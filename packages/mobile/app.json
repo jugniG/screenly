@@ -1,0 +1,46 @@
+{
+  "expo": {
+    "name": "Screenly",
+    "slug": "screenly",
+    "version": "1.0.0",
+    "scheme": "screenly",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#ffffff"
+    },
+    "android": {
+      "package": "com.screenly_x8k2.runable",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#5C6EFF"
+      },
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "android.permission.PACKAGE_USAGE_STATS",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.RECEIVE_BOOT_COMPLETED"
+      ]
+    },
+    "ios": {
+      "bundleIdentifier": "com.screenly_x8k2.runable",
+      "supportsTablet": false
+    },
+    "extra": {
+      "apiUrl": "https://mx24ytavcmnd1t17h1ciq-preview-4200.runable.site/"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-web-browser"
+    ],
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    }
+  }
+}
