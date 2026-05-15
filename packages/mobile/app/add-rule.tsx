@@ -14,7 +14,7 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Card } from '../components/ui/Card';
 import { colors, fonts, spacing, radius } from '../components/ui/theme';
-import { API_BASE } from '../lib/config';
+import { apiFetch } from '../lib/fetchApi';
 
 type RuleType = 'daily_limit' | 'schedule' | 'block_always';
 type Step = 'app' | 'type' | 'configure' | 'done';
@@ -78,10 +78,8 @@ export default function AddRuleScreen() {
       if (ruleType === 'daily_limit') body.limitMinutes = parseInt(limitMinutes);
       if (ruleType === 'schedule') { body.scheduleStart = scheduleStart; body.scheduleEnd = scheduleEnd; }
 
-      const res = await fetch(`${API_BASE}/api/rules`, {
+      const res = await apiFetch('/api/rules', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify(body),
       });
 

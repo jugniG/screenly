@@ -8,21 +8,24 @@ export default function AuthCallbackScreen() {
   const params = useLocalSearchParams<{ token?: string }>();
 
   useEffect(() => {
-    // Magic link token arrives via deep link: screenly://auth/callback?token=xxx
-    if (params.token) {
-      (authClient as any).magicLink.verify({ query: { token: params.token } })
-        .then(({ error }: any) => {
-          if (error) {
-            router.replace('/(auth)/sign-in');
-          } else {
-            router.replace('/(tabs)');
-          }
-        })
-        .catch(() => router.replace('/(auth)/sign-in'));
-    } else {
-      // Google OAuth callback — session should be set already
-      router.replace('/(tabs)');
+    async function handleCallback() {
+      if (params.token) {
+        const { error } = await (authClient as any).magicLink.verify({ query: { token: params.token } });
+        if (error) {
+          router.replace('/(auth)/sign-in');
+        } else {
+          router.replace('/(tabs)');
+        }
+      } else {
+        const { data: session } = await authClient.getSession();
+        if (session) {
+          router.replace('/(tabs)');
+        } else {
+          router.replace('/(auth)/sign-in');
+        }
+      }
     }
+    handleCallback();
   }, [params.token]);
 
   return (

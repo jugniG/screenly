@@ -14,7 +14,7 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { RuleBadge } from '../../components/ui/RuleBadge';
 import { colors, fonts, spacing } from '../../components/ui/theme';
-import { API_BASE } from '../../lib/config';
+import { apiFetch } from '../../lib/fetchApi';
 
 interface TodayUsage {
   packageName: string;
@@ -42,8 +42,8 @@ export default function DashboardScreen() {
     try {
       const headers = { 'Content-Type': 'application/json' };
       const [usageRes, rulesRes] = await Promise.all([
-        fetch(`${API_BASE}/api/usage/today`, { headers, credentials: 'include' }),
-        fetch(`${API_BASE}/api/rules`,        { headers, credentials: 'include' }),
+        apiFetch('/api/usage/today'),
+        apiFetch('/api/rules'),
       ]);
       if (usageRes.ok) setUsage(await usageRes.json());
       if (rulesRes.ok) setRules(await rulesRes.json());

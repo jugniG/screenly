@@ -8,17 +8,19 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
+import { router } from 'expo-router';
 import { authClient } from '../../lib/auth';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { colors, fonts, spacing } from '../../components/ui/theme';
 
 export default function SignInScreen() {
-  const [email, setEmail]             = useState('');
-  const [loading, setLoading]         = useState(false);
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [sent, setSent]               = useState(false);
-  const [error, setError]             = useState('');
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState('');
 
   async function handleMagicLink() {
     if (!email.trim()) { setError('Enter your email'); return; }
@@ -44,12 +46,34 @@ export default function SignInScreen() {
   async function handleGoogle() {
     setGoogleLoading(true);
     try {
-      const { error: err } = await (authClient as any).signIn.social({
+      const result = await (authClient as any).signIn.social({
         provider: 'google',
         callbackURL: 'screenly://auth/callback',
+        redirect: true,
       });
-      if (err) {
-        Alert.alert('Google Sign-In Failed', err.message ?? 'Try again');
+
+      if (result?.url) {
+        const browserResult = await WebBrowser.openAuthSessionAsync(
+          result.url,
+          'screenly://auth/callback'
+        );
+
+        if (browserResult.type === 'success') {
+          const url = new URL(browserResult.url);
+          const token = url.searchParams.get('token');
+          if (token) {
+            router.push(`/auth/callback?token=${token}`);
+          } else {
+            const { data: session } = await authClient.getSession();
+            if (session) {
+              router.replace('/(tabs)');
+            } else {
+              Alert.alert('Sign-In Failed', 'Could not verify session');
+            }
+          }
+        }
+      } else if (result?.error) {
+        Alert.alert('Google Sign-In Failed', result.error.message ?? 'Try again');
       }
     } catch (e: any) {
       Alert.alert('Error', e.message ?? 'Something went wrong');

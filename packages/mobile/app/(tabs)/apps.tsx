@@ -14,7 +14,7 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { RuleBadge } from '../../components/ui/RuleBadge';
 import { colors, fonts, spacing } from '../../components/ui/theme';
-import { API_BASE } from '../../lib/config';
+import { apiFetch } from '../../lib/fetchApi';
 
 interface Rule {
   id: string;
@@ -34,7 +34,7 @@ export default function AppsScreen() {
 
   async function load() {
     try {
-      const res = await fetch(`${API_BASE}/api/rules`, { credentials: 'include' });
+      const res = await apiFetch('/api/rules');
       if (res.ok) setRules(await res.json());
     } catch {}
     finally { setLoading(false); setRefreshing(false); }
@@ -44,10 +44,8 @@ export default function AppsScreen() {
 
   async function toggleRule(id: string, enabled: boolean) {
     try {
-      await fetch(`${API_BASE}/api/rules/${id}`, {
+      await apiFetch(`/api/rules/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({ enabled: !enabled }),
       });
       setRules(prev => prev.map(r => r.id === id ? { ...r, enabled: !enabled } : r));
@@ -64,9 +62,8 @@ export default function AppsScreen() {
         style: 'destructive',
         onPress: async () => {
           try {
-            await fetch(`${API_BASE}/api/rules/${id}`, {
+            await apiFetch(`/api/rules/${id}`, {
               method: 'DELETE',
-              credentials: 'include',
             });
             setRules(prev => prev.filter(r => r.id !== id));
           } catch {

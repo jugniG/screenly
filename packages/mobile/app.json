@@ -32,7 +32,7 @@
       "supportsTablet": false
     },
     "extra": {
-      "apiUrl": "https://mx24ytavcmnd1t17h1ciq-preview-4200.runable.site/"
+      "apiUrl": "https://mx24ytavcmnd1t17h1ciq-preview-4200.runable.site"
     },
     "plugins": [
       "expo-router",

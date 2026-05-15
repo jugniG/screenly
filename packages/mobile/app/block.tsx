@@ -12,7 +12,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { colors, fonts, spacing } from '../components/ui/theme';
 import { Button } from '../components/ui/Button';
-import { API_BASE } from '../lib/config';
+import { apiFetch } from '../lib/fetchApi';
 
 const FREE_UNLOCK_SECONDS = 5 * 60; // 5 minutes countdown
 
@@ -53,10 +53,8 @@ export default function BlockScreen() {
 
   async function handleFreeUnlock() {
     try {
-      await fetch(`${API_BASE}/api/unlock/free`, {
+      await apiFetch('/api/unlock/free', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({ packageName, minutesUnlocked: 30 }),
       });
     } catch {}
@@ -66,10 +64,8 @@ export default function BlockScreen() {
     setUnlockLoading(true);
     setMode('paying');
     try {
-      const res = await fetch(`${API_BASE}/api/unlock/checkout`, {
+      const res = await apiFetch('/api/unlock/checkout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({ packageName, appName }),
       });
 
@@ -96,10 +92,8 @@ export default function BlockScreen() {
         const pid    = params.get('payment_id') ?? payment_id;
 
         if (status === 'succeeded' || status === 'paid') {
-          const confirmRes = await fetch(`${API_BASE}/api/unlock/confirm`, {
+          const confirmRes = await apiFetch('/api/unlock/confirm', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
             body: JSON.stringify({ paymentId: pid, packageName }),
           });
 

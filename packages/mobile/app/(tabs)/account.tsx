@@ -13,7 +13,7 @@ import { authClient } from '../../lib/auth';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { colors, fonts, spacing } from '../../components/ui/theme';
-import { API_BASE } from '../../lib/config';
+import { apiFetch } from '../../lib/fetchApi';
 
 interface UnlockEvent {
   id: string;
@@ -31,7 +31,7 @@ export default function AccountScreen() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/unlock/history`, { credentials: 'include' })
+    apiFetch('/api/unlock/history')
       .then(r => r.ok ? r.json() : [])
       .then(setHistory)
       .catch(() => {})

@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Card } from '../../components/ui/Card';
 import { colors, fonts, spacing } from '../../components/ui/theme';
-import { API_BASE } from '../../lib/config';
+import { apiFetch } from '../../lib/fetchApi';
 
 const SCREEN_W = Dimensions.get('window').width;
 const BAR_MAX_H = 120;
@@ -28,7 +28,7 @@ export default function StatsScreen() {
 
   async function load() {
     try {
-      const res = await fetch(`${API_BASE}/api/usage/today`, { credentials: 'include' });
+      const res = await apiFetch('/api/usage/today');
       if (res.ok) {
         const today = await res.json();
         // Build a mock 7-day array with today's real data
