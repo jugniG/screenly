@@ -8,8 +8,6 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
-import * as WebBrowser from 'expo-web-browser';
-import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { authClient } from '../../lib/auth';
 import { Button } from '../../components/ui/Button';
@@ -18,29 +16,30 @@ import { colors, fonts, spacing } from '../../components/ui/theme';
 
 export default function SignInScreen() {
   const { data: session } = authClient.useSession();
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const [sent, setSent] = useState(false);
+  const [step, setStep] = useState<'email' | 'otp'>('email');
   const [error, setError] = useState('');
 
   useEffect(() => {
     if (session) router.replace('/(tabs)');
   }, [session]);
 
-  async function handleMagicLink() {
+  async function handleSendCode() {
     if (!email.trim()) { setError('Enter your email'); return; }
     setError('');
     setLoading(true);
     try {
-      const { error: err } = await (authClient as any).signIn.magicLink({
+      const { error: err } = await (authClient as any).emailOtp.sendVerificationOtp({
         email: email.trim(),
-        callbackURL: 'screenly://auth/callback',
+        type: 'sign-in',
       });
       if (err) {
-        Alert.alert('Error', err.message ?? 'Could not send link');
+        Alert.alert('Error', err.message ?? 'Could not send code');
       } else {
-        setSent(true);
+        setStep('otp');
       }
     } catch (e: any) {
       Alert.alert('Error', e.message ?? 'Something went wrong');
@@ -49,63 +48,28 @@ export default function SignInScreen() {
     }
   }
 
-  async function handleGoogle() {
-    setGoogleLoading(true);
+  async function handleSignIn() {
+    if (!otp.trim()) { setError('Enter the code'); return; }
+    setError('');
+    setLoading(true);
     try {
-      const callbackURL = 'screenly://auth/callback';
-      // Build the Better Auth Google OAuth URL directly — avoids state cookie
-      // mismatch between the mobile HTTP client and the system browser cookie jar
-      const apiBase = Constants.expoConfig?.extra?.apiUrl ?? process.env.EXPO_PUBLIC_API_URL ?? '';
-      const oauthUrl = `${apiBase}/api/auth/signin/social?provider=google&callbackURL=${encodeURIComponent(callbackURL)}&disableRedirect=false`;
-
-      const browserResult = await WebBrowser.openAuthSessionAsync(oauthUrl, callbackURL);
-
-      if (browserResult.type === 'success') {
-        const deepLink = browserResult.url;
-        try {
-          const params = new URL(deepLink).searchParams;
-          const token = params.get('token');
-          if (token) {
-            router.push(`/auth/callback?token=${token}`);
-          } else {
-            const { data: session } = await authClient.getSession();
-            if (session) router.replace('/(tabs)');
-            else router.replace('/(auth)/sign-in');
-          }
-        } catch {
-          const { data: session } = await authClient.getSession();
-          if (session) router.replace('/(tabs)');
-          else router.replace('/(auth)/sign-in');
+      const { data, error: err } = await (authClient as any).signIn.emailOtp({
+        email: email.trim(),
+        otp: otp.trim(),
+      });
+      if (err) {
+        Alert.alert('Error', err.message ?? 'Invalid code');
+      } else {
+        if (name.trim()) {
+          await (authClient as any).updateUser({ name: name.trim() });
         }
-      } else if (browserResult.type === 'cancel') {
-        // User dismissed — do nothing
+        router.replace('/(tabs)');
       }
     } catch (e: any) {
       Alert.alert('Error', e.message ?? 'Something went wrong');
     } finally {
-      setGoogleLoading(false);
+      setLoading(false);
     }
-  }
-
-  if (sent) {
-    return (
-      <View style={styles.centeredContainer}>
-        <View style={styles.sentBox}>
-          <Text style={styles.sentIcon}>&#x2709;&#xFE0F;</Text>
-          <Text style={styles.sentTitle}>Check your inbox</Text>
-          <Text style={styles.sentSubtitle}>
-            We sent a sign-in link to{'\n'}
-            <Text style={styles.sentEmail}>{email}</Text>
-          </Text>
-          <Button
-            title="Resend link"
-            variant="outline"
-            onPress={() => setSent(false)}
-            style={{ marginTop: spacing.xl }}
-          />
-        </View>
-      </View>
-    );
   }
 
   return (
@@ -123,43 +87,63 @@ export default function SignInScreen() {
           <Text style={styles.tagline}>Take back your screen time</Text>
         </View>
 
-        {/* Magic Link */}
-        <View style={styles.form}>
-          <Input
-            label="Email"
-            value={email}
-            onChangeText={v => { setEmail(v); setError(''); }}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            placeholder="you@example.com"
-            error={error}
-          />
-          <Button
-            title={loading ? 'Sending...' : 'Send magic link'}
-            onPress={handleMagicLink}
-            disabled={loading || googleLoading}
-            style={{ marginTop: spacing.lg }}
-          />
-        </View>
-
-        {/* Divider */}
-        <View style={styles.divider}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>or</Text>
-          <View style={styles.dividerLine} />
-        </View>
-
-        {/* Google */}
-        <Button
-          title={googleLoading ? 'Connecting...' : 'Continue with Google'}
-          onPress={handleGoogle}
-          disabled={loading || googleLoading}
-          variant="outline"
-          icon="google"
-        />
+        {step === 'email' ? (
+          <View style={styles.form}>
+            <Input
+              label="Name"
+              value={name}
+              onChangeText={v => setName(v)}
+              autoCapitalize="words"
+              placeholder="Your name"
+            />
+            <Input
+              label="Email"
+              value={email}
+              onChangeText={v => { setEmail(v); setError(''); }}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              placeholder="you@example.com"
+              error={error}
+            />
+            <Button
+              title={loading ? 'Sending...' : 'Send code'}
+              onPress={handleSendCode}
+              disabled={loading}
+              style={{ marginTop: spacing.lg }}
+            />
+          </View>
+        ) : (
+          <View style={styles.form}>
+            <Text style={styles.otpSentText}>
+              Code sent to{'\n'}
+              <Text style={styles.otpSentEmail}>{email}</Text>
+            </Text>
+            <Input
+              label="Code"
+              value={otp}
+              onChangeText={v => { setOtp(v); setError(''); }}
+              keyboardType="number-pad"
+              placeholder="000000"
+              maxLength={6}
+              error={error}
+            />
+            <Button
+              title={loading ? 'Signing in...' : 'Sign in'}
+              onPress={handleSignIn}
+              disabled={loading}
+              style={{ marginTop: spacing.lg }}
+            />
+            <Button
+              title="Back"
+              variant="outline"
+              onPress={() => { setStep('email'); setOtp(''); setError(''); }}
+              style={{ marginTop: spacing.sm }}
+            />
+          </View>
+        )}
 
         <Text style={styles.hint}>
-          No account? A magic link will create one automatically.
+          No account? Signing in will create one automatically.
         </Text>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -173,13 +157,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     paddingTop: 100,
     paddingBottom: spacing.xxl,
-  },
-  centeredContainer: {
-    flex: 1,
-    backgroundColor: colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.xl,
   },
   brand: {
     alignItems: 'center',
@@ -198,14 +175,15 @@ const styles = StyleSheet.create({
   brandName: { fontFamily: fonts.bold, fontSize: 28, color: colors.text },
   tagline: { fontFamily: fonts.regular, fontSize: 14, color: colors.textSecondary, marginTop: 4 },
   form: {},
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: spacing.lg,
-    gap: 8,
+  otpSentText: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: spacing.lg,
+    lineHeight: 22,
   },
-  dividerLine: { flex: 1, height: 1, backgroundColor: colors.border },
-  dividerText: { fontFamily: fonts.regular, fontSize: 13, color: colors.textSecondary },
+  otpSentEmail: { fontFamily: fonts.semiBold, color: colors.text },
   hint: {
     fontFamily: fonts.regular,
     fontSize: 12,
@@ -213,15 +191,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: spacing.xl,
   },
-  sentBox: { alignItems: 'center' },
-  sentIcon: { fontSize: 56, marginBottom: spacing.lg },
-  sentTitle: { fontFamily: fonts.bold, fontSize: 24, color: colors.text, marginBottom: spacing.sm },
-  sentSubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  sentEmail: { fontFamily: fonts.semiBold, color: colors.text },
 });
