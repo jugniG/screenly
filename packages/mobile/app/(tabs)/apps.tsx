@@ -15,6 +15,7 @@ import { Button } from '../../components/ui/Button';
 import { RuleBadge } from '../../components/ui/RuleBadge';
 import { colors, fonts, spacing } from '../../components/ui/theme';
 import { apiFetch } from '../../lib/fetchApi';
+import { syncRules } from '../../lib/enforcer';
 
 interface Rule {
   id: string;
@@ -35,7 +36,11 @@ export default function AppsScreen() {
   async function load() {
     try {
       const res = await apiFetch('/api/rules');
-      if (res.ok) setRules(await res.json());
+      if (res.ok) {
+        const rules = await res.json();
+        setRules(rules);
+        syncRules();
+      }
     } catch {}
     finally { setLoading(false); setRefreshing(false); }
   }
@@ -49,6 +54,7 @@ export default function AppsScreen() {
         body: JSON.stringify({ enabled: !enabled }),
       });
       setRules(prev => prev.map(r => r.id === id ? { ...r, enabled: !enabled } : r));
+      syncRules();
     } catch {
       Alert.alert('Error', 'Could not update rule');
     }
@@ -66,6 +72,7 @@ export default function AppsScreen() {
               method: 'DELETE',
             });
             setRules(prev => prev.filter(r => r.id !== id));
+            syncRules();
           } catch {
             Alert.alert('Error', 'Could not delete rule');
           }

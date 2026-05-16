@@ -3,81 +3,83 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   Dimensions,
   TouchableOpacity,
+  Image,
   Animated,
   StatusBar,
 } from 'react-native';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { colors, fonts, spacing, radius } from '../components/ui/theme';
+import { fonts, radius } from '../components/ui/theme';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 const SLIDES = [
   {
     id: '1',
-    emoji: '📱',
-    accentColor: '#5C6EFF',
-    bgColor: '#EEF0FF',
-    title: 'You unlock your\nphone 96 times a day.',
-    subtitle: 'Most of it is mindless. Screenly helps you see exactly where your time goes — and take it back.',
-    stat: '3h 15m',
-    statLabel: 'average daily screen time',
+    bg: '#0D0D1A',
+    accent: '#7C5CFF',
+    image: require('../assets/screens/image1.png'),
+    titleParts: [
+      { text: 'Ever opened an app\nfor 5 minutes... ', color: '#fff' },
+      { text: 'and lost an hour?', color: '#7C5CFF' },
+    ],
+    subParts: [
+      { text: 'Apps are designed to keep you scrolling. ', color: '#9CA3AF' },
+      { text: 'Screenly', color: '#7C5CFF' },
+      { text: ' helps you take back control.', color: '#9CA3AF' },
+    ],
   },
   {
     id: '2',
-    emoji: '🔒',
-    accentColor: '#8B5CF6',
-    bgColor: '#F5F3FF',
-    title: 'Block the apps\nthat drain you.',
-    subtitle: 'Set daily limits or time windows for any app. When you hit the limit, it locks — no workarounds.',
-    stat: '40%',
-    statLabel: 'more focus time reported by users',
-  },
-  {
-    id: '3',
-    emoji: '⏳',
-    accentColor: '#10B981',
-    bgColor: '#F0FFF4',
-    title: 'Break free,\non your terms.',
-    subtitle: 'Need 5 more minutes? Take a free cooldown. Emergency? Unlock instantly — no judgment.',
-    stat: '5 min',
-    statLabel: 'free cooldown, always available',
+    bg: '#0A1A0D',
+    accent: '#22C55E',
+    image: require('../assets/screens/image2.png'),
+    titleParts: [
+      { text: 'Screenly can help you\n', color: '#fff' },
+      { text: 'optimize your\nphone usage.', color: '#22C55E' },
+    ],
+    subParts: [
+      { text: "Define time windows or max usage for your apps and we don't let you go over.\nIt's urgent? You can ", color: '#9CA3AF' },
+      { text: 'unlock it with just $5.', color: '#22C55E' },
+    ],
   },
 ];
 
 export default function OnboardingScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const flatListRef = useRef<FlatList>(null);
+  const flatListRef = useRef<Animated.FlatList<(typeof SLIDES)[number]>>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
 
+  const current = SLIDES[currentIndex];
+  const isLast = currentIndex === SLIDES.length - 1;
+
   async function finish() {
+    await AsyncStorage.setItem('onboarding_done', '1');
+    router.replace('/(auth)/sign-up');
+  }
+
+  async function skip() {
     await AsyncStorage.setItem('onboarding_done', '1');
     router.replace('/(auth)/sign-in');
   }
 
   function next() {
-    if (currentIndex < SLIDES.length - 1) {
-      flatListRef.current?.scrollToIndex({ index: currentIndex + 1, animated: true });
-    } else {
+    if (isLast) {
       finish();
+    } else {
+      (flatListRef.current as any)?.scrollToIndex({ index: currentIndex + 1, animated: true });
     }
   }
 
-  const isLast = currentIndex === SLIDES.length - 1;
-
   return (
-    <View style={styles.root}>
-      <StatusBar barStyle="dark-content" />
+    <View style={[styles.root, { backgroundColor: current.bg }]}>
+      <StatusBar barStyle="light-content" />
 
-      {/* Skip */}
-      {!isLast && (
-        <TouchableOpacity style={styles.skip} onPress={finish}>
-          <Text style={styles.skipText}>Skip</Text>
-        </TouchableOpacity>
-      )}
+      <TouchableOpacity style={styles.skip} onPress={skip}>
+        <Text style={styles.skipText}>Skip</Text>
+      </TouchableOpacity>
 
       <Animated.FlatList
         ref={flatListRef}
@@ -85,70 +87,64 @@ export default function OnboardingScreen() {
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        keyExtractor={(item) => item.id}
+        keyExtractor={item => item.id}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-          { useNativeDriver: false }
+          { useNativeDriver: false },
         )}
-        onMomentumScrollEnd={(e) => {
-          const index = Math.round(e.nativeEvent.contentOffset.x / width);
-          setCurrentIndex(index);
+        onMomentumScrollEnd={e => {
+          setCurrentIndex(Math.round(e.nativeEvent.contentOffset.x / width));
         }}
         renderItem={({ item }) => (
-          <View style={[styles.slide, { width }]}>
-            {/* Big visual card */}
-            <View style={[styles.visualCard, { backgroundColor: item.bgColor }]}>
-              <Text style={styles.emoji}>{item.emoji}</Text>
-              <View style={[styles.statBubble, { backgroundColor: item.accentColor }]}>
-                <Text style={styles.statNumber}>{item.stat}</Text>
-                <Text style={styles.statLabel}>{item.statLabel}</Text>
-              </View>
+          <View style={[styles.slide, { width, backgroundColor: item.bg }]}>
+            {/* Centered phone screenshot */}
+            <View style={styles.imageWrap}>
+              <Image
+                source={item.image}
+                style={styles.phoneImage}
+                resizeMode="contain"
+              />
             </View>
 
-            {/* Text */}
+            {/* Text below image */}
             <View style={styles.textBlock}>
-              <Text style={styles.title}>{item.title}</Text>
-              <Text style={styles.subtitle}>{item.subtitle}</Text>
+              <Text style={styles.title}>
+                {item.titleParts.map((p, i) => (
+                  <Text key={i} style={{ color: p.color }}>{p.text}</Text>
+                ))}
+              </Text>
+              <Text style={styles.sub}>
+                {item.subParts.map((p, i) => (
+                  <Text key={i} style={{ color: p.color }}>{p.text}</Text>
+                ))}
+              </Text>
             </View>
           </View>
         )}
       />
 
       {/* Dots + CTA */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, { backgroundColor: current.bg }]}>
         <View style={styles.dots}>
           {SLIDES.map((_, i) => {
             const inputRange = [(i - 1) * width, i * width, (i + 1) * width];
-            const dotWidth = scrollX.interpolate({
-              inputRange,
-              outputRange: [8, 24, 8],
-              extrapolate: 'clamp',
-            });
-            const opacity = scrollX.interpolate({
-              inputRange,
-              outputRange: [0.3, 1, 0.3],
-              extrapolate: 'clamp',
-            });
+            const dotWidth = scrollX.interpolate({ inputRange, outputRange: [6, 20, 6], extrapolate: 'clamp' });
+            const opacity = scrollX.interpolate({ inputRange, outputRange: [0.3, 1, 0.3], extrapolate: 'clamp' });
             return (
               <Animated.View
                 key={i}
-                style={[
-                  styles.dot,
-                  { width: dotWidth, opacity, backgroundColor: SLIDES[currentIndex].accentColor },
-                ]}
+                style={[styles.dot, { width: dotWidth, opacity, backgroundColor: current.accent }]}
               />
             );
           })}
         </View>
 
         <TouchableOpacity
-          style={[styles.cta, { backgroundColor: SLIDES[currentIndex].accentColor }]}
+          style={[styles.cta, { backgroundColor: current.accent }]}
           onPress={next}
           activeOpacity={0.85}
         >
-          <Text style={styles.ctaText}>
-            {isLast ? 'Get Started' : 'Continue'}
-          </Text>
+          <Text style={styles.ctaText}>{isLast ? 'Get Started' : 'Continue'}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -156,79 +152,64 @@ export default function OnboardingScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
+  root: { flex: 1 },
+
   skip: {
     position: 'absolute',
     top: 56,
-    right: spacing.xl,
+    right: 24,
     zIndex: 10,
   },
   skipText: {
     fontFamily: fonts.medium,
     fontSize: 14,
-    color: colors.textSecondary,
+    color: '#9CA3AF',
   },
+
   slide: {
     flex: 1,
-    paddingHorizontal: spacing.xl,
-    paddingTop: 80,
+    paddingTop: 56,
+    paddingHorizontal: 24,
     alignItems: 'center',
   },
-  visualCard: {
-    width: '100%',
-    height: height * 0.38,
-    borderRadius: radius.xl,
-    alignItems: 'center',
+
+  imageWrap: {
+    flex: 1,
     justifyContent: 'center',
-    marginBottom: spacing.xl,
-    gap: spacing.lg,
-  },
-  emoji: {
-    fontSize: 80,
-  },
-  statBubble: {
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
-    borderRadius: radius.full,
     alignItems: 'center',
+    width: '100%',
   },
-  statNumber: {
-    fontFamily: fonts.bold,
-    fontSize: 22,
-    color: '#fff',
+
+  phoneImage: {
+    width: width * 0.72,
+    height: undefined,
+    aspectRatio: 0.46,
   },
-  statLabel: {
-    fontFamily: fonts.regular,
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.85)',
-  },
+
   textBlock: {
+    paddingBottom: 12,
     alignItems: 'center',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.sm,
+    width: '100%',
   },
   title: {
     fontFamily: fonts.bold,
-    fontSize: 28,
-    color: colors.text,
+    fontSize: 22,
     textAlign: 'center',
-    lineHeight: 36,
+    lineHeight: 30,
+    marginBottom: 10,
   },
-  subtitle: {
+  sub: {
     fontFamily: fonts.regular,
-    fontSize: 15,
-    color: colors.textSecondary,
+    fontSize: 13,
     textAlign: 'center',
-    lineHeight: 23,
-    marginTop: spacing.xs,
+    lineHeight: 20,
   },
+
   footer: {
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: 24,
     paddingBottom: 48,
-    gap: spacing.lg,
+    paddingTop: 12,
+    gap: 16,
     alignItems: 'center',
   },
   dots: {
@@ -237,13 +218,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   dot: {
-    height: 8,
+    height: 6,
     borderRadius: radius.full,
   },
   cta: {
     width: '100%',
     paddingVertical: 16,
-    borderRadius: radius.lg,
+    borderRadius: 14,
     alignItems: 'center',
   },
   ctaText: {

@@ -13,6 +13,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { colors, fonts, spacing } from '../components/ui/theme';
 import { Button } from '../components/ui/Button';
 import { apiFetch } from '../lib/fetchApi';
+import { unlockApp } from '../lib/enforcer';
 
 const FREE_UNLOCK_SECONDS = 5 * 60; // 5 minutes countdown
 
@@ -55,8 +56,9 @@ export default function BlockScreen() {
     try {
       await apiFetch('/api/unlock/free', {
         method: 'POST',
-        body: JSON.stringify({ packageName, minutesUnlocked: 30 }),
+        body: JSON.stringify({ packageName, appName, minutesUnlocked: 30 }),
       });
+      await unlockApp(packageName!, 30);
     } catch {}
   }
 
@@ -98,6 +100,7 @@ export default function BlockScreen() {
           });
 
           if (confirmRes.ok) {
+            await unlockApp(packageName!, 60);
             setMode('unlocked');
             return;
           }

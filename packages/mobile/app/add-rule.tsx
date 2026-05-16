@@ -13,8 +13,10 @@ import { router } from 'expo-router';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Card } from '../components/ui/Card';
+import AppPicker from '../components/ui/AppPicker';
 import { colors, fonts, spacing, radius } from '../components/ui/theme';
 import { apiFetch } from '../lib/fetchApi';
+import { syncRules } from '../lib/enforcer';
 
 type RuleType = 'daily_limit' | 'schedule' | 'block_always';
 type Step = 'app' | 'type' | 'configure' | 'done';
@@ -41,14 +43,14 @@ export default function AddRuleScreen() {
   const [scheduleStart, setScheduleStart] = useState('22:00');
   const [scheduleEnd, setScheduleEnd]   = useState('07:00');
   const [loading, setLoading]       = useState(false);
+  const [showPicker, setShowPicker] = useState(false);
   const [errors, setErrors]         = useState<Record<string, string>>({});
 
-  function validateApp() {
-    const e: Record<string, string> = {};
-    if (!packageName.trim()) e.packageName = 'Required (e.g. com.instagram.android)';
-    if (!appName.trim())     e.appName = 'Required';
-    setErrors(e);
-    return Object.keys(e).length === 0;
+  function handleAppSelected(app: { name: string; packageName: string }) {
+    setAppName(app.name);
+    setPackageName(app.packageName);
+    setShowPicker(false);
+    setStep('type');
   }
 
   function validateConfigure() {
@@ -89,6 +91,7 @@ export default function AddRuleScreen() {
         return;
       }
 
+      syncRules();
       setStep('done');
     } catch (e: any) {
       Alert.alert('Error', e.message ?? 'Something went wrong');
@@ -97,10 +100,16 @@ export default function AddRuleScreen() {
     }
   }
 
+  function goBack() {
+    if (step === 'app') router.back();
+    else if (step === 'type') setStep('app');
+    else if (step === 'configure') setStep('type');
+  }
+
   return (
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => (step === 'app' ? router.back() : setStep(step === 'type' ? 'app' : step === 'configure' ? 'type' : 'app'))}>
+        <TouchableOpacity onPress={goBack}>
           <Text style={styles.back}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Add Rule</Text>
@@ -123,37 +132,40 @@ export default function AddRuleScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-
-        {/* Step 1: App */}
+        {/* Step 1: Pick App */}
         {step === 'app' && (
           <View style={styles.stepContainer}>
             <Text style={styles.stepTitle}>Which app?</Text>
-            <Text style={styles.stepSubtitle}>Enter the app's package name and display name</Text>
-            <Input
-              label="Package Name"
-              value={packageName}
-              onChangeText={setPackageName}
-              placeholder="e.g. com.instagram.android"
-              autoCapitalize="none"
-              autoCorrect={false}
-              error={errors.packageName}
-              containerStyle={{ marginBottom: spacing.md }}
-            />
-            <Input
-              label="App Name"
-              value={appName}
-              onChangeText={setAppName}
-              placeholder="e.g. Instagram"
-              error={errors.appName}
-            />
-            <Text style={styles.hint}>
-              💡 On Android, find the package name in Settings → Apps → tap app → App Info
-            </Text>
-            <Button
-              title="Next →"
-              onPress={() => { if (validateApp()) setStep('type'); }}
-              style={{ marginTop: spacing.xl }}
-            />
+            <Text style={styles.stepSubtitle}>Select the app you want to restrict</Text>
+
+            <TouchableOpacity
+              style={styles.pickerButton}
+              onPress={() => setShowPicker(true)}
+            >
+              <View style={styles.pickerPlaceholder}>
+                <Text style={styles.pickerPlaceholderIcon}>📱</Text>
+                <Text style={styles.pickerPlaceholderText}>Tap to choose an app</Text>
+              </View>
+            </TouchableOpacity>
+
+            {packageName ? (
+              <View style={styles.selectedApp}>
+                <View style={styles.selectedAppIcon}>
+                  <Text style={styles.selectedAppIconText}>{appName[0]}</Text>
+                </View>
+                <View>
+                  <Text style={styles.selectedAppName}>{appName}</Text>
+                  <Text style={styles.selectedAppPkg}>{packageName}</Text>
+                </View>
+              </View>
+            ) : null}
+
+            {showPicker && (
+              <AppPicker
+                onSelect={handleAppSelected}
+                onCancel={() => setShowPicker(false)}
+              />
+            )}
           </View>
         )}
 
@@ -163,14 +175,11 @@ export default function AddRuleScreen() {
             <Text style={styles.stepTitle}>Rule type</Text>
             <Text style={styles.stepSubtitle}>How should Screenly handle {appName}?</Text>
             {RULE_TYPES.map(opt => (
-              <TouchableOpacity
-                key={opt.value}
-                onPress={() => setRuleType(opt.value)}
-              >
-                <Card style={[styles.typeCard, ruleType === opt.value ? styles.typeCardSelected : undefined]}>
+              <TouchableOpacity key={opt.value} onPress={() => setRuleType(opt.value)}>
+                <Card style={[styles.typeCard, ruleType === opt.value && styles.typeCardSelected]}>
                   <Text style={styles.typeEmoji}>{opt.emoji}</Text>
                   <View style={styles.typeInfo}>
-                    <Text style={[styles.typeLabel, ruleType === opt.value ? { color: colors.primary } : undefined]}>
+                    <Text style={[styles.typeLabel, ruleType === opt.value && { color: colors.primary }]}>
                       {opt.label}
                     </Text>
                     <Text style={styles.typeDesc}>{opt.desc}</Text>
@@ -179,11 +188,7 @@ export default function AddRuleScreen() {
                 </Card>
               </TouchableOpacity>
             ))}
-            <Button
-              title="Next →"
-              onPress={() => setStep('configure')}
-              style={{ marginTop: spacing.xl }}
-            />
+            <Button title="Next →" onPress={() => setStep('configure')} style={{ marginTop: spacing.xl }} />
           </View>
         )}
 
@@ -294,7 +299,38 @@ const styles = StyleSheet.create({
   stepContainer: {},
   stepTitle: { fontFamily: fonts.bold, fontSize: 22, color: colors.text, marginBottom: 6 },
   stepSubtitle: { fontFamily: fonts.regular, fontSize: 14, color: colors.textSecondary, marginBottom: spacing.xl },
-  hint: { fontFamily: fonts.regular, fontSize: 12, color: colors.textMuted, marginTop: spacing.sm },
+  pickerButton: {
+    backgroundColor: colors.bg,
+    borderRadius: radius.md,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderStyle: 'dashed',
+    padding: spacing.xl,
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  pickerPlaceholder: { alignItems: 'center' },
+  pickerPlaceholderIcon: { fontSize: 32, marginBottom: spacing.sm },
+  pickerPlaceholderText: { fontFamily: fonts.medium, fontSize: 15, color: colors.textSecondary },
+  selectedApp: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.accentSoft,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    gap: spacing.md,
+  },
+  selectedAppIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.md,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectedAppIconText: { fontFamily: fonts.semiBold, fontSize: 20, color: '#fff' },
+  selectedAppName: { fontFamily: fonts.semiBold, fontSize: 16, color: colors.text },
+  selectedAppPkg: { fontFamily: fonts.regular, fontSize: 12, color: colors.textMuted, marginTop: 2 },
   typeCard: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm },
   typeCardSelected: { borderColor: colors.primary, borderWidth: 2 },
   typeEmoji: { fontSize: 28, marginRight: spacing.md },

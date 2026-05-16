@@ -15,8 +15,9 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { colors, fonts, spacing } from '../../components/ui/theme';
 
-export default function SignInScreen() {
+export default function SignUpScreen() {
   const { data: session } = authClient.useSession();
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
@@ -28,6 +29,7 @@ export default function SignInScreen() {
   }, [session]);
 
   async function handleSendCode() {
+    if (!name.trim()) { setError('Enter your name'); return; }
     if (!email.trim()) { setError('Enter your email'); return; }
     setError('');
     setLoading(true);
@@ -48,7 +50,7 @@ export default function SignInScreen() {
     }
   }
 
-  async function handleSignIn() {
+  async function handleSignUp() {
     if (!otp.trim()) { setError('Enter the code'); return; }
     setError('');
     setLoading(true);
@@ -59,6 +61,8 @@ export default function SignInScreen() {
       });
       if (err) {
         Alert.alert('Error', err.message ?? 'Invalid code');
+      } else {
+        await (authClient as any).updateUser({ name: name.trim() });
       }
     } catch (e: any) {
       Alert.alert('Error', e.message ?? 'Something went wrong');
@@ -82,10 +86,18 @@ export default function SignInScreen() {
         </View>
 
         <View style={styles.form}>
-          <Text style={styles.formTitle}>Sign in</Text>
+          <Text style={styles.formTitle}>Create account</Text>
 
           {step === 'email' ? (
             <>
+              <Input
+                label="Name"
+                value={name}
+                onChangeText={v => setName(v)}
+                autoCapitalize="words"
+                placeholder="Your name"
+                error={error && !name.trim() ? error : ''}
+              />
               <Input
                 label="Email"
                 value={email}
@@ -118,8 +130,8 @@ export default function SignInScreen() {
                 error={error}
               />
               <Button
-                title={loading ? 'Signing in…' : 'Sign in'}
-                onPress={handleSignIn}
+                title={loading ? 'Creating account…' : 'Create account'}
+                onPress={handleSignUp}
                 disabled={loading}
                 style={{ marginTop: spacing.lg }}
               />
@@ -133,9 +145,9 @@ export default function SignInScreen() {
           )}
         </View>
 
-        <TouchableOpacity style={styles.footer} onPress={() => router.push('/(auth)/sign-up')}>
-          <Text style={styles.footerText}>Don't have an account? </Text>
-          <Text style={styles.footerLink}>Sign up</Text>
+        <TouchableOpacity style={styles.footer} onPress={() => router.push('/(auth)/sign-in')}>
+          <Text style={styles.footerText}>Already have an account? </Text>
+          <Text style={styles.footerLink}>Sign in</Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -147,12 +159,12 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     paddingHorizontal: spacing.xl,
-    paddingTop: 100,
+    paddingTop: 80,
     paddingBottom: spacing.xxl,
   },
   brand: {
     alignItems: 'center',
-    marginBottom: spacing.xxl,
+    marginBottom: spacing.xl,
   },
   logoBox: {
     width: 72,

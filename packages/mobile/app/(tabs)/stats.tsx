@@ -6,13 +6,11 @@ import {
   ScrollView,
   RefreshControl,
   ActivityIndicator,
-  Dimensions,
 } from 'react-native';
 import { Card } from '../../components/ui/Card';
 import { colors, fonts, spacing } from '../../components/ui/theme';
-import { apiFetch } from '../../lib/fetchApi';
+import ScreenlyEnforcer from '../../modules/screenly-enforcer/src/ScreenlyEnforcerModule';
 
-const SCREEN_W = Dimensions.get('window').width;
 const BAR_MAX_H = 120;
 
 interface DayUsage {
@@ -28,25 +26,20 @@ export default function StatsScreen() {
 
   async function load() {
     try {
-      const res = await apiFetch('/api/usage/today');
-      if (res.ok) {
-        const today = await res.json();
-        // Build a mock 7-day array with today's real data
-        const days: DayUsage[] = Array.from({ length: 7 }).map((_, i) => {
-          const d = new Date();
-          d.setDate(d.getDate() - (6 - i));
-          const isToday = i === 6;
-          if (isToday) {
-            return {
-              date: d.toISOString().split('T')[0],
-              totalMinutes: today.reduce((s: number, a: any) => s + a.totalMinutes, 0),
-              appBreakdown: today.map((a: any) => ({ appName: a.appName, packageName: a.packageName, minutes: a.totalMinutes })),
-            };
-          }
-          return { date: d.toISOString().split('T')[0], totalMinutes: 0, appBreakdown: [] };
-        });
-        setData(days);
-      }
+      const todayUsage = await ScreenlyEnforcer.getTodayUsage();
+      const days: DayUsage[] = Array.from({ length: 7 }).map((_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - (6 - i));
+        if (i === 6) {
+          return {
+            date: d.toISOString().split('T')[0],
+            totalMinutes: todayUsage.reduce((s, a) => s + a.totalMinutes, 0),
+            appBreakdown: todayUsage.map(a => ({ appName: a.appName, packageName: a.packageName, minutes: a.totalMinutes })),
+          };
+        }
+        return { date: d.toISOString().split('T')[0], totalMinutes: 0, appBreakdown: [] };
+      });
+      setData(days);
     } catch {}
     finally { setLoading(false); setRefreshing(false); }
   }

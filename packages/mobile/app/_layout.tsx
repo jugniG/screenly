@@ -4,6 +4,7 @@ import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authClient } from '../lib/auth';
+import { syncRules } from '../lib/enforcer';
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -16,27 +17,38 @@ export default function RootLayout() {
   const { data: session, isPending } = authClient.useSession();
   const [onboardingChecked, setOnboardingChecked] = useState(false);
   const [onboardingDone, setOnboardingDone] = useState(false);
+  const [setupDone, setSetupDone] = useState(false);
+  const [setupChecked, setSetupChecked] = useState(false);
 
   useEffect(() => {
     AsyncStorage.getItem('onboarding_done').then((val) => {
       setOnboardingDone(!!val);
       setOnboardingChecked(true);
     });
+    AsyncStorage.getItem('setup_done').then((val) => {
+      setSetupDone(!!val);
+      setSetupChecked(true);
+    });
   }, []);
 
   useEffect(() => {
-    if (!fontsLoaded || isPending || !onboardingChecked) return;
+    if (!fontsLoaded || isPending || !onboardingChecked || !setupChecked) return;
 
     if (!onboardingDone) {
       router.replace('/onboarding');
     } else if (session) {
-      router.replace('/(tabs)');
+      if (!setupDone) {
+        router.replace('/setup');
+      } else {
+        syncRules();
+        router.replace('/(tabs)');
+      }
     } else {
       router.replace('/(auth)/sign-in');
     }
-  }, [fontsLoaded, isPending, session, onboardingChecked, onboardingDone]);
+  }, [fontsLoaded, isPending, session, onboardingChecked, onboardingDone, setupDone, setupChecked]);
 
-  if (!fontsLoaded || isPending || !onboardingChecked) return null;
+  if (!fontsLoaded || isPending || !onboardingChecked || !setupChecked) return null;
 
   return (
     <>

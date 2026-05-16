@@ -1,6 +1,8 @@
-import { Redirect } from 'expo-router';
+import { View, ActivityIndicator } from 'react-native';
 
-// Root redirects to (auth)/sign-in; _layout.tsx handles the actual auth gate
+// _layout.tsx handles all routing — this is just a splash until fonts/session load
 export default function Index() {
-  return <Redirect href="/(auth)/sign-in" />;
+  return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F7F8FA' }}>
+    <ActivityIndicator size="large" color="#5C6EFF" />
+  </View>;
 }

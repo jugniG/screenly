@@ -21,10 +21,12 @@
       },
       "edgeToEdgeEnabled": true,
       "permissions": [
+        "android.permission.QUERY_ALL_PACKAGES",
         "android.permission.PACKAGE_USAGE_STATS",
         "android.permission.SYSTEM_ALERT_WINDOW",
         "android.permission.FOREGROUND_SERVICE",
-        "android.permission.RECEIVE_BOOT_COMPLETED"
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.BIND_ACCESSIBILITY_SERVICE"
       ]
     },
     "ios": {
@@ -36,7 +38,8 @@
     },
     "plugins": [
       "expo-router",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-dev-client"
     ],
     "web": {
       "favicon": "./assets/favicon.png",

@@ -15,13 +15,8 @@ import { Button } from '../../components/ui/Button';
 import { RuleBadge } from '../../components/ui/RuleBadge';
 import { colors, fonts, spacing } from '../../components/ui/theme';
 import { apiFetch } from '../../lib/fetchApi';
-
-interface TodayUsage {
-  packageName: string;
-  appName: string;
-  totalMinutes: number;
-  blocked: boolean;
-}
+import { syncRules } from '../../lib/enforcer';
+import ScreenlyEnforcer from '../../modules/screenly-enforcer/src/ScreenlyEnforcerModule';
 
 interface Rule {
   id: string;
@@ -33,20 +28,23 @@ interface Rule {
 
 export default function DashboardScreen() {
   const { data: session } = authClient.useSession();
-  const [usage, setUsage]     = useState<TodayUsage[]>([]);
+  const [usage, setUsage]     = useState<{ packageName: string; appName: string; totalMinutes: number }[]>([]);
   const [rules, setRules]     = useState<Rule[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   async function load() {
     try {
-      const headers = { 'Content-Type': 'application/json' };
-      const [usageRes, rulesRes] = await Promise.all([
-        apiFetch('/api/usage/today'),
+      const [usageList, rulesRes] = await Promise.all([
+        ScreenlyEnforcer.getTodayUsage().catch(() => []),
         apiFetch('/api/rules'),
       ]);
-      if (usageRes.ok) setUsage(await usageRes.json());
-      if (rulesRes.ok) setRules(await rulesRes.json());
+      setUsage(usageList);
+      if (rulesRes.ok) {
+        const r = await rulesRes.json();
+        setRules(r);
+        syncRules();
+      }
     } catch {}
     finally {
       setLoading(false);
@@ -57,7 +55,7 @@ export default function DashboardScreen() {
   useEffect(() => { load(); }, []);
 
   const totalMinutes = usage.reduce((s, u) => s + u.totalMinutes, 0);
-  const blockedCount = usage.filter(u => u.blocked).length;
+  const blockedCount = 0;
 
   const topApps = [...usage].sort((a, b) => b.totalMinutes - a.totalMinutes).slice(0, 4);
 
