@@ -9,6 +9,7 @@ import {
   Alert,
 } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
+import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { authClient } from '../../lib/auth';
 import { Button } from '../../components/ui/Button';
@@ -52,36 +53,32 @@ export default function SignInScreen() {
     setGoogleLoading(true);
     try {
       const callbackURL = 'screenly://auth/callback';
+      // Build the Better Auth Google OAuth URL directly — avoids state cookie
+      // mismatch between the mobile HTTP client and the system browser cookie jar
+      const apiBase = Constants.expoConfig?.extra?.apiUrl ?? process.env.EXPO_PUBLIC_API_URL ?? '';
+      const oauthUrl = `${apiBase}/api/auth/signin/social?provider=google&callbackURL=${encodeURIComponent(callbackURL)}&disableRedirect=false`;
 
-      const result = await (authClient as any).signIn.social({
-        provider: 'google',
-        callbackURL,
-        redirect: false,
-      });
+      const browserResult = await WebBrowser.openAuthSessionAsync(oauthUrl, callbackURL);
 
-      const url = result?.data?.url ?? result?.url;
-      if (url) {
-        // openAuthSessionAsync watches for a redirect back to screenly://
-        const browserResult = await WebBrowser.openAuthSessionAsync(url, callbackURL);
-
-        if (browserResult.type === 'success') {
-          // App was reopened via deep link — navigate to callback handler
-          const deepLink = browserResult.url; // e.g. screenly://auth/callback?...
+      if (browserResult.type === 'success') {
+        const deepLink = browserResult.url;
+        try {
           const params = new URL(deepLink).searchParams;
           const token = params.get('token');
           if (token) {
             router.push(`/auth/callback?token=${token}`);
           } else {
-            // Session cookie already set — just check session
             const { data: session } = await authClient.getSession();
             if (session) router.replace('/(tabs)');
             else router.replace('/(auth)/sign-in');
           }
-        } else if (browserResult.type === 'cancel') {
-          // User closed the browser — do nothing
+        } catch {
+          const { data: session } = await authClient.getSession();
+          if (session) router.replace('/(tabs)');
+          else router.replace('/(auth)/sign-in');
         }
-      } else if (result?.error) {
-        Alert.alert('Google Sign-In Failed', result.error.message ?? 'Try again');
+      } else if (browserResult.type === 'cancel') {
+        // User dismissed — do nothing
       }
     } catch (e: any) {
       Alert.alert('Error', e.message ?? 'Something went wrong');

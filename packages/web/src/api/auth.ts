@@ -21,14 +21,11 @@ export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET,
   trustedOrigins: ["*"],
 
-  account: {
-    skipStateCookieCheck: true,
-  },
-
   socialProviders: {
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID ?? "placeholder",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "placeholder",
+      disableStateCheck: true,
     },
   },
 
