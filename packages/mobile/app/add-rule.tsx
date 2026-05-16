@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,9 +6,11 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  TextInput,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -16,6 +18,7 @@ import { Card } from '../components/ui/Card';
 import AppPicker from '../components/ui/AppPicker';
 import { colors, fonts, spacing, radius } from '../components/ui/theme';
 import { apiFetch } from '../lib/fetchApi';
+import { BackButton } from '../components/ui/BackButton';
 import { syncRules } from '../lib/enforcer';
 
 type RuleType = 'daily_limit' | 'schedule' | 'block_always';
@@ -29,7 +32,7 @@ interface RuleTypeOption {
 }
 
 const RULE_TYPES: RuleTypeOption[] = [
-  { value: 'daily_limit',  label: 'Daily Limit',   desc: 'Block after N minutes per day',       emoji: '⏱️' },
+  { value: 'daily_limit',  label: 'Daily Limit',   desc: 'Only open for X minutes per day',       emoji: '⏱️' },
   { value: 'schedule',     label: 'Time Schedule',  desc: 'Block between specific hours',         emoji: '🗓️' },
   { value: 'block_always', label: 'Always Block',   desc: 'Permanently block the app',            emoji: '🚫' },
 ];
@@ -40,17 +43,36 @@ export default function AddRuleScreen() {
   const [appName, setAppName]       = useState('');
   const [ruleType, setRuleType]     = useState<RuleType>('daily_limit');
   const [limitMinutes, setLimitMinutes] = useState('60');
-  const [scheduleStart, setScheduleStart] = useState('22:00');
-  const [scheduleEnd, setScheduleEnd]   = useState('07:00');
+  const [startH, setStartH] = useState('10');
+  const [startM, setStartM] = useState('00');
+  const [startP, setStartP] = useState<'PM' | 'AM'>('PM');
+  const [endH, setEndH] = useState('7');
+  const [endM, setEndM] = useState('00');
+  const [endP, setEndP] = useState<'AM' | 'PM'>('AM');
   const [loading, setLoading]       = useState(false);
   const [showPicker, setShowPicker] = useState(false);
   const [errors, setErrors]         = useState<Record<string, string>>({});
+  const [existingPackages, setExistingPackages] = useState<string[]>([]);
+
+  useEffect(() => {
+    apiFetch('/api/rules')
+      .then(r => r.ok ? r.json() : [])
+      .then((rules: any[]) => setExistingPackages(rules.map(r => r.packageName)))
+      .catch(() => {});
+  }, []);
 
   function handleAppSelected(app: { name: string; packageName: string }) {
     setAppName(app.name);
     setPackageName(app.packageName);
     setShowPicker(false);
     setStep('type');
+  }
+
+  function to24h(h: string, m: string, p: 'AM' | 'PM') {
+    let hh = parseInt(h) || 0;
+    if (p === 'AM' && hh === 12) hh = 0;
+    if (p === 'PM' && hh !== 12) hh += 12;
+    return `${String(hh).padStart(2, '0')}:${m.padStart(2, '0')}`;
   }
 
   function validateConfigure() {
@@ -60,11 +82,35 @@ export default function AddRuleScreen() {
       if (isNaN(m) || m < 1) e.limitMinutes = 'Enter a valid number of minutes';
     }
     if (ruleType === 'schedule') {
-      if (!/^\d{2}:\d{2}$/.test(scheduleStart)) e.scheduleStart = 'Format: HH:MM';
-      if (!/^\d{2}:\d{2}$/.test(scheduleEnd))   e.scheduleEnd   = 'Format: HH:MM';
+      const sh = parseInt(startH);
+      const sm = parseInt(startM);
+      const eh = parseInt(endH);
+      const em = parseInt(endM);
+      if (isNaN(sh) || sh < 1 || sh > 12) e.startH = 'Hour 1-12';
+      if (isNaN(sm) || sm < 0 || sm > 59) e.startM = 'Minute 0-59';
+      if (isNaN(eh) || eh < 1 || eh > 12) e.endH = 'Hour 1-12';
+      if (isNaN(em) || em < 0 || em > 59) e.endM = 'Minute 0-59';
     }
     setErrors(e);
     return Object.keys(e).length === 0;
+  }
+
+  function hasConfigureErrors() {
+    if (ruleType === 'daily_limit') {
+      const m = parseInt(limitMinutes);
+      return isNaN(m) || m < 1;
+    }
+    if (ruleType === 'schedule') {
+      const sh = parseInt(startH);
+      const sm = parseInt(startM);
+      const eh = parseInt(endH);
+      const em = parseInt(endM);
+      return isNaN(sh) || sh < 1 || sh > 12 ||
+             isNaN(sm) || sm < 0 || sm > 59 ||
+             isNaN(eh) || eh < 1 || eh > 12 ||
+             isNaN(em) || em < 0 || em > 59;
+    }
+    return false;
   }
 
   async function submit() {
@@ -78,7 +124,10 @@ export default function AddRuleScreen() {
         enabled: true,
       };
       if (ruleType === 'daily_limit') body.limitMinutes = parseInt(limitMinutes);
-      if (ruleType === 'schedule') { body.scheduleStart = scheduleStart; body.scheduleEnd = scheduleEnd; }
+      if (ruleType === 'schedule') {
+        body.scheduleStart = to24h(startH, startM, startP);
+        body.scheduleEnd = to24h(endH, endM, endP);
+      }
 
       const res = await apiFetch('/api/rules', {
         method: 'POST',
@@ -107,12 +156,11 @@ export default function AddRuleScreen() {
   }
 
   return (
-    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <SafeAreaView style={styles.flex}>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={goBack}>
-          <Text style={styles.back}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Add Rule</Text>
+        <BackButton onPress={goBack} />
+        <Text style={styles.headerTitle}>Add App</Text>
         <View style={{ width: 50 }} />
       </View>
 
@@ -164,22 +212,23 @@ export default function AddRuleScreen() {
               <AppPicker
                 onSelect={handleAppSelected}
                 onCancel={() => setShowPicker(false)}
+                existingPackages={existingPackages}
               />
             )}
           </View>
         )}
 
-        {/* Step 2: Rule Type */}
+        {/* Step 2: Restriction Type */}
         {step === 'type' && (
           <View style={styles.stepContainer}>
-            <Text style={styles.stepTitle}>Rule type</Text>
+            <Text style={styles.stepTitle}>Restriction</Text>
             <Text style={styles.stepSubtitle}>How should Screenly handle {appName}?</Text>
             {RULE_TYPES.map(opt => (
               <TouchableOpacity key={opt.value} onPress={() => setRuleType(opt.value)}>
                 <Card style={[styles.typeCard, ruleType === opt.value && styles.typeCardSelected]}>
                   <Text style={styles.typeEmoji}>{opt.emoji}</Text>
                   <View style={styles.typeInfo}>
-                    <Text style={[styles.typeLabel, ruleType === opt.value && { color: colors.primary }]}>
+                    <Text style={[styles.typeLabel, ruleType === opt.value && { color: colors.textMuted }]}>
                       {opt.label}
                     </Text>
                     <Text style={styles.typeDesc}>{opt.desc}</Text>
@@ -188,7 +237,7 @@ export default function AddRuleScreen() {
                 </Card>
               </TouchableOpacity>
             ))}
-            <Button title="Next →" onPress={() => setStep('configure')} style={{ marginTop: spacing.xl }} />
+            <Button title="Next >" onPress={() => setStep('configure')} style={{ marginTop: spacing.xl }} />
           </View>
         )}
 
@@ -216,32 +265,95 @@ export default function AddRuleScreen() {
                 <Text style={styles.stepSubtitle}>
                   Block {appName} during these hours
                 </Text>
-                <Input
-                  label="Block from (HH:MM)"
-                  value={scheduleStart}
-                  onChangeText={setScheduleStart}
-                  placeholder="22:00"
-                  error={errors.scheduleStart}
-                  containerStyle={{ marginBottom: spacing.md }}
-                />
-                <Input
-                  label="Until (HH:MM)"
-                  value={scheduleEnd}
-                  onChangeText={setScheduleEnd}
-                  placeholder="07:00"
-                  error={errors.scheduleEnd}
-                />
+
+                <Text style={styles.timeLabel}>Block from</Text>
+                <View style={styles.timeRow}>
+                  <TextInput
+                    style={[styles.timeInput, errors.startH && styles.timeInputError]}
+                    value={startH}
+                    onChangeText={t => { setStartH(t.replace(/[^0-9]/g, '')); setErrors(prev => ({ ...prev, startH: '' })); }}
+                    keyboardType="number-pad"
+                    placeholder="10"
+                    placeholderTextColor={colors.textMuted}
+                    maxLength={2}
+                  />
+                  <Text style={styles.timeSep}>:</Text>
+                  <TextInput
+                    style={[styles.timeInput, errors.startM && styles.timeInputError]}
+                    value={startM}
+                    onChangeText={t => { setStartM(t.replace(/[^0-9]/g, '')); setErrors(prev => ({ ...prev, startM: '' })); }}
+                    keyboardType="number-pad"
+                    placeholder="00"
+                    placeholderTextColor={colors.textMuted}
+                    maxLength={2}
+                  />
+                  <View style={styles.ampmGroup}>
+                    <TouchableOpacity
+                      style={[styles.ampmBtn, startP === 'AM' && styles.ampmBtnActive]}
+                      onPress={() => setStartP('AM')}
+                    >
+                      <Text style={[styles.ampmText, startP === 'AM' && styles.ampmTextActive]}>AM</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.ampmBtn, startP === 'PM' && styles.ampmBtnActive]}
+                      onPress={() => setStartP('PM')}
+                    >
+                      <Text style={[styles.ampmText, startP === 'PM' && styles.ampmTextActive]}>PM</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+                {errors.startH && <Text style={styles.timeError}>{errors.startH}</Text>}
+                {errors.startM && <Text style={styles.timeError}>{errors.startM}</Text>}
+
+                <Text style={[styles.timeLabel, { marginTop: spacing.md }]}>Until</Text>
+                <View style={styles.timeRow}>
+                  <TextInput
+                    style={[styles.timeInput, errors.endH && styles.timeInputError]}
+                    value={endH}
+                    onChangeText={t => { setEndH(t.replace(/[^0-9]/g, '')); setErrors(prev => ({ ...prev, endH: '' })); }}
+                    keyboardType="number-pad"
+                    placeholder="7"
+                    placeholderTextColor={colors.textMuted}
+                    maxLength={2}
+                  />
+                  <Text style={styles.timeSep}>:</Text>
+                  <TextInput
+                    style={[styles.timeInput, errors.endM && styles.timeInputError]}
+                    value={endM}
+                    onChangeText={t => { setEndM(t.replace(/[^0-9]/g, '')); setErrors(prev => ({ ...prev, endM: '' })); }}
+                    keyboardType="number-pad"
+                    placeholder="00"
+                    placeholderTextColor={colors.textMuted}
+                    maxLength={2}
+                  />
+                  <View style={styles.ampmGroup}>
+                    <TouchableOpacity
+                      style={[styles.ampmBtn, endP === 'AM' && styles.ampmBtnActive]}
+                      onPress={() => setEndP('AM')}
+                    >
+                      <Text style={[styles.ampmText, endP === 'AM' && styles.ampmTextActive]}>AM</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.ampmBtn, endP === 'PM' && styles.ampmBtnActive]}
+                      onPress={() => setEndP('PM')}
+                    >
+                      <Text style={[styles.ampmText, endP === 'PM' && styles.ampmTextActive]}>PM</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+                {errors.endH && <Text style={styles.timeError}>{errors.endH}</Text>}
+                {errors.endM && <Text style={styles.timeError}>{errors.endM}</Text>}
               </>
             )}
             {ruleType === 'block_always' && (
               <Text style={styles.stepSubtitle}>
-                {appName} will always be blocked. You can still unlock with a countdown or payment.
+                {appName} will always be blocked.
               </Text>
             )}
             <Button
-              title={loading ? 'Saving…' : 'Save Rule'}
+              title={loading ? 'Saving…' : 'Save'}
               onPress={submit}
-              disabled={loading}
+              disabled={loading || hasConfigureErrors()}
               style={{ marginTop: spacing.xl }}
             />
           </View>
@@ -251,9 +363,9 @@ export default function AddRuleScreen() {
         {step === 'done' && (
           <View style={styles.doneContainer}>
             <Text style={styles.doneEmoji}>✅</Text>
-            <Text style={styles.doneTitle}>Rule created!</Text>
-            <Text style={styles.doneSubtitle}>{appName} is now protected</Text>
-            <Button title="Back to Apps" onPress={() => router.replace('/(tabs)/apps')} style={{ marginTop: spacing.xl }} />
+            <Text style={styles.doneTitle}>App added!</Text>
+            <Text style={styles.doneSubtitle}>{appName} is now being tracked</Text>
+            <Button title="Go Home" onPress={() => router.replace('/(tabs)')} style={{ marginTop: spacing.xl }} />
             <Button
               title="Add Another"
               variant="secondary"
@@ -267,6 +379,7 @@ export default function AddRuleScreen() {
         )}
       </ScrollView>
     </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
@@ -279,7 +392,6 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     paddingTop: spacing.xl,
   },
-  back: { fontFamily: fonts.medium, fontSize: 15, color: colors.primary },
   headerTitle: { fontFamily: fonts.semiBold, fontSize: 17, color: colors.text },
   progress: {
     flexDirection: 'row',
@@ -332,7 +444,7 @@ const styles = StyleSheet.create({
   selectedAppName: { fontFamily: fonts.semiBold, fontSize: 16, color: colors.text },
   selectedAppPkg: { fontFamily: fonts.regular, fontSize: 12, color: colors.textMuted, marginTop: 2 },
   typeCard: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm },
-  typeCardSelected: { borderColor: colors.primary, borderWidth: 2 },
+  typeCardSelected: { borderColor: colors.borderSoft, borderWidth: 2 },
   typeEmoji: { fontSize: 28, marginRight: spacing.md },
   typeInfo: { flex: 1 },
   typeLabel: { fontFamily: fonts.semiBold, fontSize: 15, color: colors.text },
@@ -342,4 +454,27 @@ const styles = StyleSheet.create({
   doneEmoji:   { fontSize: 64, marginBottom: spacing.lg },
   doneTitle:   { fontFamily: fonts.bold,    fontSize: 24, color: colors.text },
   doneSubtitle:{ fontFamily: fonts.regular, fontSize: 15, color: colors.textSecondary, marginTop: spacing.sm },
+  timeLabel: { fontFamily: fonts.medium, fontSize: 14, color: colors.textSecondary, marginBottom: spacing.sm },
+  timeRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  timeInput: {
+    width: 52,
+    height: 44,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    fontFamily: fonts.regular,
+    fontSize: 16,
+    color: colors.text,
+    textAlign: 'center',
+    padding: 0,
+  },
+  timeInputError: { borderColor: colors.danger },
+  timeSep: { fontFamily: fonts.bold, fontSize: 18, color: colors.text, marginHorizontal: 2 },
+  ampmGroup: { flexDirection: 'row', marginLeft: spacing.sm, borderRadius: radius.md, overflow: 'hidden', borderWidth: 1, borderColor: colors.border },
+  ampmBtn: { paddingHorizontal: 14, paddingVertical: 10, backgroundColor: colors.surface },
+  ampmBtnActive: { backgroundColor: colors.primary },
+  ampmText: { fontFamily: fonts.semiBold, fontSize: 13, color: colors.text },
+  ampmTextActive: { color: '#fff' },
+  timeError: { fontFamily: fonts.regular, fontSize: 12, color: colors.danger, marginTop: 4 },
 });

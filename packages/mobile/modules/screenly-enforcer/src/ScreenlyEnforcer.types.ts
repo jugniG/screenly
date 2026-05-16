@@ -25,4 +25,7 @@ export interface ScreenlyEnforcerModule {
   getTodayUsage(): Promise<AppUsage[]>;
   isAccessibilityServiceEnabled(): Promise<boolean>;
   requestAccessibilityService(): Promise<void>;
+
+  // Icons
+  getAppIcons(packageNamesJson: string): Promise<string>;
 }

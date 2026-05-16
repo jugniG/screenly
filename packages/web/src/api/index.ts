@@ -6,6 +6,7 @@ import { rules } from './routes/rules';
 import { usage } from './routes/usage';
 import { unlock, dodoWebhook } from './routes/unlock';
 import { unlockHistory } from './routes/unlockHistory';
+import { remove } from './routes/remove';
 
 const app = new Hono()
   .use(cors({ origin: (origin) => origin ?? '*', credentials: true }))
@@ -20,7 +21,8 @@ const app = new Hono()
   .route('/rules',   rules)
   .route('/usage',   usage)
   .route('/unlock',  unlock)
-  .route('/unlock',  unlockHistory);  // /api/unlock/history
+  .route('/unlock',  unlockHistory)  // /api/unlock/history
+  .route('/remove',  remove);  // /api/remove/checkout, /api/remove/confirm
 
 export type AppType = typeof app;
 export default app;

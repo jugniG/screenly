@@ -19,6 +19,7 @@ interface StepConfig {
   icon: keyof typeof Ionicons.glyphMap;
   title: string;
   desc: string;
+  instructions: string[];
   check: () => Promise<boolean>;
   request: () => Promise<void>;
 }
@@ -29,6 +30,11 @@ const STEPS: StepConfig[] = [
     icon: 'analytics',
     title: 'Usage Access',
     desc: "Screenly needs to see how long you use each app. This is how we know when you've hit your limit.",
+    instructions: [
+      'Tap "Open Settings" below',
+      'Find and tap "Screenly" in the list',
+      'Toggle the switch to ON',
+    ],
     check: () => ScreenlyEnforcer.hasUsageStatsPermission(),
     request: () => ScreenlyEnforcer.requestUsageStatsPermission(),
   },
@@ -37,6 +43,12 @@ const STEPS: StepConfig[] = [
     icon: 'accessibility',
     title: 'Accessibility Service',
     desc: 'Screenly uses this to detect when a blocked app opens and show you the block screen immediately.',
+    instructions: [
+      'Tap "Open Settings" below',
+      'Tap "Installed apps" (or "Downloaded apps")',
+      'Find and tap "Screenly"',
+      'Toggle "Screenly" to ON',
+    ],
     check: () => ScreenlyEnforcer.isAccessibilityServiceEnabled(),
     request: () => ScreenlyEnforcer.requestAccessibilityService(),
   },
@@ -107,6 +119,19 @@ export default function SetupScreen() {
 
         <Text style={styles.title}>{step.title}</Text>
         <Text style={styles.desc}>{step.desc}</Text>
+
+        {!granted && !checking && (
+          <View style={styles.instructions}>
+            {step.instructions.map((line, i) => (
+              <View key={i} style={styles.instructionRow}>
+                <View style={styles.stepNum}>
+                  <Text style={styles.stepNumText}>{i + 1}</Text>
+                </View>
+                <Text style={styles.instructionText}>{line}</Text>
+              </View>
+            ))}
+          </View>
+        )}
 
         {checking ? (
           <Text style={styles.checkingText}>Checking…</Text>
@@ -202,6 +227,36 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     maxWidth: 300,
     marginBottom: spacing.xl,
+  },
+  instructions: {
+    width: '100%',
+    marginBottom: spacing.xl,
+    gap: 12,
+  },
+  instructionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  stepNum: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: 'rgba(92,110,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepNumText: {
+    fontFamily: fonts.semiBold,
+    fontSize: 13,
+    color: colors.primary,
+  },
+  instructionText: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.65)',
+    flex: 1,
+    lineHeight: 20,
   },
   checkingText: {
     fontFamily: fonts.medium,

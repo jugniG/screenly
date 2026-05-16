@@ -15,16 +15,10 @@ export default function RootLayout() {
   });
 
   const { data: session, isPending } = authClient.useSession();
-  const [onboardingChecked, setOnboardingChecked] = useState(false);
-  const [onboardingDone, setOnboardingDone] = useState(false);
   const [setupDone, setSetupDone] = useState(false);
   const [setupChecked, setSetupChecked] = useState(false);
 
   useEffect(() => {
-    AsyncStorage.getItem('onboarding_done').then((val) => {
-      setOnboardingDone(!!val);
-      setOnboardingChecked(true);
-    });
     AsyncStorage.getItem('setup_done').then((val) => {
       setSetupDone(!!val);
       setSetupChecked(true);
@@ -32,11 +26,9 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    if (!fontsLoaded || isPending || !onboardingChecked || !setupChecked) return;
+    if (!fontsLoaded || isPending || !setupChecked) return;
 
-    if (!onboardingDone) {
-      router.replace('/onboarding');
-    } else if (session) {
+    if (session) {
       if (!setupDone) {
         router.replace('/setup');
       } else {
@@ -44,11 +36,11 @@ export default function RootLayout() {
         router.replace('/(tabs)');
       }
     } else {
-      router.replace('/(auth)/sign-in');
+      router.replace('/onboarding');
     }
-  }, [fontsLoaded, isPending, session, onboardingChecked, onboardingDone, setupDone, setupChecked]);
+  }, [fontsLoaded, isPending, session, setupDone, setupChecked]);
 
-  if (!fontsLoaded || isPending || !onboardingChecked || !setupChecked) return null;
+  if (!fontsLoaded || isPending || !setupChecked) return null;
 
   return (
     <>

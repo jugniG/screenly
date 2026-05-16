@@ -1,20 +1,31 @@
 export const colors = {
-  background:    '#F7F8FA',
-  surface:       '#FFFFFF',
-  border:        '#E8E8EE',
-  text:          '#0F0F14',
-  textSecondary: '#6B6B7B',
-  textMuted:     '#AEAEBF',
-  primary:       '#5C6EFF',
-  primaryLight:  '#EEF0FF',
-  danger:        '#EF4444',
-  dangerSoft:    '#FEE2E2',
+  background:    '#0E0E0E',     // Deeper black background
+  surface:       '#1C1C1C',     // Noticeably lighter cards — more contrast vs bg
+  surfaceAlt:    '#3d3737',     // Alt surface for inputs, sections
+
+  border:        '#7a7a7a',     // Subtle dark border
+  borderSoft:    '#474545',     // Slightly more visible divider
+
+  text:          '#F5F5F5',     // Near-white primary text
+  textSecondary: '#A0A0A0',     // Muted secondary text
+  textMuted:     '#606060',     // Very muted / placeholder
+
+  primary:       '#2C2B2B',     // Warm orange accent (matches screenshot)
+  primaryLight:  '#444242',     // Dark tinted orange bg for badges/highlights
+  primarySoft:   'rgb(65, 41, 18)',     // Alias
+
   success:       '#22C55E',
-  successSoft:   '#F0FFF4',
-  // legacy aliases
-  bg:            '#F7F8FA',
-  accent:        '#5C6EFF',
-  accentSoft:    '#EEF0FF',
+  successSoft:   '#0D2818',
+
+  danger:        '#8f4d4d',
+  dangerSoft:    '#2D1010',
+
+  overlay:       'rgba(0, 0, 0, 0.75)',
+
+  // Legacy aliases used across codebase
+  bg:            '#121212',
+  accent:        '#F97316',
+  accentSoft:    '#2A1A0A',
 };
 
 export const fonts = {

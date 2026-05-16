@@ -5,8 +5,6 @@ import { colors } from '../../components/ui/theme';
 
 const TAB_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   index: 'home',
-  apps: 'grid',
-  stats: 'bar-chart',
   account: 'person',
 };
 
@@ -25,7 +23,7 @@ export default function TabsLayout() {
           paddingBottom: insets.bottom,
           paddingTop: 4,
         },
-        tabBarActiveTintColor: colors.primary,
+        tabBarActiveTintColor: colors.text,
         tabBarInactiveTintColor: colors.textMuted,
         tabBarLabelStyle: {
           fontFamily: 'Poppins-Medium',
@@ -36,14 +34,12 @@ export default function TabsLayout() {
           <Ionicons
             name={`${TAB_ICONS[route.name]}${focused ? '' : '-outline'}` as any}
             size={22}
-            color={focused ? colors.primary : colors.textMuted}
+            color={focused ? colors.text : colors.textMuted}
           />
         ),
       })}
     >
       <Tabs.Screen name="index"   options={{ title: 'Home' }} />
-      <Tabs.Screen name="apps"    options={{ title: 'Apps' }} />
-      <Tabs.Screen name="stats"   options={{ title: 'Stats' }} />
       <Tabs.Screen name="account" options={{ title: 'Account' }} />
     </Tabs>
   );

@@ -10,7 +10,6 @@ import {
   StatusBar,
 } from 'react-native';
 import { router } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fonts, radius } from '../components/ui/theme';
 
 const { width } = Dimensions.get('window');
@@ -55,13 +54,11 @@ export default function OnboardingScreen() {
   const current = SLIDES[currentIndex];
   const isLast = currentIndex === SLIDES.length - 1;
 
-  async function finish() {
-    await AsyncStorage.setItem('onboarding_done', '1');
+  function finish() {
     router.replace('/(auth)/sign-up');
   }
 
-  async function skip() {
-    await AsyncStorage.setItem('onboarding_done', '1');
+  function skip() {
     router.replace('/(auth)/sign-in');
   }
 

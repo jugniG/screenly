@@ -34,7 +34,7 @@
       "supportsTablet": false
     },
     "extra": {
-      "apiUrl": "https://5205-103-190-15-162.ngrok-free.app"
+      "apiUrl": "https://ac01-152-59-100-93.ngrok-free.app"
     },
     "plugins": [
       "expo-router",
