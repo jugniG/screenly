@@ -51,8 +51,7 @@ export default function SignInScreen() {
   async function handleGoogle() {
     setGoogleLoading(true);
     try {
-      const baseUrl = 'https://5205-103-190-15-162.ngrok-free.app';
-      const callbackURL = `${baseUrl}/api/oauth/mobile-callback`;
+      const callbackURL = 'screenly://auth/callback';
 
       const result = await (authClient as any).signIn.social({
         provider: 'google',
@@ -62,16 +61,24 @@ export default function SignInScreen() {
 
       const url = result?.data?.url ?? result?.url;
       if (url) {
+        // openAuthSessionAsync watches for a redirect back to screenly://
         const browserResult = await WebBrowser.openAuthSessionAsync(url, callbackURL);
 
         if (browserResult.type === 'success') {
-          const token = new URL(browserResult.url).searchParams.get('token');
+          // App was reopened via deep link — navigate to callback handler
+          const deepLink = browserResult.url; // e.g. screenly://auth/callback?...
+          const params = new URL(deepLink).searchParams;
+          const token = params.get('token');
           if (token) {
             router.push(`/auth/callback?token=${token}`);
           } else {
+            // Session cookie already set — just check session
             const { data: session } = await authClient.getSession();
             if (session) router.replace('/(tabs)');
+            else router.replace('/(auth)/sign-in');
           }
+        } else if (browserResult.type === 'cancel') {
+          // User closed the browser — do nothing
         }
       } else if (result?.error) {
         Alert.alert('Google Sign-In Failed', result.error.message ?? 'Try again');
