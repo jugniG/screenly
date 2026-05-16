@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -16,11 +16,16 @@ import { Input } from '../../components/ui/Input';
 import { colors, fonts, spacing } from '../../components/ui/theme';
 
 export default function SignInScreen() {
+  const { data: session } = authClient.useSession();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (session) router.replace('/(tabs)');
+  }, [session]);
 
   async function handleMagicLink() {
     if (!email.trim()) { setError('Enter your email'); return; }
@@ -46,30 +51,26 @@ export default function SignInScreen() {
   async function handleGoogle() {
     setGoogleLoading(true);
     try {
+      const baseUrl = 'https://5205-103-190-15-162.ngrok-free.app';
+      const callbackURL = `${baseUrl}/api/oauth/mobile-callback`;
+
       const result = await (authClient as any).signIn.social({
         provider: 'google',
-        callbackURL: 'screenly://auth/callback',
-        redirect: true,
+        callbackURL,
+        redirect: false,
       });
 
-      if (result?.url) {
-        const browserResult = await WebBrowser.openAuthSessionAsync(
-          result.url,
-          'screenly://auth/callback'
-        );
+      const url = result?.data?.url ?? result?.url;
+      if (url) {
+        const browserResult = await WebBrowser.openAuthSessionAsync(url, callbackURL);
 
         if (browserResult.type === 'success') {
-          const url = new URL(browserResult.url);
-          const token = url.searchParams.get('token');
+          const token = new URL(browserResult.url).searchParams.get('token');
           if (token) {
             router.push(`/auth/callback?token=${token}`);
           } else {
             const { data: session } = await authClient.getSession();
-            if (session) {
-              router.replace('/(tabs)');
-            } else {
-              Alert.alert('Sign-In Failed', 'Could not verify session');
-            }
+            if (session) router.replace('/(tabs)');
           }
         }
       } else if (result?.error) {

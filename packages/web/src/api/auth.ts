@@ -2,13 +2,28 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { magicLink } from "better-auth/plugins";
 import { db } from "./database";
+import * as schema from "./database/schema";
+const  baseURL= process.env.WEBSITE_URL
+console.log({baseURL});
 
 export const auth = betterAuth({
   basePath: "/api/auth",
-  baseURL: process.env.WEBSITE_URL,
-  database: drizzleAdapter(db, { provider: "sqlite" }),
+  baseURL,
+  database: drizzleAdapter(db, {
+    provider: "sqlite",
+    schema: {
+      user: schema.user,
+      session: schema.session,
+      account: schema.account,
+      verification: schema.verification,
+    },
+  }),
   secret: process.env.BETTER_AUTH_SECRET,
   trustedOrigins: ["*"],
+
+  account: {
+    skipStateCookieCheck: true,
+  },
 
   socialProviders: {
     google: {
@@ -23,8 +38,8 @@ export const auth = betterAuth({
         // Lazy-import Resend so missing key doesn't crash at startup
         const { Resend } = await import("resend");
         const resend = new Resend(process.env.RESEND_API_KEY);
-        await resend.emails.send({
-          from: "Screenly <noreply@screenly.app>",
+        const res = await resend.emails.send({
+          from: "screenly@syncmate.xyz",
           to: email,
           subject: "Your Screenly sign-in link",
           html: `
@@ -38,6 +53,8 @@ export const auth = betterAuth({
             </div>
           `,
         });
+        console.log({res});
+        
       },
     }),
   ],
