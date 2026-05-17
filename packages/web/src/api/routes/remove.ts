@@ -82,11 +82,7 @@ export const remove = new Hono<AppEnv>()
         ))
         .returning();
 
-      if (!deleted.length) {
-        return c.json({ error: 'No rule found for this app' }, 404);
-      }
-
-      return c.json({ success: true, appName: deleted[0].appName }, 200);
+      return c.json({ success: true, appName: deleted[0]?.appName ?? '' }, 200);
     } catch (e: any) {
       console.error('[remove/confirm] error:', e.message);
       return c.json({ error: e.message ?? 'Confirm failed' }, 500);
