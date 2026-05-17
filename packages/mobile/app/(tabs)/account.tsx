@@ -18,7 +18,7 @@ import { authClient } from '../../lib/auth';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { colors, fonts, spacing, radius } from '../../components/ui/theme';
-import { apiFetch } from '../../lib/fetchApi';
+import { apiFetch, API_BASE } from '../../lib/fetchApi';
 import { syncRules } from '../../lib/enforcer';
 import ScreenlyEnforcer from '../../modules/screenly-enforcer/src/ScreenlyEnforcerModule';
 
@@ -128,22 +128,19 @@ export default function AccountScreen() {
         return;
       }
 
-      const { checkout_url, session_id } = await res.json();
+      const { checkout_url } = await res.json();
 
-      const result = await WebBrowser.openAuthSessionAsync(
-        checkout_url,
-        `screenly://remove-confirm`,
-      );
+      const result = await WebBrowser.openAuthSessionAsync(checkout_url, 'screenly://remove-confirm');
 
       if (result.type === 'success') {
         const params = new URL(result.url).searchParams;
         const status = params.get('status');
-        const sid = params.get('session_id') ?? session_id;
+        const pid = params.get('payment_id');
 
-        if (status === 'succeeded' || status === 'paid') {
+        if ((status === 'succeeded' || status === 'paid') && pid) {
           const confirmRes = await apiFetch('/api/remove/confirm', {
             method: 'POST',
-            body: JSON.stringify({ sessionId: sid, packageName: rule.packageName }),
+            body: JSON.stringify({ paymentId: pid, packageName: rule.packageName }),
           });
 
           if (confirmRes.ok) {
@@ -153,9 +150,8 @@ export default function AccountScreen() {
             return;
           }
 
-          Alert.alert('Error', 'Could not confirm removal');
-        } else {
-          Alert.alert('Cancelled', 'Payment was not completed');
+          const err = await confirmRes.json().catch(() => ({}));
+          Alert.alert('Error', err.error ?? 'Could not confirm removal');
         }
       } else {
         Alert.alert('Cancelled', 'Payment was not completed');

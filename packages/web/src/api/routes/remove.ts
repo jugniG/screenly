@@ -58,19 +58,20 @@ export const remove = new Hono<AppEnv>()
   // POST /api/remove/confirm — verify payment and delete the rule
   .post('/confirm', async (c) => {
     const user = c.get('user')!;
-    const { sessionId, packageName } = await c.req.json<{
-      sessionId: string;
+    const { paymentId, packageName } = await c.req.json<{
+      paymentId: string;
       packageName: string;
     }>();
 
-    if (!sessionId || !packageName) return c.json({ error: 'sessionId and packageName required' }, 400);
+    if (!paymentId || !packageName) return c.json({ error: 'paymentId and packageName required' }, 400);
 
     try {
       const dodo = await getDodo();
-      const session = await dodo.checkoutSessions.retrieve(sessionId);
+      const payment = await dodo.payments.retrieve(paymentId);
+      console.error('[remove/confirm] payment=%s status=%s', paymentId, payment.status);
 
-      if (session.payment_status !== 'succeeded' && session.payment_status !== 'paid') {
-        return c.json({ error: `Payment status: ${session.payment_status}` }, 402);
+      if (payment.status !== 'succeeded' && payment.status !== 'paid') {
+        return c.json({ error: `Payment not completed (status: ${payment.status})` }, 402);
       }
 
       const deleted = await db
@@ -87,6 +88,7 @@ export const remove = new Hono<AppEnv>()
 
       return c.json({ success: true, appName: deleted[0].appName }, 200);
     } catch (e: any) {
+      console.error('[remove/confirm] error:', e.message);
       return c.json({ error: e.message ?? 'Confirm failed' }, 500);
     }
   });

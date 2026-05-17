@@ -11,7 +11,7 @@ import {
 import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { colors, fonts, spacing } from '../components/ui/theme';
-import { apiFetch } from '../lib/fetchApi';
+import { apiFetch, API_BASE } from '../lib/fetchApi';
 import { unlockApp } from '../lib/enforcer';
 
 export default function BlockScreen() {
@@ -39,24 +39,20 @@ export default function BlockScreen() {
         return;
       }
 
-      const { checkout_url, session_id } = await res.json();
-      console.log({ checkout_url });
+      const { checkout_url } = await res.json();
 
-      const result = await WebBrowser.openAuthSessionAsync(
-        checkout_url,
-        `screenly://unlock-confirm`
-      );
+      const result = await WebBrowser.openAuthSessionAsync(checkout_url, 'screenly://unlock-confirm');
 
       if (result.type === 'success') {
         const url = result.url;
         const params = new URL(url).searchParams;
         const status = params.get('status');
-        const sid = params.get('session_id') ?? session_id;
+        const pid    = params.get('payment_id');
 
-        if (status === 'succeeded' || status === 'paid') {
+        if ((status === 'succeeded' || status === 'paid') && pid) {
           const confirmRes = await apiFetch('/api/unlock/confirm', {
             method: 'POST',
-            body: JSON.stringify({ sessionId: sid, packageName }),
+            body: JSON.stringify({ paymentId: pid, packageName }),
           });
 
           if (confirmRes.ok) {
