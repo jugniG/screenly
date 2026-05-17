@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, RefreshControl, ActivityIndicator, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { authClient } from '../../lib/auth';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -179,7 +180,7 @@ export default function HomeScreen() {
             const isLimit = item.ruleType === 'daily_limit';
 
             return (
-              <Card style={[styles.appCard, !item.enabled && styles.appCardDisabled]}>
+              <Card style={[styles.appCard, !item.enabled && styles.appCardDisabled,{marginVertical:3}]}>
                   {/* Row 1: icon + name + delete + right info */}
                   <View style={styles.cardRow}>
                     {iconUri ? (
@@ -209,7 +210,12 @@ export default function HomeScreen() {
                   {isLimit && limitMin > 0 && (
                     <View style={styles.progressWrap}>
                       <View style={styles.progressTrack}>
-                        <View style={[styles.progressFill, { width: `${progress * 100}%` as any }, limitReached && styles.progressFillRed]} />
+                        <LinearGradient
+                          colors={limitReached ? ['#EF4444', '#DC2626'] : ['#ff910065', '#f3935fce']}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 0 }}
+                          style={[styles.progressFill, { width: `${progress * 100}%` as any }]}
+                        />
                       </View>
                       <Text style={[styles.usedLabel, limitReached && styles.limitReachedLabel]}>
                         {limitReached ? 'Limit reached' : `${formatMinutes(usedMin)} used`}
@@ -276,19 +282,17 @@ const styles = StyleSheet.create({
   progressTrack: {
     height: 6,
     borderRadius: 3,
-    backgroundColor: colors.border,
+    backgroundColor: '#2A2A2A',
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
     borderRadius: 3,
-    backgroundColor: colors.primary,
   },
-  progressFillRed: { backgroundColor: colors.danger },
-  usedLabel: { fontFamily: fonts.regular, fontSize: 12, color: colors.textMuted, textAlign: 'right' },
+  usedLabel: { fontFamily: fonts.semiBold, fontSize: 12, color: colors.textSecondary, textAlign: 'right' },
   limitReachedLabel: { color: colors.danger },
   scheduleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  scheduleSubtitle: { fontFamily: fonts.regular, fontSize: 12, color: colors.textMuted },
+  scheduleSubtitle: { fontFamily: fonts.semiBold, fontSize: 12, color: colors.textSecondary },
   scheduleDuration: { fontFamily: fonts.semiBold, fontSize: 12, color: colors.textSecondary },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xl },
   emptyEmoji: { fontSize: 48, marginBottom: spacing.md },

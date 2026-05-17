@@ -33,9 +33,7 @@
       "bundleIdentifier": "com.screenly_x8k2.runable",
       "supportsTablet": false
     },
-    "extra": {
-      "apiUrl": "https://ac01-152-59-100-93.ngrok-free.app"
-    },
+    "extra": {},
     "plugins": [
       "expo-router",
       "expo-web-browser",

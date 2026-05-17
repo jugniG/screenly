@@ -33,7 +33,7 @@ interface RuleTypeOption {
 
 const RULE_TYPES: RuleTypeOption[] = [
   { value: 'daily_limit',  label: 'Daily Limit',   desc: 'Only open for X minutes per day',       emoji: '⏱️' },
-  { value: 'schedule',     label: 'Time Schedule',  desc: 'Block between specific hours',         emoji: '🗓️' },
+  { value: 'schedule',     label: 'Time Schedule',  desc: 'Allow only between specific hours',     emoji: '🗓️' },
   { value: 'block_always', label: 'Always Block',   desc: 'Permanently block the app',            emoji: '🚫' },
 ];
 
@@ -263,10 +263,10 @@ export default function AddRuleScreen() {
             {ruleType === 'schedule' && (
               <>
                 <Text style={styles.stepSubtitle}>
-                  Block {appName} during these hours
+                  Allow {appName} only during these hours
                 </Text>
 
-                <Text style={styles.timeLabel}>Block from</Text>
+                <Text style={styles.timeLabel}>From</Text>
                 <View style={styles.timeRow}>
                   <TextInput
                     style={[styles.timeInput, errors.startH && styles.timeInputError]}

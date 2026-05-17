@@ -1,9 +1,13 @@
 import Constants from 'expo-constants';
 
 const API_BASE: string =
-  Constants.expoConfig?.extra?.apiUrl ??
   process.env.EXPO_PUBLIC_API_URL ??
+  Constants.expoConfig?.extra?.apiUrl ??
   'http://10.0.2.2:3000';
+
+console.log('[fetchApi] apiUrl from config:', Constants.expoConfig?.extra?.apiUrl);
+console.log('[fetchApi] EXPO_PUBLIC_API_URL:', process.env.EXPO_PUBLIC_API_URL);
+console.log('[fetchApi] resolved API_BASE:', API_BASE);
 
 export { API_BASE };
 

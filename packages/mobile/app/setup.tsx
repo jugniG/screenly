@@ -64,18 +64,22 @@ export default function SetupScreen() {
 
   async function checkCurrentStep() {
     setChecking(true);
-    const ok = await step.check();
-    setGranted(ok);
-    setChecking(false);
-
-    if (ok) {
-      if (isLast) {
-        await AsyncStorage.setItem('setup_done', '1');
-        router.replace('/(tabs)');
-      } else {
-        setStepIndex(i => i + 1);
-        setGranted(null);
+    try {
+      const ok = await step.check();
+      setGranted(ok);
+      setChecking(false);
+      if (ok) {
+        if (isLast) {
+          await AsyncStorage.setItem('setup_done', '1');
+          router.replace('/(tabs)');
+        } else {
+          setStepIndex(i => i + 1);
+          setGranted(null);
+        }
       }
+    } catch {
+      setGranted(false);
+      setChecking(false);
     }
   }
 
@@ -120,18 +124,16 @@ export default function SetupScreen() {
         <Text style={styles.title}>{step.title}</Text>
         <Text style={styles.desc}>{step.desc}</Text>
 
-        {!granted && !checking && (
-          <View style={styles.instructions}>
-            {step.instructions.map((line, i) => (
-              <View key={i} style={styles.instructionRow}>
-                <View style={styles.stepNum}>
-                  <Text style={styles.stepNumText}>{i + 1}</Text>
-                </View>
-                <Text style={styles.instructionText}>{line}</Text>
+        <View style={styles.instructions}>
+          {step.instructions.map((line, i) => (
+            <View key={i} style={styles.instructionRow}>
+              <View style={styles.stepNum}>
+                <Text style={styles.stepNumText}>{i + 1}</Text>
               </View>
-            ))}
-          </View>
-        )}
+              <Text style={styles.instructionText}>{line}</Text>
+            </View>
+          ))}
+        </View>
 
         {checking ? (
           <Text style={styles.checkingText}>Checking…</Text>
@@ -167,7 +169,7 @@ export default function SetupScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#0D0D1A',
+    backgroundColor: colors.background,
     paddingHorizontal: spacing.xl,
     paddingTop: 80,
     alignItems: 'center',
@@ -199,6 +201,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
     fontSize: 13,
     color: 'rgba(255,255,255,0.5)',
+
   },
   body: {
     alignItems: 'center',
@@ -207,7 +210,7 @@ const styles = StyleSheet.create({
     width: 88,
     height: 88,
     borderRadius: 44,
-    backgroundColor: 'rgba(92,110,255,0.12)',
+    backgroundColor: colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.lg,
@@ -232,6 +235,10 @@ const styles = StyleSheet.create({
     width: '100%',
     marginBottom: spacing.xl,
     gap: 12,
+    borderRadius: 14,
+    padding: spacing.md,
+    borderWidth: 0.5,
+    borderColor: 'rgba(255,255,255,0.08)',
   },
   instructionRow: {
     flexDirection: 'row',
@@ -242,7 +249,7 @@ const styles = StyleSheet.create({
     width: 26,
     height: 26,
     borderRadius: 13,
-    backgroundColor: 'rgba(92,110,255,0.2)',
+    backgroundColor: colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -252,11 +259,11 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   instructionText: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.65)',
-    flex: 1,
-    lineHeight: 20,
+    fontFamily: fonts.medium,
+    color: '#FFFFFF',
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   checkingText: {
     fontFamily: fonts.medium,

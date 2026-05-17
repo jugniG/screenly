@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   TextInput,
   Modal,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
@@ -19,6 +20,7 @@ import { Button } from '../../components/ui/Button';
 import { colors, fonts, spacing, radius } from '../../components/ui/theme';
 import { apiFetch } from '../../lib/fetchApi';
 import { syncRules } from '../../lib/enforcer';
+import ScreenlyEnforcer from '../../modules/screenly-enforcer/src/ScreenlyEnforcerModule';
 
 interface UnlockEvent {
   id: string;
@@ -48,6 +50,7 @@ export default function AccountScreen() {
   const [editing, setEditing] = useState(false);
   const [nameInput, setNameInput] = useState(session?.user?.name ?? '');
   const [saving, setSaving] = useState(false);
+  const [icons, setIcons] = useState<Record<string, string>>({});
 
   useFocusEffect(useCallback(() => {
     apiFetch('/api/unlock/history')
@@ -58,11 +61,25 @@ export default function AccountScreen() {
   }, []));
 
   useFocusEffect(useCallback(() => {
-    apiFetch('/api/rules')
-      .then(r => r.ok ? r.json() : [])
-      .then(setRules)
-      .catch(() => {})
-      .finally(() => setRulesLoading(false));
+    (async () => {
+      try {
+        const res = await apiFetch('/api/rules');
+        if (res.ok) {
+          const list: Rule[] = await res.json();
+          setRules(list);
+          if (list.length > 0) {
+            const pkgs = JSON.stringify(list.map(r => r.packageName));
+            const str = await (ScreenlyEnforcer.getAppIcons(pkgs) as any);
+            try {
+              const parsed = JSON.parse(str as string);
+              console.log('account icons loaded:', Object.keys(parsed).length);
+              setIcons(parsed);
+            } catch {}
+          }
+        }
+      } catch {}
+      finally { setRulesLoading(false); }
+    })();
   }, []));
 
   async function handleSaveName() {
@@ -111,7 +128,7 @@ export default function AccountScreen() {
         return;
       }
 
-      const { checkout_url, payment_id } = await res.json();
+      const { checkout_url, session_id } = await res.json();
 
       const result = await WebBrowser.openAuthSessionAsync(
         checkout_url,
@@ -121,12 +138,12 @@ export default function AccountScreen() {
       if (result.type === 'success') {
         const params = new URL(result.url).searchParams;
         const status = params.get('status');
-        const pid = params.get('payment_id') ?? payment_id;
+        const sid = params.get('session_id') ?? session_id;
 
         if (status === 'succeeded' || status === 'paid') {
           const confirmRes = await apiFetch('/api/remove/confirm', {
             method: 'POST',
-            body: JSON.stringify({ paymentId: pid, packageName: rule.packageName }),
+            body: JSON.stringify({ sessionId: sid, packageName: rule.packageName }),
           });
 
           if (confirmRes.ok) {
@@ -204,9 +221,13 @@ export default function AccountScreen() {
                 <TouchableOpacity key={rule.id} onPress={() => handleRemoveApp(rule)}>
                   <Card style={styles.removeRow} padding="sm">
                     <View style={styles.removeTop}>
-                      <View style={styles.removeIcon}>
-                        <Text style={styles.removeIconText}>{rule.appName[0]}</Text>
-                      </View>
+                      {icons[rule.packageName] ? (
+                        <Image source={{ uri: icons[rule.packageName] }} style={styles.removeAppIcon} />
+                      ) : (
+                        <View style={styles.removeIcon}>
+                          <Text style={styles.removeIconText}>{rule.appName[0]}</Text>
+                        </View>
+                      )}
                       <View style={styles.removeInfo}>
                         <Text style={styles.removeAppName}>{rule.appName}</Text>
                         <Text style={styles.removeType}>
@@ -224,7 +245,7 @@ export default function AccountScreen() {
           </View>
         )}
 
-        {/* Unlock History */}
+        {/* Unlock History
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Unlock History</Text>
           {loading ? (
@@ -260,6 +281,7 @@ export default function AccountScreen() {
             ))
           )}
         </View>
+        */}
 
         {/* Sign Out */}
         <Button
@@ -333,8 +355,9 @@ const styles = StyleSheet.create({
   removeIconText: { fontFamily: fonts.bold, fontSize: 16, color: colors.danger },
   removeInfo: { flex: 1 },
   removeBtn: { backgroundColor: colors.dangerSoft, borderColor: colors.danger, borderWidth: 1 },
+  removeAppIcon: { width: 36, height: 36, borderRadius: 10, marginRight: spacing.sm },
   removeAppName: { fontFamily: fonts.medium, fontSize: 14, color: colors.text },
-  removeType: { fontFamily: fonts.regular, fontSize: 12, color: colors.textMuted, marginTop: 1 },
+  removeType: { fontFamily: fonts.semiBold, fontSize: 12, color: colors.textSecondary, marginTop: 1 },
   section: { marginBottom: spacing.xl },
   sectionTitle: { fontFamily: fonts.semiBold, fontSize: 16, color: colors.text, marginBottom: spacing.sm },
   historyRow: { marginBottom: spacing.sm },

@@ -1,16 +1,16 @@
 export const colors = {
-  background:    '#0E0E0E',     // Deeper black background
-  surface:       '#1C1C1C',     // Noticeably lighter cards — more contrast vs bg
+  background:    '#0E0F11',     // Deeper black background
+  surface:       '#242629',     // Noticeably lighter cards — more contrast vs bg
   surfaceAlt:    '#3d3737',     // Alt surface for inputs, sections
 
-  border:        '#7a7a7a',     // Subtle dark border
-  borderSoft:    '#474545',     // Slightly more visible divider
+  border:        '#d42d2d1a',     // Subtle dark border
+  borderSoft:    '#705f40bb',     // Slightly more visible divider
 
   text:          '#F5F5F5',     // Near-white primary text
   textSecondary: '#A0A0A0',     // Muted secondary text
   textMuted:     '#606060',     // Very muted / placeholder
 
-  primary:       '#2C2B2B',     // Warm orange accent (matches screenshot)
+  primary:       '#f3935fce',     // Warm orange accent (matches screenshot)
   primaryLight:  '#444242',     // Dark tinted orange bg for badges/highlights
   primarySoft:   'rgb(65, 41, 18)',     // Alias
 

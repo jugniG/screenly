@@ -37,6 +37,8 @@ export default function SignInScreen() {
         type: 'sign-in',
       });
       if (err) {
+        console.log({err});
+        
         Alert.alert('Error', err.message ?? 'Could not send code');
       } else {
         setStep('otp');
@@ -195,6 +197,7 @@ const styles = StyleSheet.create({
   footerLink: {
     fontFamily: fonts.semiBold,
     fontSize: 14,
-    color: colors.primary,
+    color: colors.textMuted,
+    textDecorationLine: 'underline'
   },
 });

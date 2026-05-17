@@ -40,7 +40,7 @@ export function Button({
   const variantStyle: ViewStyle = {
     primary:   { backgroundColor: colors.primary },
     secondary: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
-    outline:   { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.border },
+    outline:   { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.borderSoft },
     ghost:     { backgroundColor: 'transparent' },
     danger:    { backgroundColor: colors.danger },
   }[variant];

@@ -39,23 +39,24 @@ export default function BlockScreen() {
         return;
       }
 
-      const { checkout_url, payment_id } = await res.json();
+      const { checkout_url, session_id } = await res.json();
+      console.log({ checkout_url });
 
       const result = await WebBrowser.openAuthSessionAsync(
         checkout_url,
-        `screenly://unlock-confirm?payment_id=${payment_id}`
+        `screenly://unlock-confirm`
       );
 
       if (result.type === 'success') {
         const url = result.url;
         const params = new URL(url).searchParams;
         const status = params.get('status');
-        const pid    = params.get('payment_id') ?? payment_id;
+        const sid = params.get('session_id') ?? session_id;
 
         if (status === 'succeeded' || status === 'paid') {
           const confirmRes = await apiFetch('/api/unlock/confirm', {
             method: 'POST',
-            body: JSON.stringify({ paymentId: pid, packageName }),
+            body: JSON.stringify({ sessionId: sid, packageName }),
           });
 
           if (confirmRes.ok) {

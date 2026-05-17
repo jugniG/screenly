@@ -10,39 +10,20 @@ import {
   StatusBar,
 } from 'react-native';
 import { router } from 'expo-router';
-import { fonts, radius } from '../components/ui/theme';
+import { colors, fonts, radius } from '../components/ui/theme';
 
 const { width } = Dimensions.get('window');
 
 const SLIDES = [
   {
     id: '1',
-    bg: '#0D0D1A',
-    accent: '#7C5CFF',
-    image: require('../assets/screens/image1.png'),
-    titleParts: [
-      { text: 'Ever opened an app\nfor 5 minutes... ', color: '#fff' },
-      { text: 'and lost an hour?', color: '#7C5CFF' },
-    ],
-    subParts: [
-      { text: 'Apps are designed to keep you scrolling. ', color: '#9CA3AF' },
-      { text: 'Screenly', color: '#7C5CFF' },
-      { text: ' helps you take back control.', color: '#9CA3AF' },
-    ],
+    accent: colors.primary,
+    image: require('../assets/screens/image1.png')
   },
   {
     id: '2',
-    bg: '#0A1A0D',
-    accent: '#22C55E',
-    image: require('../assets/screens/image2.png'),
-    titleParts: [
-      { text: 'Screenly can help you\n', color: '#fff' },
-      { text: 'optimize your\nphone usage.', color: '#22C55E' },
-    ],
-    subParts: [
-      { text: "Define time windows or max usage for your apps and we don't let you go over.\nIt's urgent? You can ", color: '#9CA3AF' },
-      { text: 'unlock it with just $5.', color: '#22C55E' },
-    ],
+    accent: colors.primary,
+    image: require('../assets/screens/image2.png')
   },
 ];
 
@@ -71,7 +52,7 @@ export default function OnboardingScreen() {
   }
 
   return (
-    <View style={[styles.root, { backgroundColor: current.bg }]}>
+    <View style={[styles.root]}>
       <StatusBar barStyle="light-content" />
 
       <TouchableOpacity style={styles.skip} onPress={skip}>
@@ -93,7 +74,7 @@ export default function OnboardingScreen() {
           setCurrentIndex(Math.round(e.nativeEvent.contentOffset.x / width));
         }}
         renderItem={({ item }) => (
-          <View style={[styles.slide, { width, backgroundColor: item.bg }]}>
+          <View style={[styles.slide, { width}]}>
             {/* Centered phone screenshot */}
             <View style={styles.imageWrap}>
               <Image
@@ -102,26 +83,12 @@ export default function OnboardingScreen() {
                 resizeMode="contain"
               />
             </View>
-
-            {/* Text below image */}
-            <View style={styles.textBlock}>
-              <Text style={styles.title}>
-                {item.titleParts.map((p, i) => (
-                  <Text key={i} style={{ color: p.color }}>{p.text}</Text>
-                ))}
-              </Text>
-              <Text style={styles.sub}>
-                {item.subParts.map((p, i) => (
-                  <Text key={i} style={{ color: p.color }}>{p.text}</Text>
-                ))}
-              </Text>
-            </View>
           </View>
         )}
       />
 
       {/* Dots + CTA */}
-      <View style={[styles.footer, { backgroundColor: current.bg }]}>
+      <View style={[styles.footer]}>
         <View style={styles.dots}>
           {SLIDES.map((_, i) => {
             const inputRange = [(i - 1) * width, i * width, (i + 1) * width];
@@ -149,7 +116,7 @@ export default function OnboardingScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
+  root: { flex: 1,backgroundColor:'#101112' },
 
   skip: {
     position: 'absolute',
@@ -178,8 +145,9 @@ const styles = StyleSheet.create({
   },
 
   phoneImage: {
-    width: width * 0.72,
+    width: width ,
     height: undefined,
+    top:0,
     aspectRatio: 0.46,
   },
 

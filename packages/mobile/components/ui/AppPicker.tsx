@@ -8,6 +8,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   Modal,
+  Image,
 } from 'react-native';
 import ScreenlyEnforcer from '../../modules/screenly-enforcer';
 import { colors, fonts, spacing, radius } from './theme';
@@ -34,17 +35,31 @@ export default function AppPicker({ onSelect, onCancel, existingPackages = [] }:
   const [manualPkg, setManualPkg] = useState('');
 
   useEffect(() => {
-    try {
-      const list: AppInfo[] = ScreenlyEnforcer.getInstalledApps() as any;
-      const sorted = list
-        .filter(a => a.appName && a.packageName)
-        .sort((a, b) => a.appName.localeCompare(b.appName));
-      setApps(sorted);
-    } catch {
-      setNativeUnavailable(true);
-    } finally {
-      setLoading(false);
-    }
+    (async () => {
+      try {
+        const list: AppInfo[] = await (ScreenlyEnforcer.getInstalledApps() as any);
+        const sorted = list
+          .filter(a => a.appName && a.packageName)
+          .sort((a, b) => a.appName.localeCompare(b.appName));
+        setApps(sorted);
+
+        if (sorted.length > 0) {
+          const pkgs = JSON.stringify(sorted.map(a => a.packageName));
+          const str = await (ScreenlyEnforcer.getAppIcons(pkgs) as any);
+          try {
+            const parsed = JSON.parse(str as string);
+            setApps(prev => prev.map(a => ({
+              ...a,
+              icon: parsed[a.packageName],
+            })));
+          } catch {}
+        }
+      } catch {
+        setNativeUnavailable(true);
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
   const filtered = useMemo(() => {
@@ -150,9 +165,13 @@ export default function AppPicker({ onSelect, onCancel, existingPackages = [] }:
                       onPress={isAdded ? undefined : () => onSelect({ name: item.appName, packageName: item.packageName })}
                       activeOpacity={isAdded ? 1 : 0.7}
                     >
-                      <View style={[styles.appIconPlaceholder, isAdded && styles.appIconPlaceholderDisabled]}>
-                        <Text style={[styles.appIconText, isAdded && styles.appIconTextDisabled]}>{item.appName[0]}</Text>
-                      </View>
+                      {item.icon ? (
+                        <Image source={{ uri: item.icon }} style={styles.appIconImage} />
+                      ) : (
+                        <View style={[styles.appIconPlaceholder, isAdded && styles.appIconPlaceholderDisabled]}>
+                          <Text style={[styles.appIconText, isAdded && styles.appIconTextDisabled]}>{item.appName[0]}</Text>
+                        </View>
+                      )}
                       <View style={styles.appInfo}>
                         <Text style={[styles.appName, isAdded && styles.appNameDisabled]}>{item.appName}</Text>
                         <Text style={styles.appPkg} numberOfLines={1}>{item.packageName}</Text>
@@ -209,6 +228,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
     paddingVertical: spacing.sm, paddingHorizontal: spacing.xs,
     borderBottomWidth: 1, borderBottomColor: colors.borderSoft,
+  },
+  appIconImage: {
+    width: 40, height: 40, borderRadius: radius.md,
+    marginRight: spacing.md,
   },
   appIconPlaceholder: {
     width: 40, height: 40, borderRadius: radius.md,
