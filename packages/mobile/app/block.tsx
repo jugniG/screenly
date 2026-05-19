@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,23 +7,48 @@ import {
   Alert,
   BackHandler,
   Platform,
+  AppState,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { colors, fonts, spacing } from '../components/ui/theme';
 import { apiFetch, API_BASE } from '../lib/fetchApi';
 import { unlockApp } from '../lib/enforcer';
+import ScreenlyEnforcer from '../modules/screenly-enforcer/src/ScreenlyEnforcerModule';
 
 export default function BlockScreen() {
   const { packageName, appName } = useLocalSearchParams<{ packageName: string; appName: string }>();
 
+  const dismissed = useRef(false);
   const [loading, setLoading] = useState(false);
 
+  function goHome() {
+    if (dismissed.current) return;
+    dismissed.current = true;
+    router.replace('/(tabs)');
+  }
+
+  // Block back button — trap user on this screen
   useEffect(() => {
     if (Platform.OS !== 'android') return;
     const sub = BackHandler.addEventListener('hardwareBackPress', () => true);
     return () => sub.remove();
   }, []);
+
+  // Auto-dismiss when Screenly opens but the blocked app is no longer in foreground
+  useEffect(() => {
+    if (!Platform.OS || !packageName) return;
+    const sub = AppState.addEventListener('change', async (state) => {
+      if (state !== 'active') return;
+      try {
+        const fg = await ScreenlyEnforcer.getForegroundApp();
+        if (fg && fg !== packageName) {
+          goHome();
+        }
+      } catch {}
+    });
+    return () => sub.remove();
+  }, [packageName]);
 
   async function handlePayUnlock() {
     setLoading(true);
@@ -56,9 +81,9 @@ export default function BlockScreen() {
           });
 
           if (confirmRes.ok) {
-            await unlockApp(packageName!, 60);
-            Alert.alert('Unlocked!', `${appName} is available for 60 minutes`);
-            router.back();
+            await unlockApp(packageName!);
+            Alert.alert('Unlocked for today!', `${appName} is available until midnight`);
+            router.replace('/(tabs)');
             return;
           }
         }
@@ -86,9 +111,14 @@ export default function BlockScreen() {
       {loading ? (
         <Text style={styles.loadingText}>Opening checkout…</Text>
       ) : (
-        <TouchableOpacity onPress={handlePayUnlock} style={styles.unlockBtn}>
-          <Text style={styles.unlockText}>Unlock now</Text>
-        </TouchableOpacity>
+        <>
+          <TouchableOpacity onPress={handlePayUnlock} style={styles.unlockBtn}>
+            <Text style={styles.unlockText}>Unlock now</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={goHome} style={styles.backBtn}>
+            <Text style={styles.backText}>Back to home</Text>
+          </TouchableOpacity>
+        </>
       )}
     </View>
   );
@@ -130,6 +160,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.primary,
     textDecorationLine: 'underline',
+  },
+  backBtn: {
+    marginTop: spacing.lg,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xl,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+  },
+  backText: {
+    fontFamily: fonts.semiBold,
+    fontSize: 14,
+    color: colors.textSecondary,
   },
   loadingText: {
     fontFamily: fonts.regular,

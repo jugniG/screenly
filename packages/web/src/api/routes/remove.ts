@@ -34,7 +34,7 @@ export const remove = new Hono<AppEnv>()
       const session = await dodo.checkoutSessions.create({
         product_cart: [{ product_id: productId, quantity: 1 }],
         customer: { email: user.email, name: user.name ?? undefined },
-        return_url: `${process.env.WEBSITE_URL ?? 'http://localhost:5173'}/api/dodo/return?action=remove`,
+        return_url: `${process.env.BETTER_AUTH_URL ?? 'http://localhost:5173'}/api/dodo/return?action=remove`,
         metadata: {
           userId: user.id,
           packageName,

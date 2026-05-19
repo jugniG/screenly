@@ -11,8 +11,8 @@ export async function syncRules() {
   } catch {}
 }
 
-export async function unlockApp(packageName: string, minutes: number = 30) {
+export async function unlockApp(packageName: string) {
   try {
-    await ScreenlyEnforcer.unlockAppForMinutes(packageName, minutes);
+    await ScreenlyEnforcer.unlockApp(packageName);
   } catch {}
 }

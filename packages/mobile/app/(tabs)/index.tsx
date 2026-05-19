@@ -71,6 +71,7 @@ export default function HomeScreen() {
   const [rules, setRules] = useState<Rule[]>([]);
   const [usage, setUsage] = useState<UsageInfo[]>([]);
   const [icons, setIcons] = useState<Record<string, string>>({});
+  const [unlockedApps, setUnlockedApps] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -89,6 +90,16 @@ export default function HomeScreen() {
           const pkgNames = JSON.stringify(rulesList.map((r: Rule) => r.packageName));
           const iconsStr: string = await ScreenlyEnforcer.getAppIcons(pkgNames) as any;
           try { setIcons(JSON.parse(iconsStr)); } catch {}
+
+          // Check unlock status for each app
+          const unlockResults = await Promise.all(
+            rulesList.map((r: Rule) =>
+              ScreenlyEnforcer.isAppUnlocked(r.packageName)
+                .then((unlocked: boolean) => unlocked ? r.packageName : null)
+                .catch(() => null)
+            )
+          );
+          setUnlockedApps(new Set(unlockResults.filter(Boolean) as string[]));
         }
       }
       setUsage((todayUsage || []).map((u: any) => ({ packageName: u.packageName, totalMinutes: u.totalMinutes })));
@@ -178,6 +189,7 @@ export default function HomeScreen() {
             const isBlocked = item.ruleType === 'block_always';
             const isSchedule = item.ruleType === 'schedule';
             const isLimit = item.ruleType === 'daily_limit';
+            const isUnlocked = unlockedApps.has(item.packageName);
 
             return (
               <Card style={[styles.appCard, !item.enabled && styles.appCardDisabled,{marginVertical:3}]}>
@@ -226,6 +238,11 @@ export default function HomeScreen() {
                     <View style={styles.scheduleRow}>
                       <Text style={styles.scheduleSubtitle}>Time window</Text>
                       <Text style={styles.scheduleDuration}>{windowDuration(item.scheduleStart, item.scheduleEnd)}/day</Text>
+                    </View>
+                  )}
+                  {isUnlocked && (
+                    <View style={styles.unlockedBadge}>
+                      <Text style={styles.unlockedText}>Unlocked until midnight</Text>
                     </View>
                   )}
                 </Card>
@@ -294,6 +311,17 @@ const styles = StyleSheet.create({
   scheduleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   scheduleSubtitle: { fontFamily: fonts.semiBold, fontSize: 12, color: colors.textSecondary },
   scheduleDuration: { fontFamily: fonts.semiBold, fontSize: 12, color: colors.textSecondary },
+  unlockedBadge: {
+    flexDirection: 'row',
+    alignSelf: 'flex-start',
+    backgroundColor: '#1A2E1A',
+    borderWidth: 1,
+    borderColor: '#2D5A2D',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  unlockedText: { fontFamily: fonts.semiBold, fontSize: 11, color: '#4ADE80' },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xl },
   emptyEmoji: { fontSize: 48, marginBottom: spacing.md },
   emptyTitle: { fontFamily: fonts.bold, fontSize: 20, color: colors.text },

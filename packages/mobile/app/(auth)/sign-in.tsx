@@ -8,6 +8,7 @@ import {
   ScrollView,
   Alert,
   TouchableOpacity,
+  Image,
 } from 'react-native';
 import { router } from 'expo-router';
 import { authClient } from '../../lib/auth';
@@ -61,6 +62,8 @@ export default function SignInScreen() {
       });
       if (err) {
         Alert.alert('Error', err.message ?? 'Invalid code');
+      } else {
+        router.replace('/(tabs)');
       }
     } catch (e: any) {
       Alert.alert('Error', e.message ?? 'Something went wrong');
@@ -76,9 +79,7 @@ export default function SignInScreen() {
     >
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <View style={styles.brand}>
-          <View style={styles.logoBox}>
-            <Text style={styles.logoText}>S</Text>
-          </View>
+          <Image source={require('../../assets/icon.png')} style={styles.logoImage} />
           <Text style={styles.brandName}>Screenly</Text>
           <Text style={styles.tagline}>Take back your screen time</Text>
         </View>
@@ -156,16 +157,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: spacing.xxl,
   },
-  logoBox: {
+  logoImage: {
     width: 72,
     height: 72,
     borderRadius: 20,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
     marginBottom: spacing.md,
   },
-  logoText: { fontFamily: fonts.bold, fontSize: 36, color: '#fff' },
   brandName: { fontFamily: fonts.bold, fontSize: 28, color: colors.text },
   tagline: { fontFamily: fonts.regular, fontSize: 14, color: colors.textSecondary, marginTop: 4 },
   form: {},

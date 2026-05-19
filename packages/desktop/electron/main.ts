@@ -5,7 +5,7 @@ import fs from "node:fs/promises";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const isDev = process.env.NODE_ENV !== "production";
-const WEB_DEV_URL = process.env.WEBSITE_URL ?? "http://localhost:3000";
+const WEB_DEV_URL = process.env.BETTER_AUTH_URL ?? "http://localhost:3000";
 const WEB_DIST = path.join(__dirname, "../web-dist");
 
 let win: BrowserWindow | null;

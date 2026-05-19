@@ -11,13 +11,13 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "cover",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#0E0E0E"
     },
     "android": {
       "package": "com.screenly_x8k2.runable",
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
-        "backgroundColor": "#5C6EFF"
+        "backgroundColor": "#F97316"
       },
       "edgeToEdgeEnabled": true,
       "permissions": [
@@ -34,10 +34,12 @@
       "supportsTablet": false
     },
     "extra": {},
+    "autolinking": {
+      "exclude": ["expo-dev-client", "expo-dev-launcher", "expo-dev-menu", "expo-dev-menu-interface"]
+    },
     "plugins": [
       "expo-router",
-      "expo-web-browser",
-      "expo-dev-client"
+      "expo-web-browser"
     ],
     "web": {
       "favicon": "./assets/favicon.png",

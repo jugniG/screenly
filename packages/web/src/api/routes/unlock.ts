@@ -56,7 +56,7 @@ export const unlock = new Hono<AppEnv>()
       const session = await dodo.checkoutSessions.create({
         product_cart: [{ product_id: productId, quantity: 1 }],
         customer: { email: user.email, name: user.name ?? undefined },
-        return_url: `${process.env.WEBSITE_URL ?? 'http://localhost:5173'}/api/dodo/return?action=unlock`,
+        return_url: `${process.env.BETTER_AUTH_URL ?? 'http://localhost:5173'}/api/dodo/return?action=unlock`,
         metadata: {
           userId: user.id,
           packageName,
@@ -78,14 +78,19 @@ export const unlock = new Hono<AppEnv>()
   // POST /api/unlock/confirm — called after successful payment redirect
   .post('/confirm', async (c) => {
     const user = c.get('user')!;
-    const { paymentId, packageName, appName = '', minutesUnlocked = 60 } = await c.req.json<{
+    const { paymentId, packageName, appName = '' } = await c.req.json<{
       paymentId: string;
       packageName: string;
       appName?: string;
-      minutesUnlocked?: number;
     }>();
 
     if (!paymentId || !packageName) return c.json({ error: 'paymentId and packageName required' }, 400);
+
+    // Calculate minutes remaining until midnight (for logging)
+    const now = new Date();
+    const midnight = new Date(now);
+    midnight.setHours(23, 59, 59, 999);
+    const minutesUntilMidnight = Math.max(1, Math.round((midnight.getTime() - now.getTime()) / 60_000));
 
     try {
       const dodo = await getDodo();
@@ -102,7 +107,7 @@ export const unlock = new Hono<AppEnv>()
         packageName,
         appName,
         unlockType:      'paid',
-        minutesUnlocked,
+        minutesUnlocked: minutesUntilMidnight,
         paymentId,
         amountPaid,
       }).returning();
@@ -158,12 +163,17 @@ export const dodoWebhook = new Hono()
             .limit(1);
 
           if (!existing.length) {
+            const now = new Date();
+            const midnight = new Date(now);
+            midnight.setHours(23, 59, 59, 999);
+            const minutesUntilMidnight = Math.max(1, Math.round((midnight.getTime() - now.getTime()) / 60_000));
+
             await db.insert(schema.unlockEvents).values({
               userId: meta.userId,
               packageName: meta.packageName,
               appName: meta.appName ?? '',
               unlockType: 'paid',
-              minutesUnlocked: 60,
+              minutesUnlocked: minutesUntilMidnight,
               paymentId,
               amountPaid: payload.data.total_amount ?? 0,
             });

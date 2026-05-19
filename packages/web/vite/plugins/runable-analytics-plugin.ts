@@ -10,7 +10,7 @@ export default function runableAnalyticsPlugin(): Plugin {
 			const doc = dom.window.document;
 			const head = doc.head;
 
-			const websiteUrl = process.env.WEBSITE_URL ?? "";
+			const websiteUrl = process.env.BETTER_AUTH_URL ?? "";
 			const hostname = websiteUrl ? new URL(websiteUrl).hostname : "";
 
 			// Runable script
