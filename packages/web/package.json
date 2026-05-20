@@ -6,7 +6,7 @@
     ".": "./src/api/index.ts"
   },
   "scripts": {
-    "build": "tsc --noEmit && vite build",
+    "build": "vite build && esbuild src/server.ts --bundle --platform=node --outfile=dist/server.js --external:@libsql/client --external:better-auth --external:hono --external:drizzle-orm --external:resend --external:dodopayments --external:standardwebhooks --external:zod",
     "dev": "vite",
     "lint": "eslint .",
     "preview": "bun run build && vite preview",
@@ -46,6 +46,7 @@
     "@types/react-dom": "19.1.11",
     "@vitejs/plugin-react": "5.1.4",
     "drizzle-kit": "^0.31.10",
+    "esbuild": "0.28.0",
     "eslint": "10.0.3",
     "eslint-plugin-react-hooks": "7.0.1",
     "eslint-plugin-react-refresh": "0.5.2",
