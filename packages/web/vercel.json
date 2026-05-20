@@ -1,5 +1,6 @@
 {
-  "buildCommand": "vite build",
+  "buildCommand": "bun run build",
   "outputDirectory": "dist",
-  "framework": "hono"
+  "framework": "hono",
+  "installCommand": "bun install"
 }
