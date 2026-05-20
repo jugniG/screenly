@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
+import Constants from 'expo-constants';
 import { colors, fonts, spacing } from '../components/ui/theme';
 import { apiFetch, API_BASE } from '../lib/fetchApi';
 import { unlockApp } from '../lib/enforcer';
@@ -19,6 +20,7 @@ import ScreenlyEnforcer from '../modules/screenly-enforcer/src/ScreenlyEnforcerM
 export default function BlockScreen() {
   const { packageName, appName } = useLocalSearchParams<{ packageName: string; appName: string }>();
 
+  const ownPackage = Constants.expoConfig?.android?.package;
   const dismissed = useRef(false);
   const [loading, setLoading] = useState(false);
 
@@ -42,7 +44,7 @@ export default function BlockScreen() {
       if (state !== 'active') return;
       try {
         const fg = await ScreenlyEnforcer.getForegroundApp();
-        if (fg && fg !== packageName) {
+        if (fg && fg !== packageName && fg !== ownPackage) {
           goHome();
         }
       } catch {}

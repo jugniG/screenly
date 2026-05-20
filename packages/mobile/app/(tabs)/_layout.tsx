@@ -1,7 +1,11 @@
-import { Tabs } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { Tabs, Redirect } from 'expo-router';
+import { View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../../components/ui/theme';
+import { authClient } from '../../lib/auth';
+import ScreenlyEnforcer from '../../modules/screenly-enforcer/src/ScreenlyEnforcerModule';
 
 const TAB_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   index: 'home',
@@ -9,12 +13,41 @@ const TAB_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
 };
 
 export default function TabsLayout() {
+  const { data: session, isPending, isFetching } = authClient.useSession() as any;
+  const [permsOk, setPermsOk] = useState<boolean | null>(null);
   const insets = useSafeAreaInsets();
+
+  useEffect(() => {
+    (async () => {
+      const [hasUsage, hasA11y] = await Promise.all([
+        ScreenlyEnforcer.hasUsageStatsPermission(),
+        ScreenlyEnforcer.isAccessibilityServiceEnabled(),
+      ]);
+      setPermsOk(hasUsage && hasA11y);
+    })();
+  }, []);
+
+  if (isPending || isFetching) {
+    return <View style={{ flex: 1, backgroundColor: colors.background }} />;
+  }
+
+  if (!session) {
+    return <Redirect href="/onboarding" />;
+  }
+
+  if (permsOk === false) {
+    return <Redirect href="/setup" />;
+  }
+
+  if (permsOk === null) {
+    return <View style={{ flex: 1, backgroundColor: colors.background }} />;
+  }
 
   return (
     <Tabs
       screenOptions={({ route }) => ({
         headerShown: false,
+        sceneContainerStyle: { backgroundColor: colors.background },
         tabBarStyle: {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,

@@ -170,8 +170,11 @@ export default function AccountScreen() {
         text: 'Sign Out',
         style: 'destructive',
         onPress: async () => {
-          await authClient.signOut();
-          router.replace('/(auth)/sign-in');
+          await authClient.signOut({fetchOptions:{
+            onSuccess:()=>{
+              router.replace('/(auth)/sign-in');
+            }
+          }});
         },
       },
     ]);

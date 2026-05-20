@@ -39,10 +39,6 @@ export default function OnboardingScreen() {
     router.replace('/(auth)/sign-up');
   }
 
-  function skip() {
-    router.replace('/(auth)/sign-in');
-  }
-
   function next() {
     if (isLast) {
       finish();
@@ -54,10 +50,6 @@ export default function OnboardingScreen() {
   return (
     <View style={[styles.root]}>
       <StatusBar barStyle="light-content" />
-
-      <TouchableOpacity style={styles.skip} onPress={skip}>
-        <Text style={styles.skipText}>Skip</Text>
-      </TouchableOpacity>
 
       <Animated.FlatList
         ref={flatListRef}

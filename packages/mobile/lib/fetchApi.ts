@@ -11,19 +11,22 @@ console.log('[fetchApi] resolved API_BASE:', API_BASE);
 
 export { API_BASE };
 
-/**
- * Wrapper around fetch that always attaches the Origin header.
- * React Native does not set Origin automatically (unlike browsers),
- * which causes better-auth to reject requests with MISSING_OR_NULL_ORIGIN (403).
- */
-export function apiFetch(path: string, init?: RequestInit): Promise<Response> {
-  return fetch(`${API_BASE}${path}`, {
-    credentials: 'include',
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      Origin: API_BASE,
-      ...(init?.headers ?? {}),
-    },
-  });
+export async function apiFetch(path: string, init?: RequestInit): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
+
+  try {
+    return await fetch(`${API_BASE}${path}`, {
+      signal: controller.signal,
+      credentials: 'include',
+      ...init,
+      headers: {
+        'Content-Type': 'application/json',
+        Origin: API_BASE,
+        ...(init?.headers ?? {}),
+      },
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
 }

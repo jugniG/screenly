@@ -17,7 +17,7 @@ import { Input } from '../../components/ui/Input';
 import { colors, fonts, spacing } from '../../components/ui/theme';
 
 export default function SignUpScreen() {
-  const { data: session } = authClient.useSession();
+  const { data: session, refetch } = authClient.useSession() as any;
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
@@ -64,6 +64,7 @@ export default function SignUpScreen() {
         Alert.alert('Error', err.message ?? 'Invalid code');
       } else {
         await (authClient as any).updateUser({ name: name.trim() });
+        await refetch();
         router.replace('/(tabs)');
       }
     } catch (e: any) {

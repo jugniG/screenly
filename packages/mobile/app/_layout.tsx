@@ -17,7 +17,7 @@ export default function RootLayout() {
     'Poppins-Bold':     require('../assets/fonts/Poppins-Bold.ttf'),
   });
 
-  const { data: session, isPending } = authClient.useSession();
+  const { data: session, isPending, isFetching, refetch } = authClient.useSession() as any;
   const [setupDone, setSetupDone] = useState(false);
   const [setupChecked, setSetupChecked] = useState(false);
   const segments = useSegments();
@@ -31,7 +31,7 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    if (!fontsLoaded || isPending || !setupChecked) return;
+    if (!fontsLoaded || isPending || isFetching || !setupChecked) return;
     if (redirected.current) return;
 
     // Don't redirect away from deep link screens
@@ -50,9 +50,9 @@ export default function RootLayout() {
     } else {
       router.replace('/onboarding');
     }
-  }, [fontsLoaded, isPending, session, setupDone, setupChecked, segments]);
+  }, [fontsLoaded, isPending, isFetching, session, setupDone, setupChecked, segments]);
 
-  if (!fontsLoaded || isPending || !setupChecked) {
+  if (!fontsLoaded || isPending || isFetching || !setupChecked) {
     return <View style={{ flex: 1, backgroundColor: '#0E0E0E' }} />;
   }
 

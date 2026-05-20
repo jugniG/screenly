@@ -17,7 +17,7 @@ import { Input } from '../../components/ui/Input';
 import { colors, fonts, spacing } from '../../components/ui/theme';
 
 export default function SignInScreen() {
-  const { data: session } = authClient.useSession();
+  const { data: session, refetch } = authClient.useSession() as any;
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
@@ -63,6 +63,7 @@ export default function SignInScreen() {
       if (err) {
         Alert.alert('Error', err.message ?? 'Invalid code');
       } else {
+        await refetch();
         router.replace('/(tabs)');
       }
     } catch (e: any) {

@@ -6,10 +6,11 @@ import {
   AppState,
   TouchableOpacity,
 } from 'react-native';
-import { router } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import ScreenlyEnforcer from '../modules/screenly-enforcer/src/ScreenlyEnforcerModule';
+import { authClient } from '../lib/auth';
 import { colors, fonts, spacing } from '../components/ui/theme';
 
 type Step = 'usage_stats' | 'accessibility';
@@ -55,6 +56,16 @@ const STEPS: StepConfig[] = [
 ];
 
 export default function SetupScreen() {
+  const { data: session, isPending, isFetching } = authClient.useSession() as any;
+
+  if (isPending || isFetching) {
+    return <View style={styles.screen} />;
+  }
+
+  if (!session) {
+    return <Redirect href="/onboarding" />;
+  }
+
   const [stepIndex, setStepIndex] = useState(0);
   const [granted, setGranted] = useState<boolean | null>(null);
   const [checking, setChecking] = useState(true);
