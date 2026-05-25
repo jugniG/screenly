@@ -21,12 +21,6 @@ class UnlockStore(context: Context) {
     saveUnlock(packageName, cal.timeInMillis)
   }
 
-  /** Legacy: unlock for a fixed number of minutes. */
-  fun unlock(packageName: String, durationMinutes: Int) {
-    val expiresAt = System.currentTimeMillis() + durationMinutes * 60_000L
-    saveUnlock(packageName, expiresAt)
-  }
-
   private fun saveUnlock(packageName: String, expiresAt: Long) {
     val json = prefs.getString("unlocks", "[]") ?: "[]"
     val arr = JSONArray(json)

@@ -52,8 +52,9 @@ class UsageTracker(context: Context) {
 
   /**
    * Queries the Android OS UsageStatsManager for today's aggregated foreground
-   * time per package. This matches what Digital Wellbeing reports and is always
-   * accurate regardless of when the Accessibility Service started.
+   * time per package. Uses INTERVAL_DAILY for a reliable daily total (same
+   * source as Digital Wellbeing), then adds the live running session to
+   * compensate for the ~1 minute OS batching lag.
    *
    * Returns null if the API is unavailable (pre-Lollipop or no permission).
    */
@@ -72,16 +73,22 @@ class UsageTracker(context: Context) {
       val dayStart = todayStartMs()
       Log.i("UsageTracker", "[USAGE] queryUsageStats dayStart=$dayStart now=$now range=${now - dayStart}ms")
 
-      val stats = manager.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, dayStart, now)
-      Log.i("UsageTracker", "[USAGE] queryUsageStats returned ${stats?.size ?: "null"} entries")
+      // Try INTERVAL_BEST first (most granular, freshest data)
+      var stats = manager.queryUsageStats(UsageStatsManager.INTERVAL_BEST, dayStart, now)
+      Log.i("UsageTracker", "[USAGE] INTERVAL_BEST returned ${stats?.size ?: "null"} entries")
+
+      if (stats.isNullOrEmpty()) {
+        // Fallback to INTERVAL_DAILY (some devices don't support BEST)
+        stats = manager.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, dayStart, now)
+        Log.i("UsageTracker", "[USAGE] INTERVAL_DAILY fallback returned ${stats?.size ?: "null"} entries")
+      }
 
       if (stats.isNullOrEmpty()) {
         Log.w("UsageTracker", "[USAGE] empty result — permission missing or no usage today")
         return emptyMap()
       }
 
-      // queryUsageStats with INTERVAL_DAILY can return multiple entries per package
-      // (e.g. spanning bucket boundaries) — fold them together.
+      // Multiple entries per package (spanning bucket boundaries) — fold them together.
       val result = mutableMapOf<String, Long>()
       for (stat in stats) {
         if (stat.totalTimeInForeground > 0) {
@@ -174,8 +181,4 @@ class UsageTracker(context: Context) {
     return (totalMs / 60000).toInt().coerceAtLeast(0)
   }
 
-  /** Clears foreground tracking state. */
-  fun resetDaily() {
-    prefs.edit().remove("fg_pkg").remove("fg_start").apply()
-  }
 }

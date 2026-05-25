@@ -4,6 +4,7 @@ import android.accessibilityservice.AccessibilityService
 import android.content.Intent
 import android.os.Build
 import android.provider.Settings
+import android.util.Log
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 
@@ -89,23 +90,6 @@ class ScreenlyEnforcerModule : Module() {
       context.startActivity(intent)
     }
 
-    Function("hasOverlayPermission") {
-      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-        return@Function true
-      }
-      val context = appContext.reactContext ?: return@Function false
-      Settings.canDrawOverlays(context)
-    }
-
-    Function("requestOverlayPermission") {
-      val context = appContext.reactContext ?: throw Exception("Context not available")
-      val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
-        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        data = android.net.Uri.parse("package:${context.packageName}")
-      }
-      context.startActivity(intent)
-    }
-
     // --- Enforcement ---
 
     Function("updateRules") { rulesJson: String ->
@@ -120,14 +104,6 @@ class ScreenlyEnforcerModule : Module() {
       }
     }
 
-    Function("unlockAppForMinutes") { args: Array<Any> ->
-      val packageName = args[0] as String
-      val minutes = (args[1] as Number).toInt()
-      if (this@ScreenlyEnforcerModule::unlockStore.isInitialized) {
-        unlockStore.unlock(packageName, minutes)
-      }
-    }
-
     Function("isAppUnlocked") { packageName: String ->
       if (this@ScreenlyEnforcerModule::unlockStore.isInitialized) {
         return@Function unlockStore.isUnlocked(packageName)
@@ -136,11 +112,20 @@ class ScreenlyEnforcerModule : Module() {
     }
 
     Function("getTodayUsage") {
-      val ctx = appContext.reactContext ?: return@Function emptyList<Map<String, Any>>()
+      Log.i("ScreenlyEnforcer", "getTodayUsage called")
+      val ctx = appContext.reactContext
+      if (ctx == null) {
+        Log.w("ScreenlyEnforcer", "getTodayUsage: reactContext is null, returning empty")
+        return@Function emptyList<Map<String, Any>>()
+      }
       if (!this@ScreenlyEnforcerModule::usageTracker.isInitialized) {
+        Log.i("ScreenlyEnforcer", "getTodayUsage: initializing usageTracker")
         usageTracker = UsageTracker(ctx)
       }
-      return@Function usageTracker.getTodayUsage().map { usage ->
+      Log.i("ScreenlyEnforcer", "getTodayUsage: calling usageTracker.getTodayUsage()")
+      val result = usageTracker.getTodayUsage()
+      Log.i("ScreenlyEnforcer", "getTodayUsage: got ${result.size} entries")
+      return@Function result.map { usage ->
         mapOf(
           "packageName" to usage.packageName,
           "appName" to usage.appName,

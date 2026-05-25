@@ -78,36 +78,56 @@ export default function HomeScreen() {
 
   async function load() {
     try {
+      console.log('[Home] step1');
       const [res, todayUsage] = await Promise.all([
         apiFetch('/api/rules'),
-        Promise.resolve(ScreenlyEnforcer.getTodayUsage()).catch(() => []),
+        (async () => {
+          console.log('[Home] calling getTodayUsage');
+          try { const r = await ScreenlyEnforcer.getTodayUsage(); console.log('[Home] got:', JSON.stringify(r?.slice(0,2))); return r; }
+          catch(e: any) { console.log('[Home] getTodayUsage error:', e?.message); return []; }
+        })(),
       ]);
+      console.log('[Home] step2 len=' + (todayUsage?.length ?? 'undef'));
       if (res.ok) {
+        console.log('[Home] step3');
         const rulesList = await res.json();
+        console.log('[Home] step4 count=' + rulesList.length);
         setRules(rulesList);
         syncRules();
 
         if (rulesList.length > 0) {
+          console.log('[Home] step5');
           const pkgNames = JSON.stringify(rulesList.map((r: Rule) => r.packageName));
           const iconsStr: string = await ScreenlyEnforcer.getAppIcons(pkgNames) as any;
-          try { setIcons(JSON.parse(iconsStr)); } catch {}
-
-          // Check unlock status for each app
+          try { setIcons(JSON.parse(iconsStr)); } catch(e: any) { console.log('[Home] icons parse error:', e?.message); }
+          console.log('[Home] step6');
+          console.log('[Home] isAppUnlocked type:', typeof ScreenlyEnforcer.isAppUnlocked);
           const unlockResults = await Promise.all(
-            rulesList.map((r: Rule) =>
-              ScreenlyEnforcer.isAppUnlocked(r.packageName)
-                .then((unlocked: boolean) => unlocked ? r.packageName : null)
-                .catch(() => null)
-            )
+            rulesList.map((r: Rule) => {
+              try {
+                return ScreenlyEnforcer.isAppUnlocked(r.packageName)
+                  .then((unlocked: boolean) => unlocked ? r.packageName : null)
+                  .catch((err: any) => { console.log('[Home] unlock catch:', r.packageName, err?.message); return null; });
+              } catch (e: any) {
+                console.log('[Home] unlock sync error:', r.packageName, e?.message);
+                return Promise.resolve(null);
+              }
+            })
           );
           setUnlockedApps(new Set(unlockResults.filter(Boolean) as string[]));
         }
       }
-      setUsage((todayUsage || []).map((u: any) => ({ packageName: u.packageName, totalMinutes: u.totalMinutes })));
+      console.log('[Home] step7');
+      const mapped = (todayUsage || []).map((u: any) => ({ packageName: u.packageName, totalMinutes: u.totalMinutes }));
+      console.log('[Home] step8 mapped:', JSON.stringify(mapped.slice(0,3)));
+      setUsage(mapped);
       const perm = await ScreenlyEnforcer.hasUsageStatsPermission().catch(() => false);
       setHasPermission(perm);
-    } catch {}
-    finally { setLoading(false); setRefreshing(false); }
+      console.log('[Home] done, perm=' + perm);
+    } catch (e: any) {
+      console.log('[Home] ERROR:', e?.message, e?.stack);
+    }
+    finally { setLoading(false); setRefreshing(false); console.log('[Home] finally loading=false'); }
   }
 
   useEffect(() => { load(); }, []);
