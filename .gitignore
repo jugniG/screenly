@@ -42,5 +42,5 @@ yarn-error.log*
 *.mobileprovision
 *.orig.*
 web-build/
-android/
+build/
 ios/

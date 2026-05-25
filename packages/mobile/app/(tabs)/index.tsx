@@ -74,6 +74,7 @@ export default function HomeScreen() {
   const [unlockedApps, setUnlockedApps] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [hasPermission, setHasPermission] = useState(true);
 
   async function load() {
     try {
@@ -103,6 +104,8 @@ export default function HomeScreen() {
         }
       }
       setUsage((todayUsage || []).map((u: any) => ({ packageName: u.packageName, totalMinutes: u.totalMinutes })));
+      const perm = await ScreenlyEnforcer.hasUsageStatsPermission().catch(() => false);
+      setHasPermission(perm);
     } catch {}
     finally { setLoading(false); setRefreshing(false); }
   }
@@ -165,6 +168,20 @@ export default function HomeScreen() {
           <Text style={styles.addBtnText}>+ Add App</Text>
         </TouchableOpacity>
       </View>
+
+      {!hasPermission && (
+        <TouchableOpacity
+          style={styles.permBanner}
+          onPress={() => ScreenlyEnforcer.requestUsageStatsPermission()}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.permBannerIcon}>⚠️</Text>
+          <View style={styles.permBannerTextWrap}>
+            <Text style={styles.permBannerTitle}>Usage access needed</Text>
+            <Text style={styles.permBannerSub}>Tap to open Settings</Text>
+          </View>
+        </TouchableOpacity>
+      )}
 
       {rules.length === 0 ? (
         <View style={styles.empty}>
@@ -322,6 +339,23 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   unlockedText: { fontFamily: fonts.semiBold, fontSize: 11, color: '#4ADE80' },
+  permBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.sm,
+    marginBottom: spacing.xs,
+    backgroundColor: '#2D1B00',
+    borderWidth: 1,
+    borderColor: '#7C4400',
+    borderRadius: 10,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 10,
+  },
+  permBannerIcon: { fontSize: 18, marginRight: spacing.sm },
+  permBannerTextWrap: { flex: 1 },
+  permBannerTitle: { fontFamily: fonts.semiBold, fontSize: 13, color: '#FFB347' },
+  permBannerSub: { fontFamily: fonts.regular, fontSize: 12, color: '#CC8800' },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xl },
   emptyEmoji: { fontSize: 48, marginBottom: spacing.md },
   emptyTitle: { fontFamily: fonts.bold, fontSize: 20, color: colors.text },
