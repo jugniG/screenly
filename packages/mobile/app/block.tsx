@@ -8,6 +8,7 @@ import {
   BackHandler,
   Platform,
   AppState,
+  Image,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
@@ -23,6 +24,17 @@ export default function BlockScreen() {
   const ownPackage = Constants.expoConfig?.android?.package;
   const dismissed = useRef(false);
   const [loading, setLoading] = useState(false);
+  const [iconUri, setIconUri] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!packageName) return;
+    ScreenlyEnforcer.getAppIcons(JSON.stringify([packageName]))
+      .then((str: string) => {
+        const map = JSON.parse(str);
+        if (map[packageName]) setIconUri(map[packageName]);
+      })
+      .catch(() => {});
+  }, [packageName]);
 
   function goHome() {
     if (dismissed.current) return;
@@ -103,9 +115,13 @@ export default function BlockScreen() {
   return (
     <View style={styles.screen}>
       <View style={styles.iconWrap}>
-        <View style={styles.appIcon}>
-          <Text style={styles.appIconText}>{(appName ?? 'A')[0]}</Text>
-        </View>
+        {iconUri ? (
+          <Image source={{ uri: iconUri }} style={styles.appIconImage} />
+        ) : (
+          <View style={styles.appIcon}>
+            <Text style={styles.appIconText}>{(appName ?? 'A')[0]}</Text>
+          </View>
+        )}
         <Text style={styles.appName}>{appName}</Text>
         <Text style={styles.blockedLabel}>This app is blocked</Text>
       </View>
@@ -144,6 +160,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: spacing.md,
+  },
+  appIconImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 20,
     marginBottom: spacing.md,
   },
   appIconText: { fontFamily: fonts.bold, fontSize: 36, color: colors.primary },
