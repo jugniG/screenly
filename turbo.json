@@ -8,7 +8,29 @@
     },
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", "dist-electron/**", ".expo/**"]
+      "outputs": ["dist/**", "dist-electron/**", ".expo/**"],
+      "env": [
+        "NODE_ENV",
+        "DATABASE_URL",
+        "DATABASE_AUTH_TOKEN",
+        "S3_ENDPOINT",
+        "S3_BUCKET",
+        "S3_ACCESS_KEY_ID",
+        "S3_SECRET_ACCESS_KEY",
+        "AI_GATEWAY_BASE_URL",
+        "AI_GATEWAY_API_KEY",
+        "BETTER_AUTH_SECRET",
+        "BETTER_AUTH_URL",
+        "WEBSITE_URL",
+        "RESEND_API_KEY",
+        "GOOGLE_CLIENT_ID",
+        "GOOGLE_CLIENT_SECRET",
+        "DODO_PAYMENTS_API_KEY",
+        "DODO_UNLOCK_PRODUCT_ID",
+        "DODO_REMOVE_PRODUCT_ID",
+        "DODO_WEBHOOK_KEY",
+        "DODO_ENVIRONMENT"
+      ]
     },
     "typecheck": {
       "dependsOn": ["^typecheck"],

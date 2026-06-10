@@ -6,7 +6,7 @@
     ".": "./src/api/index.ts"
   },
   "scripts": {
-    "build": "vite build && esbuild src/server.ts --bundle --platform=node --outfile=dist/server.js --format=esm --external:pg --external:better-auth --external:hono --external:drizzle-orm --external:resend --external:dodopayments --external:standardwebhooks --external:zod",
+    "build": "npx vite build && esbuild src/server.ts --bundle --platform=node --outfile=dist/server.js --format=esm --external:pg --external:better-auth --external:hono --external:drizzle-orm --external:resend --external:dodopayments --external:standardwebhooks --external:zod",
     "dev": "vite",
     "lint": "eslint .",
     "preview": "npm run build && vite preview",
