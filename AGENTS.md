@@ -33,6 +33,23 @@ Run Metro: `bun start --clear` (from `packages/mobile/`)
 - **arm64-only**: ABI splits configured to only build for `arm64-v8a` (modern Android phones).
 - **No expo-dev-client**: removed from project. Release APK launches directly into the app.
 - **platform**: Android only (no iOS — requires Mac).
+- **Ask before installing tools**: before trying to install any CLI tool (Rust, Solana, Anchor, etc.), ask the user first. Don't run installers without confirmation — installation takes long and may fail. Check if they want to proceed or have an alternative approach.
+
+## ADB Debugging
+
+Check app crash logs:
+```bash
+adb logcat -c                          # clear buffer
+adb logcat --pid=$(adb shell pidof -s com.screenly_x8k2.runable) -s AndroidRuntime
+```
+Or for full React Native / Expo crash dump:
+```bash
+adb logcat -c && adb logcat -s AndroidRuntime *:E ReactNative:V
+```
+To get the latest crash from a fresh install:
+```bash
+adb logcat -d -s AndroidRuntime *:E ReactNative:V | tail -40
+```
 
 ## Distribution
 

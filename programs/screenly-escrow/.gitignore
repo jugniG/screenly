@@ -1,0 +1,8 @@
+target/
+programs/screenly-escrow/keypair.json
+*.so
+*.rlib
+*.rmeta
+*.d
+.rustc_info.json
+.cargo-lock

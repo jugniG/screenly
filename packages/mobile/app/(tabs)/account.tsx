@@ -13,7 +13,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
 import { authClient } from '../../lib/auth';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -21,6 +20,12 @@ import { colors, fonts, spacing, radius } from '../../components/ui/theme';
 import { apiFetch, API_BASE } from '../../lib/fetchApi';
 import { syncRules } from '../../lib/enforcer';
 import ScreenlyEnforcer from '../../modules/screenly-enforcer/src/ScreenlyEnforcerModule';
+import {
+  getConnection,
+  loadOrCreateWallet,
+  buildRemoveTx,
+  sendAndConfirmTx,
+} from '../../lib/solana';
 
 interface UnlockEvent {
   id: string;
@@ -102,60 +107,37 @@ export default function AccountScreen() {
   async function handleRemoveApp(rule: Rule) {
     Alert.alert(
       `Remove ${rule.appName}?`,
-      `This is a commitment breaking charge of $5. You're paying to permanently remove this restriction. You can re-add the app anytime.`,
+      `Your $5 USDC commitment for this app will be forfeited. You can re-add it anytime.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Pay $5 & Remove',
+          text: 'Remove (Forfeit $5)',
           style: 'destructive',
-          onPress: () => startRemoveCheckout(rule),
+          onPress: () => startRemove(rule),
         },
       ],
     );
   }
 
-  async function startRemoveCheckout(rule: Rule) {
+  async function startRemove(rule: Rule) {
     setRemoving(rule.packageName);
     try {
-      const res = await apiFetch('/api/remove/checkout', {
-        method: 'POST',
-        body: JSON.stringify({ packageName: rule.packageName, appName: rule.appName }),
-      });
+      // Execute Solana remove tx (forfeits $5 to Screenly + closes escrow)
+      const connection = getConnection();
+      const wallet = await loadOrCreateWallet();
+      const tx = buildRemoveTx(wallet.publicKey, rule.packageName);
+      await sendAndConfirmTx(connection, tx, wallet);
 
+      // Delete rule from API
+      const res = await apiFetch(`/api/rules/${rule.id}`, { method: 'DELETE' });
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        Alert.alert('Error', err.error ?? 'Could not start checkout');
+        Alert.alert('Error', 'Rule removed on-chain but failed to sync with server');
         return;
       }
 
-      const { checkout_url } = await res.json();
-
-      const result = await WebBrowser.openAuthSessionAsync(checkout_url, 'screenly://remove-confirm');
-
-      if (result.type === 'success') {
-        const params = new URL(result.url).searchParams;
-        const status = params.get('status');
-        const pid = params.get('payment_id');
-
-        if ((status === 'succeeded' || status === 'paid') && pid) {
-          const confirmRes = await apiFetch('/api/remove/confirm', {
-            method: 'POST',
-            body: JSON.stringify({ paymentId: pid, packageName: rule.packageName }),
-          });
-
-          if (confirmRes.ok) {
-            setRules(prev => prev.filter(r => r.id !== rule.id));
-            syncRules();
-            Alert.alert('Removed', `${rule.appName} restriction has been removed.`);
-            return;
-          }
-
-          const err = await confirmRes.json().catch(() => ({}));
-          Alert.alert('Error', err.error ?? 'Could not confirm removal');
-        }
-      } else {
-        Alert.alert('Cancelled', 'Payment was not completed');
-      }
+      setRules(prev => prev.filter(r => r.id !== rule.id));
+      syncRules();
+      Alert.alert('Removed', `${rule.appName} restriction removed. $5 forfeited.`);
     } catch (e: any) {
       Alert.alert('Error', e.message ?? 'Something went wrong');
     } finally {

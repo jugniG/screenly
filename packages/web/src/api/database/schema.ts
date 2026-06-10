@@ -1,9 +1,8 @@
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
-
-export * from './auth-schema';
+import { text, integer, boolean, timestamp } from 'drizzle-orm/pg-core';
+import { screenly } from './pg-schema';
 
 // App rules — one per restricted app per user
-export const appRules = sqliteTable('app_rules', {
+export const appRules = screenly.table('app_rules', {
   id:            text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   userId:        text('user_id').notNull(),
   packageName:   text('package_name').notNull(),
@@ -12,23 +11,23 @@ export const appRules = sqliteTable('app_rules', {
   limitMinutes:  integer('limit_minutes'),
   scheduleStart: text('schedule_start'),
   scheduleEnd:   text('schedule_end'),
-  enabled:       integer('enabled', { mode: 'boolean' }).notNull().default(true),
-  createdAt:     integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull(),
+  enabled:       boolean('enabled').notNull().default(true),
+  createdAt:     timestamp('created_at').$defaultFn(() => new Date()).notNull(),
 });
 
 // Daily usage logs — synced from device
-export const usageLogs = sqliteTable('usage_logs', {
+export const usageLogs = screenly.table('usage_logs', {
   id:           text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   userId:       text('user_id').notNull(),
   packageName:  text('package_name').notNull(),
   appName:      text('app_name').notNull().default(''),
   date:         text('date').notNull(), // YYYY-MM-DD
   totalMinutes: integer('total_minutes').notNull().default(0),
-  updatedAt:    integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull(),
+  updatedAt:    timestamp('updated_at').$defaultFn(() => new Date()).notNull(),
 });
 
 // Unlock events — free countdowns and paid unlocks
-export const unlockEvents = sqliteTable('unlock_events', {
+export const unlockEvents = screenly.table('unlock_events', {
   id:             text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   userId:         text('user_id').notNull(),
   packageName:    text('package_name').notNull(),
@@ -37,5 +36,7 @@ export const unlockEvents = sqliteTable('unlock_events', {
   minutesUnlocked: integer('minutes_unlocked').notNull().default(30),
   paymentId:      text('payment_id'),
   amountPaid:     integer('amount_paid'), // cents
-  createdAt:      integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull(),
+  createdAt:      timestamp('created_at').$defaultFn(() => new Date()).notNull(),
 });
+
+export * from './auth-schema';

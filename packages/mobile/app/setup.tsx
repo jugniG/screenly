@@ -57,6 +57,53 @@ const STEPS: StepConfig[] = [
 
 export default function SetupScreen() {
   const { data: session, isPending, isFetching } = authClient.useSession() as any;
+  const [stepIndex, setStepIndex] = useState(0);
+  const [granted, setGranted] = useState<boolean | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+
+  const step = STEPS[stepIndex] ?? STEPS[0];
+
+  useEffect(() => {
+    let cancelled = false;
+    async function run() {
+      const currentStep = STEPS[stepIndex];
+      if (!currentStep || isPending || isFetching || !session) return;
+      setChecking(true);
+      try {
+        const ok = await currentStep.check();
+        if (cancelled) return;
+        setGranted(ok);
+        setChecking(false);
+        if (ok) {
+          if (stepIndex === STEPS.length - 1) {
+            await AsyncStorage.setItem('setup_done', '1');
+            router.replace('/(tabs)');
+          } else {
+            setStepIndex(i => i + 1);
+            setGranted(null);
+          }
+        }
+      } catch {
+        if (!cancelled) {
+          setGranted(false);
+          setChecking(false);
+        }
+      }
+    }
+    run();
+    return () => { cancelled = true; };
+  }, [stepIndex, retryCount, session, isPending, isFetching]);
+
+  useEffect(() => {
+    if (isPending || isFetching || !session) return;
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        setRetryCount(c => c + 1);
+      }
+    });
+    return () => sub.remove();
+  }, [session, isPending, isFetching]);
 
   if (isPending || isFetching) {
     return <View style={styles.screen} />;
@@ -65,47 +112,6 @@ export default function SetupScreen() {
   if (!session) {
     return <Redirect href="/onboarding" />;
   }
-
-  const [stepIndex, setStepIndex] = useState(0);
-  const [granted, setGranted] = useState<boolean | null>(null);
-  const [checking, setChecking] = useState(true);
-
-  const step = STEPS[stepIndex];
-  const isLast = stepIndex === STEPS.length - 1;
-
-  async function checkCurrentStep() {
-    setChecking(true);
-    try {
-      const ok = await step.check();
-      setGranted(ok);
-      setChecking(false);
-      if (ok) {
-        if (isLast) {
-          await AsyncStorage.setItem('setup_done', '1');
-          router.replace('/(tabs)');
-        } else {
-          setStepIndex(i => i + 1);
-          setGranted(null);
-        }
-      }
-    } catch {
-      setGranted(false);
-      setChecking(false);
-    }
-  }
-
-  useEffect(() => {
-    const sub = AppState.addEventListener('change', (state) => {
-      if (state === 'active') {
-        checkCurrentStep();
-      }
-    });
-    return () => sub.remove();
-  }, [stepIndex]);
-
-  useEffect(() => {
-    checkCurrentStep();
-  }, [stepIndex]);
 
   return (
     <View style={styles.screen}>
@@ -168,7 +174,7 @@ export default function SetupScreen() {
       {!checking && !granted && (
         <TouchableOpacity
           style={styles.checkAgain}
-          onPress={checkCurrentStep}
+          onPress={() => setRetryCount(c => c + 1)}
         >
           <Text style={styles.checkAgainText}>Check again</Text>
         </TouchableOpacity>

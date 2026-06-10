@@ -9,14 +9,19 @@ import {
   Platform,
   AppState,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
 import Constants from 'expo-constants';
 import { colors, fonts, spacing } from '../components/ui/theme';
-import { apiFetch, API_BASE } from '../lib/fetchApi';
 import { unlockApp } from '../lib/enforcer';
 import ScreenlyEnforcer from '../modules/screenly-enforcer/src/ScreenlyEnforcerModule';
+import {
+  getConnection,
+  loadOrCreateWallet,
+  buildGiveInTx,
+  sendAndConfirmTx,
+} from '../lib/solana';
 
 export default function BlockScreen() {
   const { packageName, appName } = useLocalSearchParams<{ packageName: string; appName: string }>();
@@ -64,52 +69,35 @@ export default function BlockScreen() {
     return () => sub.remove();
   }, [packageName]);
 
-  async function handlePayUnlock() {
-    setLoading(true);
-    try {
-      const res = await apiFetch('/api/unlock/checkout', {
-        method: 'POST',
-        body: JSON.stringify({ packageName, appName }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        Alert.alert('Error', err.error ?? 'Could not start checkout');
-        return;
-      }
-
-      const { checkout_url } = await res.json();
-
-      const result = await WebBrowser.openAuthSessionAsync(checkout_url, 'screenly://unlock-confirm');
-
-      if (result.type === 'success') {
-        const url = result.url;
-        const params = new URL(url).searchParams;
-        const status = params.get('status');
-        const pid    = params.get('payment_id');
-
-        if ((status === 'succeeded' || status === 'paid') && pid) {
-          const confirmRes = await apiFetch('/api/unlock/confirm', {
-            method: 'POST',
-            body: JSON.stringify({ paymentId: pid, packageName }),
-          });
-
-          if (confirmRes.ok) {
-            await unlockApp(packageName!);
-            Alert.alert('Unlocked for today!', `${appName} is available until midnight`);
-            router.replace('/(tabs)');
-            return;
-          }
-        }
-        Alert.alert('Payment not confirmed', 'Please try again');
-      } else {
-        Alert.alert('Cancelled', 'Payment was not completed');
-      }
-    } catch (e: any) {
-      Alert.alert('Error', e.message ?? 'Something went wrong');
-    } finally {
-      setLoading(false);
-    }
+  async function handleGiveIn() {
+    if (!packageName) return;
+    Alert.alert(
+      'Give in?',
+      `You'll forfeit $5 USDC from your commitment to ${appName}. Are you sure?`,
+      [
+        { text: 'Stay strong', style: 'cancel' },
+        {
+          text: 'I give in',
+          style: 'destructive',
+          onPress: async () => {
+            setLoading(true);
+            try {
+              const connection = getConnection();
+              const wallet = await loadOrCreateWallet();
+              const tx = buildGiveInTx(wallet.publicKey, packageName);
+              await sendAndConfirmTx(connection, tx, wallet);
+              await unlockApp(packageName!);
+              Alert.alert('Give in', `${appName} is unlocked. $5 forfeited.`);
+              router.replace('/(tabs)');
+            } catch (e: any) {
+              Alert.alert('Error', e?.message ?? 'Failed to process');
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ],
+    );
   }
 
   return (
@@ -127,11 +115,12 @@ export default function BlockScreen() {
       </View>
 
       {loading ? (
-        <Text style={styles.loadingText}>Opening checkout…</Text>
+        <ActivityIndicator color={colors.primary} size="large" />
       ) : (
         <>
-          <TouchableOpacity onPress={handlePayUnlock} style={styles.unlockBtn}>
-            <Text style={styles.unlockText}>Unlock now</Text>
+          <TouchableOpacity onPress={handleGiveIn} style={styles.giveInBtn}>
+            <Text style={styles.giveInText}>I give in</Text>
+            <Text style={styles.giveInSub}>Forfeit $5 commitment</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={goHome} style={styles.backBtn}>
             <Text style={styles.backText}>Back to home</Text>
@@ -176,14 +165,25 @@ const styles = StyleSheet.create({
     color: colors.danger,
     marginTop: 4,
   },
-  unlockBtn: {
-    paddingVertical: spacing.sm,
+  giveInBtn: {
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.danger,
+    backgroundColor: colors.dangerSoft,
   },
-  unlockText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 16,
-    color: colors.primary,
-    textDecorationLine: 'underline',
+  giveInText: {
+    fontFamily: fonts.bold,
+    fontSize: 18,
+    color: colors.danger,
+  },
+  giveInSub: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginTop: 2,
   },
   backBtn: {
     marginTop: spacing.lg,

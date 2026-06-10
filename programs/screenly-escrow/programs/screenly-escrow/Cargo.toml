@@ -1,0 +1,28 @@
+[package]
+name = "screenly-escrow"
+version = "0.1.0"
+description = "Screenly commitment contract — $5 USDC escrow per app rule"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "screenly_escrow"
+
+[features]
+no-entrypoint = []
+no-idl = []
+cpi = ["no-entrypoint"]
+default = []
+
+[dependencies]
+anchor-lang = { version = "0.30.1", features = ["init-if-needed"] }
+anchor-spl = "0.30.1"
+solana-program = "1.18.26"
+spl-token = { version = "5", features = ["no-entrypoint"] }
+spl-associated-token-account = { version = "3", features = ["no-entrypoint"] }
+
+[profile.release]
+codegen-units = 1
+opt-level = "z"
+lto = true
+overflow-checks = true

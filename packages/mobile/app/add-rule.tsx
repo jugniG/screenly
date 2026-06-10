@@ -20,9 +20,18 @@ import { colors, fonts, spacing, radius } from '../components/ui/theme';
 import { apiFetch } from '../lib/fetchApi';
 import { BackButton } from '../components/ui/BackButton';
 import { syncRules } from '../lib/enforcer';
+import { getAssociatedTokenAddressSync } from '@solana/spl-token';
+import {
+  getConnection,
+  loadOrCreateWallet,
+  walletAddress,
+  buildDepositTx,
+  sendAndConfirmTx,
+  USDC_MINT,
+} from '../lib/solana';
 
 type RuleType = 'daily_limit' | 'schedule' | 'block_always';
-type Step = 'app' | 'type' | 'configure' | 'done';
+type Step = 'app' | 'type' | 'configure' | 'deposit' | 'done';
 
 interface RuleTypeOption {
   value: RuleType;
@@ -51,6 +60,9 @@ export default function AddRuleScreen() {
   const [endP, setEndP] = useState<'AM' | 'PM'>('AM');
   const [loading, setLoading]       = useState(false);
   const [showPicker, setShowPicker] = useState(false);
+  const [walletAddr, setWalletAddr] = useState('');
+  const [usdcBalance, setUsdcBalance] = useState(0);
+  const [depositing, setDepositing] = useState(false);
   const [errors, setErrors]         = useState<Record<string, string>>({});
   const [existingPackages, setExistingPackages] = useState<string[]>([]);
 
@@ -141,11 +153,31 @@ export default function AddRuleScreen() {
       }
 
       syncRules();
-      setStep('done');
+
+      // Load wallet for deposit step
+      const wallet = await loadOrCreateWallet();
+      setWalletAddr(walletAddress(wallet));
+      setStep('deposit');
     } catch (e: any) {
       Alert.alert('Error', e.message ?? 'Something went wrong');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleDeposit() {
+    setDepositing(true);
+    try {
+      const wallet = await loadOrCreateWallet();
+      const connection = getConnection();
+      const userAta = getAssociatedTokenAddressSync(USDC_MINT, wallet.publicKey);
+      const tx = buildDepositTx(wallet.publicKey, userAta, packageName);
+      await sendAndConfirmTx(connection, tx, wallet);
+      setStep('done');
+    } catch (e: any) {
+      Alert.alert('Deposit failed', e?.message ?? 'Could not complete deposit');
+    } finally {
+      setDepositing(false);
     }
   }
 
@@ -359,6 +391,40 @@ export default function AddRuleScreen() {
           </View>
         )}
 
+        {/* Step 4: Deposit $5 */}
+        {step === 'deposit' && (
+          <View style={styles.stepContainer}>
+            <Text style={styles.stepTitle}>Lock in your commitment</Text>
+            <Text style={styles.stepSubtitle}>
+              Deposit $5 USDC to commit to staying focused. If you give in, the $5 goes to Screenly.
+            </Text>
+
+            <View style={styles.depositCard}>
+              <Text style={styles.depositAmount}>$5 USDC</Text>
+              <Text style={styles.depositLabel}>per app</Text>
+            </View>
+
+            <Text style={styles.walletLabel}>Your wallet</Text>
+            <Text style={styles.walletAddr} selectable>{walletAddr || 'Loading…'}</Text>
+            <Text style={styles.walletHint}>
+              Fund this address with $5 USDC on Solana devnet if you haven't already.
+            </Text>
+
+            <Button
+              title={depositing ? 'Depositing…' : 'Commit $5'}
+              onPress={handleDeposit}
+              disabled={depositing || !walletAddr}
+              style={{ marginTop: spacing.xl }}
+            />
+            <Button
+              title="Skip deposit for now"
+              variant="secondary"
+              onPress={() => setStep('done')}
+              style={{ marginTop: spacing.sm }}
+            />
+          </View>
+        )}
+
         {/* Done */}
         {step === 'done' && (
           <View style={styles.doneContainer}>
@@ -477,4 +543,45 @@ const styles = StyleSheet.create({
   ampmText: { fontFamily: fonts.semiBold, fontSize: 13, color: colors.text },
   ampmTextActive: { color: '#fff' },
   timeError: { fontFamily: fonts.regular, fontSize: 12, color: colors.danger, marginTop: 4 },
+  depositCard: {
+    alignItems: 'center',
+    backgroundColor: colors.accentSoft,
+    borderRadius: radius.lg,
+    padding: spacing.xl,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+  },
+  depositAmount: {
+    fontFamily: fonts.bold,
+    fontSize: 36,
+    color: colors.primary,
+  },
+  depositLabel: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginTop: 4,
+  },
+  walletLabel: {
+    fontFamily: fonts.semiBold,
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
+  },
+  walletAddr: {
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    color: colors.text,
+    backgroundColor: colors.surface,
+    borderRadius: radius.sm,
+    padding: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  walletHint: {
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    color: colors.textMuted,
+    marginBottom: spacing.sm,
+  },
 });
