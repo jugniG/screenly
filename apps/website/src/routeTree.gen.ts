@@ -10,7 +10,11 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TestRouteImport } from './routes/test'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DemoTanstackQueryRouteImport } from './routes/demo/tanstack-query'
+import { Route as DemoOrpcTodoRouteImport } from './routes/demo/orpc-todo'
+import { Route as DemoBetterAuthRouteImport } from './routes/demo/better-auth'
 import { Route as ApiSplatRouteImport } from './routes/api.$'
 import { Route as ApiRpcSplatRouteImport } from './routes/api.rpc.$'
 import { Route as ApiDodoWebhookRouteImport } from './routes/api.dodo.webhook'
@@ -22,9 +26,29 @@ const TestRoute = TestRouteImport.update({
   path: '/test',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoTanstackQueryRoute = DemoTanstackQueryRouteImport.update({
+  id: '/demo/tanstack-query',
+  path: '/demo/tanstack-query',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoOrpcTodoRoute = DemoOrpcTodoRouteImport.update({
+  id: '/demo/orpc-todo',
+  path: '/demo/orpc-todo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoBetterAuthRoute = DemoBetterAuthRouteImport.update({
+  id: '/demo/better-auth',
+  path: '/demo/better-auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSplatRoute = ApiSplatRouteImport.update({
@@ -55,8 +79,12 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/test': typeof TestRoute
   '/api/$': typeof ApiSplatRoute
+  '/demo/better-auth': typeof DemoBetterAuthRoute
+  '/demo/orpc-todo': typeof DemoOrpcTodoRoute
+  '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/dodo/return': typeof ApiDodoReturnRoute
   '/api/dodo/webhook': typeof ApiDodoWebhookRoute
@@ -64,8 +92,12 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/test': typeof TestRoute
   '/api/$': typeof ApiSplatRoute
+  '/demo/better-auth': typeof DemoBetterAuthRoute
+  '/demo/orpc-todo': typeof DemoOrpcTodoRoute
+  '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/dodo/return': typeof ApiDodoReturnRoute
   '/api/dodo/webhook': typeof ApiDodoWebhookRoute
@@ -74,8 +106,12 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/test': typeof TestRoute
   '/api/$': typeof ApiSplatRoute
+  '/demo/better-auth': typeof DemoBetterAuthRoute
+  '/demo/orpc-todo': typeof DemoOrpcTodoRoute
+  '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/dodo/return': typeof ApiDodoReturnRoute
   '/api/dodo/webhook': typeof ApiDodoWebhookRoute
@@ -85,8 +121,12 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/about'
     | '/test'
     | '/api/$'
+    | '/demo/better-auth'
+    | '/demo/orpc-todo'
+    | '/demo/tanstack-query'
     | '/api/auth/$'
     | '/api/dodo/return'
     | '/api/dodo/webhook'
@@ -94,8 +134,12 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/about'
     | '/test'
     | '/api/$'
+    | '/demo/better-auth'
+    | '/demo/orpc-todo'
+    | '/demo/tanstack-query'
     | '/api/auth/$'
     | '/api/dodo/return'
     | '/api/dodo/webhook'
@@ -103,8 +147,12 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/about'
     | '/test'
     | '/api/$'
+    | '/demo/better-auth'
+    | '/demo/orpc-todo'
+    | '/demo/tanstack-query'
     | '/api/auth/$'
     | '/api/dodo/return'
     | '/api/dodo/webhook'
@@ -113,8 +161,12 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AboutRoute: typeof AboutRoute
   TestRoute: typeof TestRoute
   ApiSplatRoute: typeof ApiSplatRoute
+  DemoBetterAuthRoute: typeof DemoBetterAuthRoute
+  DemoOrpcTodoRoute: typeof DemoOrpcTodoRoute
+  DemoTanstackQueryRoute: typeof DemoTanstackQueryRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiDodoReturnRoute: typeof ApiDodoReturnRoute
   ApiDodoWebhookRoute: typeof ApiDodoWebhookRoute
@@ -130,11 +182,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TestRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo/tanstack-query': {
+      id: '/demo/tanstack-query'
+      path: '/demo/tanstack-query'
+      fullPath: '/demo/tanstack-query'
+      preLoaderRoute: typeof DemoTanstackQueryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo/orpc-todo': {
+      id: '/demo/orpc-todo'
+      path: '/demo/orpc-todo'
+      fullPath: '/demo/orpc-todo'
+      preLoaderRoute: typeof DemoOrpcTodoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo/better-auth': {
+      id: '/demo/better-auth'
+      path: '/demo/better-auth'
+      fullPath: '/demo/better-auth'
+      preLoaderRoute: typeof DemoBetterAuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/$': {
@@ -177,8 +257,12 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AboutRoute: AboutRoute,
   TestRoute: TestRoute,
   ApiSplatRoute: ApiSplatRoute,
+  DemoBetterAuthRoute: DemoBetterAuthRoute,
+  DemoOrpcTodoRoute: DemoOrpcTodoRoute,
+  DemoTanstackQueryRoute: DemoTanstackQueryRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiDodoReturnRoute: ApiDodoReturnRoute,
   ApiDodoWebhookRoute: ApiDodoWebhookRoute,
