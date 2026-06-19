@@ -11,10 +11,10 @@ export const errorLogger = os.use(async ({ context, next, path }) => {
     return await next({ context })
   } catch (error) {
     // Log the error with full context
-    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-    console.error('🔴 ORPC Error')
-    console.error('Path:', path.join('.'))
-    console.error('Context:', JSON.stringify({
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+    console.log('🔴 ORPC Error')
+    console.log('Path:', path.join('.'))
+    console.log('Context:', JSON.stringify({
       // @ts-expect-error
       headers: context.headers instanceof Headers
       // @ts-expect-error
@@ -25,13 +25,13 @@ export const errorLogger = os.use(async ({ context, next, path }) => {
     }, null, 2))
 
     if (error instanceof Error) {
-      console.error('Error Name:', error.name)
-      console.error('Error Message:', error.message)
-      console.error('Stack Trace:', error.stack)
+      console.log('Error Name:', error.name)
+      console.log('Error Message:', error.message)
+      console.log('Stack Trace:', error.stack)
     } else {
-      console.error('Error:', error)
+      console.log('Error:', error)
     }
-    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
 
     // Re-throw ORPCError as-is
     if (error instanceof ORPCError) {
