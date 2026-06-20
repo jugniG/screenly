@@ -3,7 +3,7 @@ cluster = "devnet"
 wallet = "/workspace/keypair.json"
 
 [programs.devnet]
-screenly_escrow = "Hp1qQyoPDu8cXHvD23Vt9RKFESHh6s8VnUgHKxwewFnN"
+screenly_escrow = "9e9aVVCftMkbqH9aVA1bmcRB5LmHT7mBnvmAqUXxMyfb"
 
 [scripts]
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"

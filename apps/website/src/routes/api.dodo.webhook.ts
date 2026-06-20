@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { db } from '#/db'
-import * as schema from '#/db/schema'
+import { db } from '@screen/db'
+import * as schema from '@screen/db/schema'
 import { eq, and } from 'drizzle-orm'
 
 export const Route = createFileRoute('/api/dodo/webhook')({

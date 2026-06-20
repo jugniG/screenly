@@ -1,0 +1,22 @@
+{
+  "name": "@screen/api",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./src/router/index.ts",
+  "exports": {
+    ".": "./src/router/index.ts",
+    "./router-types": "./src/router-types.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@orpc/client": "*",
+    "@screen/db": "*",
+    "zod": "*"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.2"
+  },
+  "private": true
+}

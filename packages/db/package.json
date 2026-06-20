@@ -1,0 +1,30 @@
+{
+  "name": "@screen/db",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema.ts",
+    "./pg-schema": "./src/pg-schema.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:pull": "drizzle-kit pull",
+    "db:studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "drizzle-orm": "*",
+    "pg": "*"
+  },
+  "devDependencies": {
+    "@types/pg": "*",
+    "drizzle-kit": "*",
+    "dotenv": "*",
+    "typescript": "~6.0.2"
+  },
+  "private": true
+}

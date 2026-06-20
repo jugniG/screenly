@@ -8,6 +8,7 @@ import { nitro } from 'nitro/vite'
 const config = defineConfig({
   resolve: { tsconfigPaths: true },
   plugins: [tailwindcss(), tanstackStart(), nitro({    preset: 'vercel'  }), viteReact()],
+  server:{allowedHosts:['deac-103-190-14-0.ngrok-free.app']}
 })
 
 export default config

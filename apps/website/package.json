@@ -27,6 +27,8 @@
     "@orpc/server": "^1.13.6",
     "@orpc/tanstack-query": "^1.13.6",
     "@orpc/zod": "^1.13.6",
+    "@screen/api": "*",
+    "@screen/db": "*",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/react-devtools": "latest",
     "@tanstack/react-query": "latest",
