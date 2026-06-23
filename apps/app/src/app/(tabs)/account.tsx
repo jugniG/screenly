@@ -41,6 +41,7 @@ interface Rule {
   packageName: string;
   appName: string;
   ruleType: string;
+  period?: 'daily' | 'hourly';
   enabled: boolean;
 }
 
@@ -203,7 +204,7 @@ export default function AccountScreen() {
                       <View style={styles.removeInfo}>
                         <Text style={styles.removeAppName}>{rule.appName}</Text>
                         <Text style={styles.removeType}>
-                          {rule.ruleType === 'daily_limit' ? 'Daily Limit' : rule.ruleType === 'schedule' ? 'Schedule' : 'Blocked'}
+                          {rule.ruleType === 'daily_limit' ? (rule.period === 'hourly' ? 'Hourly Limit' : 'Daily Limit') : rule.ruleType === 'schedule' ? 'Schedule' : 'Blocked'}
                         </Text>
                       </View>
                       {removing === rule.packageName && (

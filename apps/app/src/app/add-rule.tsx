@@ -29,6 +29,8 @@ import {
   buildDepositTx,
   sendAndConfirmTx,
   USDC_MINT,
+  MIN_DEPOSIT_AMOUNT,
+  USDC_DECIMALS,
 } from '../lib/solana';
 
 type RuleType = 'daily_limit' | 'schedule' | 'block_always';
@@ -63,6 +65,8 @@ export default function AddRuleScreen() {
   const [showPicker, setShowPicker] = useState(false);
   const [walletAddr, setWalletAddr] = useState('');
   const [usdcBalance, setUsdcBalance] = useState(0);
+  const [period, setPeriod]         = useState<'daily' | 'hourly'>('daily');
+  const [depositDollars, setDepositDollars] = useState('10');
   const [depositing, setDepositing] = useState(false);
   const [errors, setErrors]         = useState<Record<string, string>>({});
   const [existingPackages, setExistingPackages] = useState<string[]>([]);
@@ -135,7 +139,10 @@ export default function AddRuleScreen() {
         ruleType,
         enabled: true,
       };
-      if (ruleType === 'daily_limit') body.limitMinutes = parseInt(limitMinutes);
+      if (ruleType === 'daily_limit') {
+        body.limitMinutes = parseInt(limitMinutes);
+        body.period = period;
+      }
       if (ruleType === 'schedule') {
         body.scheduleStart = to24h(startH, startM, startP);
         body.scheduleEnd = to24h(endH, endM, endP);
@@ -158,10 +165,17 @@ export default function AddRuleScreen() {
   async function handleDeposit() {
     setDepositing(true);
     try {
+      const dollars = parseFloat(depositDollars);
+      if (isNaN(dollars) || dollars < (MIN_DEPOSIT_AMOUNT / 10 ** USDC_DECIMALS)) {
+        Alert.alert('Invalid amount', `Minimum deposit is $${MIN_DEPOSIT_AMOUNT / 10 ** USDC_DECIMALS}`);
+        setDepositing(false);
+        return;
+      }
+      const amount = Math.floor(dollars * 10 ** USDC_DECIMALS);
       const wallet = await loadOrCreateWallet();
       const connection = getConnection();
       const userAta = getAssociatedTokenAddressSync(USDC_MINT, wallet.publicKey);
-      const tx = buildDepositTx(wallet.publicKey, userAta, packageName);
+      const tx = buildDepositTx(wallet.publicKey, userAta, packageName, amount);
       await sendAndConfirmTx(connection, tx, wallet);
       setStep('done');
     } catch (e: any) {
@@ -270,8 +284,26 @@ export default function AddRuleScreen() {
             {ruleType === 'daily_limit' && (
               <>
                 <Text style={styles.stepSubtitle}>
-                  Block {appName} after how many minutes per day?
+                  Block {appName} after how many minutes?
                 </Text>
+                <View style={styles.periodRow}>
+                  <TouchableOpacity
+                    style={[styles.periodBtn, period === 'daily' && styles.periodBtnActive]}
+                    onPress={() => setPeriod('daily')}
+                  >
+                    <Text style={[styles.periodBtnText, period === 'daily' && styles.periodBtnTextActive]}>
+                      Per Day
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.periodBtn, period === 'hourly' && styles.periodBtnActive]}
+                    onPress={() => setPeriod('hourly')}
+                  >
+                    <Text style={[styles.periodBtnText, period === 'hourly' && styles.periodBtnTextActive]}>
+                      Per Hour
+                    </Text>
+                  </TouchableOpacity>
+                </View>
                 <Input
                   label="Limit (minutes)"
                   value={limitMinutes}
@@ -381,27 +413,35 @@ export default function AddRuleScreen() {
           </View>
         )}
 
-        {/* Step 4: Deposit $5 */}
+        {/* Step 4: Deposit */}
         {step === 'deposit' && (
           <View style={styles.stepContainer}>
             <Text style={styles.stepTitle}>Lock in your commitment</Text>
             <Text style={styles.stepSubtitle}>
-              Deposit $5 USDC to commit to staying focused. If you give in, the $5 goes to Screenly.
+              Deposit USDC to commit to staying focused. If you give in, you lose it.
             </Text>
 
             <View style={styles.depositCard}>
-              <Text style={styles.depositAmount}>$5 USDC</Text>
+              <Text style={styles.depositAmount}>${depositDollars || '0'} USDC</Text>
               <Text style={styles.depositLabel}>per app</Text>
             </View>
+
+            <Input
+              label={`Amount (min $${MIN_DEPOSIT_AMOUNT / 10 ** USDC_DECIMALS} USDC)`}
+              value={depositDollars}
+              onChangeText={setDepositDollars}
+              keyboardType="number-pad"
+              placeholder="10"
+            />
 
             <Text style={styles.walletLabel}>Your wallet</Text>
             <Text style={styles.walletAddr} selectable>{walletAddr || 'Loading…'}</Text>
             <Text style={styles.walletHint}>
-              Fund this address with $5 USDC on Solana devnet if you haven't already.
+              Fund this address with USDC on Solana devnet if you haven't already.
             </Text>
 
             <Button
-              title={depositing ? 'Depositing…' : 'Commit $5'}
+              title={depositing ? 'Depositing…' : 'Commit'}
               onPress={handleDeposit}
               disabled={depositing || !walletAddr}
               style={{ marginTop: spacing.xl }}
@@ -427,7 +467,7 @@ export default function AddRuleScreen() {
               variant="secondary"
               onPress={() => {
                 setStep('app'); setPackageName(''); setAppName('');
-                setRuleType('daily_limit'); setLimitMinutes('60');
+                setRuleType('daily_limit'); setLimitMinutes('60'); setPeriod('daily'); setDepositDollars('10');
               }}
               style={{ marginTop: spacing.sm }}
             />
@@ -567,6 +607,32 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     padding: spacing.sm,
     marginBottom: spacing.xs,
+  },
+  periodRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  periodBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+  },
+  periodBtnActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryLight,
+  },
+  periodBtnText: {
+    fontFamily: fonts.semiBold,
+    fontSize: 13,
+    color: colors.textSecondary,
+  },
+  periodBtnTextActive: {
+    color: colors.primary,
   },
   walletHint: {
     fontFamily: fonts.regular,

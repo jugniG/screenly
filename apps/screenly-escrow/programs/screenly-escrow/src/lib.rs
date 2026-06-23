@@ -15,7 +15,7 @@ declare_id!("9e9aVVCftMkbqH9aVA1bmcRB5LmHT7mBnvmAqUXxMyfb");
 // ── Deposit ─────────────────────────────────────────────────────────────────
 
 #[derive(Accounts)]
-#[instruction(package_name: String)]
+#[instruction(package_name: String, amount: u64)]
 pub struct Deposit<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
@@ -112,9 +112,13 @@ pub struct Remove<'info> {
 pub mod screenly_escrow {
     use super::*;
 
-    pub fn deposit(ctx: Context<Deposit>, package_name: String) -> Result<()> {
+    pub fn deposit(ctx: Context<Deposit>, package_name: String, amount: u64) -> Result<()> {
         require!(
-            ctx.accounts.user_token_account.amount >= DEPOSIT_AMOUNT,
+            ctx.accounts.user_token_account.amount >= MIN_DEPOSIT_AMOUNT,
+            ErrorCode::InvalidDepositAmount
+        );
+        require!(
+            amount >= MIN_DEPOSIT_AMOUNT,
             ErrorCode::InvalidDepositAmount
         );
 
@@ -137,12 +141,12 @@ pub mod screenly_escrow {
                 authority: ctx.accounts.user.to_account_info(),
             },
         );
-        token::transfer(transfer_ctx, DEPOSIT_AMOUNT)?;
+        token::transfer(transfer_ctx, amount)?;
 
         let escrow = &mut ctx.accounts.escrow;
         escrow.user = ctx.accounts.user.key();
         escrow.package_name = package_name;
-        escrow.deposit_amount = DEPOSIT_AMOUNT;
+        escrow.deposit_amount = amount;
         escrow.status = EscrowStatus::Active;
         escrow.created_at = Clock::get()?.unix_timestamp;
         escrow.resolved_at = None;

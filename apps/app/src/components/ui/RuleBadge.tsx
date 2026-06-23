@@ -7,6 +7,7 @@ type RuleType = 'daily_limit' | 'schedule' | 'block_always';
 interface RuleBadgeProps {
   type: RuleType;
   value?: string;
+  period?: 'daily' | 'hourly';
 }
 
 const RULE_CONFIG: Record<RuleType, { label: string; color: string; bg: string }> = {
@@ -15,12 +16,13 @@ const RULE_CONFIG: Record<RuleType, { label: string; color: string; bg: string }
   block_always:{ label: 'Always Block',color: colors.danger, bg: '#FEE2E2' },
 };
 
-export function RuleBadge({ type, value }: RuleBadgeProps) {
+export function RuleBadge({ type, value, period }: RuleBadgeProps) {
   const config = RULE_CONFIG[type];
+  const label = type === 'daily_limit' && period === 'hourly' ? 'Hourly Limit' : config.label;
   return (
     <View style={[styles.badge, { backgroundColor: config.bg }]}>
       <Text style={[styles.text, { color: config.color }]}>
-        {config.label}{value ? `: ${value}` : ''}
+        {label}{value ? `: ${value}` : ''}
       </Text>
     </View>
   );

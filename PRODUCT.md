@@ -54,3 +54,23 @@ The block screen:
 - Auth: Better Auth with email OTP
 - Blockchain: Solana devnet, Anchor program (screenly-escrow), @solana/web3.js
 - Native module: custom screenly-enforcer Kotlin module for usage stats, accessibility service, and foreground app detection
+
+## Solana Wallet Design Decisions & Industry Conventions
+
+### Why Generate a Wallet Locally? (Embedded Wallet Strategy)
+Screenly uses an **embedded local wallet** model (automatically generating a keypair on the device and storing it in `AsyncStorage`). 
+
+Here is how it compares to industry conventions and why it was chosen:
+
+1. **User Experience (UX) vs. Traditional Connect Wallet**:
+   * *Traditional Web3 (e.g., Phantom Connect)*: In web apps, users click "Connect Wallet" and approve every transaction through a browser extension. On Android, this requires deep-linking between Screenly and the Phantom mobile app. If a user gets blocked and wants to "give in", switching apps to sign the transaction is a clunky and easily bypassable experience.
+   * *Embedded Wallet (Screenly)*: The app generates a local wallet keypair. This allows Screenly to sign transactions silently on the user's phone in milliseconds without requiring another app.
+
+2. **How Funding Works (The Cold Start Problem)**:
+   * Because the generated wallet starts with a **0 balance**, the user must manually copy their Screenly wallet address and transfer **USDC** and **SOL** (for gas) into it from their main wallet (e.g., Phantom or Binance).
+   * *Industry Standard for Production*: In commercial consumer Web3 apps, developers usually integrate a **Fiat On-Ramp** (like MoonPay, Stripe, or Coinbase Pay) directly into the app. This allows users to buy USDC using a credit card without needing to know about address transfers or external wallets.
+
+3. **Key Recovery & Security**:
+   * Since the private key is stored locally in the phone's `AsyncStorage`, deleting the app will delete the wallet.
+   * *Industry Standard for Production*: Production apps use secure MPC (Multi-Party Computation) systems (like *Privy* or *Web3Auth*) that split the private key. Part of the key is stored on the user's device (linked to iCloud/Google Drive backup), and part is secured by a login provider (Google/Email). This allows the user to recover their wallet if they delete the app or change phones.
+

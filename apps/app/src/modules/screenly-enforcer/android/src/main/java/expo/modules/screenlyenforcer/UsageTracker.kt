@@ -181,4 +181,36 @@ class UsageTracker(context: Context) {
     return (totalMs / 60000).toInt().coerceAtLeast(0)
   }
 
+  fun getCurrentHourMinutesForPackage(packageName: String): Int {
+    val manager = usm ?: return 0
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) return 0
+    val now = System.currentTimeMillis()
+    val cal = java.util.Calendar.getInstance().apply {
+      set(java.util.Calendar.MINUTE, 0)
+      set(java.util.Calendar.SECOND, 0)
+      set(java.util.Calendar.MILLISECOND, 0)
+    }
+    val hourStart = cal.timeInMillis
+    Log.i("UsageTracker", "[ENFORCE] hourStart=$hourStart now=$now range=${now - hourStart}ms")
+    val stats = manager.queryUsageStats(UsageStatsManager.INTERVAL_BEST, hourStart, now)
+    if (stats.isNullOrEmpty()) {
+      Log.w("UsageTracker", "[ENFORCE] no hour stats for $packageName")
+      return 0
+    }
+    var totalMs = 0L
+    for (stat in stats) {
+      if (stat.packageName == packageName && stat.totalTimeInForeground > 0) {
+        totalMs += stat.totalTimeInForeground
+      }
+    }
+    // Add live running time if this app is currently active
+    val fgPkg = prefs.getString("fg_pkg", null)
+    val fgStart = prefs.getLong("fg_start", 0)
+    val liveMs = if (packageName == fgPkg && fgStart > hourStart)
+      (now - fgStart).coerceAtLeast(0L) else 0L
+    val total = totalMs + liveMs
+    Log.i("UsageTracker", "[ENFORCE] $packageName — hourOsMs=${totalMs/60000}min live=${liveMs/60000}min total=${total/60000}min")
+    return (total / 60000).toInt().coerceAtLeast(0)
+  }
+
 }

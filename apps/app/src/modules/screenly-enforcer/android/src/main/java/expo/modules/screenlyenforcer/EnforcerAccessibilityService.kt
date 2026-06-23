@@ -84,8 +84,12 @@ class EnforcerAccessibilityService : AccessibilityService() {
     return when (rule.ruleType) {
       "daily_limit" -> {
         val limitMin = rule.limitMinutes ?: return false
-        val used = usageTracker.getTodayMinutesForPackage(packageName)
-        toast("daily_limit: used=${used}m limit=${limitMin}m block=${used >= limitMin}")
+        val used = if (rule.period == "hourly")
+          usageTracker.getCurrentHourMinutesForPackage(packageName)
+        else
+          usageTracker.getTodayMinutesForPackage(packageName)
+        val periodLabel = if (rule.period == "hourly") "hour" else "day"
+        toast("daily_limit($periodLabel): used=${used}m limit=${limitMin}m block=${used >= limitMin}")
         used >= limitMin
       }
       "schedule" -> {

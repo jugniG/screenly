@@ -14,7 +14,7 @@ import {
   ESCROW_PROGRAM_ID,
   USDC_MINT,
   VAULT_TOKEN_ACCOUNT,
-  DEPOSIT_AMOUNT,
+  MIN_DEPOSIT_AMOUNT,
   PROGRAM_SEED,
   ESCROW_SEED,
 } from './config';
@@ -48,12 +48,13 @@ export function getEscrowAta(escrowPda: PublicKey): PublicKey {
 
 /**
  * Build a `deposit` transaction.
- * Transfers $5 USDC from user → escrow PDA.
+ * Transfers USDC from user → escrow PDA.
  */
 export function buildDepositTx(
   user: PublicKey,
   userTokenAccount: PublicKey,
   packageName: string,
+  amount: number = MIN_DEPOSIT_AMOUNT,
 ): Transaction {
   const [escrowPda] = getEscrowPda(user, packageName);
   const escrowAta = getEscrowAta(escrowPda);
@@ -71,7 +72,7 @@ export function buildDepositTx(
 
   // amount as u64 (8 bytes, little-endian)
   const amountBuf = Buffer.alloc(8);
-  amountBuf.writeBigUInt64LE(BigInt(DEPOSIT_AMOUNT));
+  amountBuf.writeBigUInt64LE(BigInt(amount));
 
   const data = Buffer.concat([discriminator, nameLen, nameBytes, amountBuf]);
 

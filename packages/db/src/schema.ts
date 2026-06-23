@@ -8,6 +8,7 @@ export const appRules = screenly.table('app_rules', {
   appName:       text('app_name').notNull(),
   ruleType:      text('rule_type', { enum: ['daily_limit', 'schedule', 'block_always'] }).notNull(),
   limitMinutes:  integer('limit_minutes'),
+  period:        text('period', { enum: ['daily', 'hourly'] }).notNull().default('daily'),
   scheduleStart: text('schedule_start'),
   scheduleEnd:   text('schedule_end'),
   enabled:       boolean('enabled').notNull().default(true),

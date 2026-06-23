@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, RefreshControl, ActivityIndicator, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import { authClient } from '../../lib/auth';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -18,6 +17,7 @@ interface Rule {
   appName: string;
   ruleType: 'daily_limit' | 'schedule' | 'block_always';
   limitMinutes: number | null;
+  period: 'daily' | 'hourly' | null;
   scheduleStart: string | null;
   scheduleEnd: string | null;
   enabled: boolean;
@@ -122,7 +122,7 @@ export default function HomeScreen() {
       setHasPermission(perm);
       console.log('[Home] done, perm=' + perm);
     } catch (e: any) {
-      console.log('[Home] ERROR:', e?.message, e?.stack);
+      console.log('[Home] ERROR:', e);
     }
     finally { setLoading(false); setRefreshing(false); console.log('[Home] finally loading=false'); }
   }
@@ -237,7 +237,7 @@ export default function HomeScreen() {
                     <Text style={styles.appName}>{item.appName}</Text>
                     <View style={styles.rightInfo}>
                       {isLimit && limitMin > 0 && (
-                        <Text style={styles.limitLabel}>{formatMinutes(limitMin)} / day</Text>
+                        <Text style={styles.limitLabel}>{formatMinutes(limitMin)} / {item.period === 'hourly' ? 'hr' : 'day'}</Text>
                       )}
                       {isSchedule && item.scheduleStart && item.scheduleEnd && (
                         <Text style={styles.limitLabel}>
@@ -254,12 +254,10 @@ export default function HomeScreen() {
                   {isLimit && limitMin > 0 && (
                     <View style={styles.progressWrap}>
                       <View style={styles.progressTrack}>
-                        <LinearGradient
-                          colors={limitReached ? ['#EF4444', '#DC2626'] : ['#ff910065', '#f3935fce']}
-                          start={{ x: 0, y: 0 }}
-                          end={{ x: 1, y: 0 }}
-                          style={[styles.progressFill, { width: `${progress * 100}%` as any }]}
-                        />
+                        <View style={[styles.progressFill, {
+                          width: `${progress * 100}%` as any,
+                          backgroundColor: limitReached ? '#EF4444' : '#ff910065',
+                        }]} />
                       </View>
                       <Text style={[styles.usedLabel, limitReached && styles.limitReachedLabel]}>
                         {limitReached ? 'Limit reached' : `${formatMinutes(usedMin)} used`}
