@@ -1,3 +1,4 @@
+import '../../lib/polyfill';
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,

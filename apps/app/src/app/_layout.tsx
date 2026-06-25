@@ -1,16 +1,14 @@
+import '../lib/polyfill';
 import { useEffect, useState, useCallback, Component, ReactNode } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import 'react-native-get-random-values';
-import { Buffer } from 'buffer';
-if (typeof globalThis.Buffer === 'undefined') {
-  globalThis.Buffer = Buffer;
-}
 import { Stack, useRouter, useRootNavigationState } from 'expo-router';
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authClient } from '../lib/auth';
 import { syncRules } from '../lib/enforcer';
+import { loadOrCreateWallet } from '../lib/solana';
+import { orpc } from '../lib/orpc';
 
 class RouteErrorBoundary extends Component<{ children: ReactNode }> {
   state = { error: null as Error | null };
@@ -50,6 +48,15 @@ export default function RootLayout() {
       setSetupChecked(true);
     });
   }, []);
+
+  useEffect(() => {
+    if (session?.user) {
+      loadOrCreateWallet().then((wallet) => {
+        orpc('updateUserWallet', { solanaWallet: wallet.publicKey.toBase58() }).catch(() => {});
+      });
+    }
+  }, [session]);
+
 
   useEffect(() => {
     if (!fontsLoaded || isPending || isFetching || !setupChecked) return;

@@ -89,6 +89,7 @@ export function buildDepositTx(
       { pubkey: ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
       { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
     ],
+    data,
   };
 
   return new Transaction().add(ix);
@@ -122,6 +123,7 @@ export function buildGiveInTx(
       { pubkey: USDC_MINT, isSigner: false, isWritable: false },
       { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
     ],
+    data,
   };
 
   return new Transaction().add(ix);
@@ -155,6 +157,7 @@ export function buildRemoveTx(
       { pubkey: USDC_MINT, isSigner: false, isWritable: false },
       { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
     ],
+    data,
   };
 
   return new Transaction().add(ix);

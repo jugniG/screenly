@@ -1,3 +1,4 @@
+import '../polyfill';
 export { getConnection, CLUSTER_NAME } from './connection';
 export { loadOrCreateWallet, getWallet, walletAddress } from './wallet';
 export {

@@ -6,6 +6,7 @@ import {
   StyleSheet,
   ViewStyle,
   View,
+  StyleProp,
 } from 'react-native';
 import { colors, fonts, radius, spacing } from './theme';
 
@@ -20,7 +21,7 @@ interface ButtonProps {
   variant?: Variant;
   loading?: boolean;
   disabled?: boolean;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   /** Optional icon name (currently: 'google') */
   icon?: 'google';
 }

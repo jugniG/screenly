@@ -106,6 +106,38 @@ pub struct Remove<'info> {
     pub token_program: Program<'info, Token>,
 }
 
+// ── AdminClaim ────────────────────────────────────────────────────────────────
+
+#[derive(Accounts)]
+pub struct AdminClaim<'info> {
+    #[account(mut)]
+    pub admin: Signer<'info>,
+
+    #[account(
+        mut,
+        seeds = [PROGRAM_SEED, ESCROW_SEED, user_key.key().as_ref(), escrow.package_name.as_bytes()],
+        bump,
+    )]
+    pub escrow: Account<'info, EscrowAccount>,
+
+    #[account(
+        mut,
+        associated_token::mint = usdc_mint,
+        associated_token::authority = escrow,
+    )]
+    pub escrow_token_account: Account<'info, TokenAccount>,
+
+    #[account(mut)]
+    pub vault_token_account: Account<'info, TokenAccount>,
+
+    pub usdc_mint: Account<'info, Mint>,
+
+    /// CHECK: Used strictly as a seed to derive the escrow account address
+    pub user_key: AccountInfo<'info>,
+
+    pub token_program: Program<'info, Token>,
+}
+
 // ── Program ──────────────────────────────────────────────────────────────────
 
 #[program]
@@ -122,16 +154,6 @@ pub mod screenly_escrow {
             ErrorCode::InvalidDepositAmount
         );
 
-        let bump = ctx.bumps.escrow;
-        let user_key = ctx.accounts.user.key();
-        let seeds = &[
-            PROGRAM_SEED,
-            ESCROW_SEED,
-            user_key.as_ref(),
-            package_name.as_bytes(),
-            &[bump],
-        ];
-        let signer_seeds = &[&seeds[..]];
 
         let transfer_ctx = CpiContext::new(
             ctx.accounts.token_program.to_account_info(),
@@ -231,4 +253,48 @@ pub mod screenly_escrow {
 
         Ok(())
     }
+
+    pub fn admin_claim(ctx: Context<AdminClaim>) -> Result<()> {
+        let admin_pubkey = ctx.accounts.admin.key();
+        require!(
+            admin_pubkey.to_string() == ADMIN_PUBKEY,
+            ErrorCode::Unauthorized
+        );
+        require!(
+            ctx.accounts.escrow.status == EscrowStatus::Active,
+            ErrorCode::NotActive
+        );
+
+        let clock = Clock::get()?;
+        let deposit_amount = ctx.accounts.escrow.deposit_amount;
+        let user_key = ctx.accounts.user_key.key();
+        let package_bytes = ctx.accounts.escrow.package_name.as_bytes().to_vec();
+        let bump = ctx.bumps.escrow;
+        let seeds = &[
+            PROGRAM_SEED,
+            ESCROW_SEED,
+            user_key.as_ref(),
+            &package_bytes,
+            &[bump],
+        ];
+        let signer_seeds = &[&seeds[..]];
+
+        let transfer_ctx = CpiContext::new_with_signer(
+            ctx.accounts.token_program.to_account_info(),
+            Transfer {
+                from: ctx.accounts.escrow_token_account.to_account_info(),
+                to: ctx.accounts.vault_token_account.to_account_info(),
+                authority: ctx.accounts.escrow.to_account_info(),
+            },
+            signer_seeds,
+        );
+        token::transfer(transfer_ctx, deposit_amount)?;
+
+        let escrow = &mut ctx.accounts.escrow;
+        escrow.status = EscrowStatus::Forfeited;
+        escrow.resolved_at = Some(clock.unix_timestamp);
+
+        Ok(())
+    }
 }
+

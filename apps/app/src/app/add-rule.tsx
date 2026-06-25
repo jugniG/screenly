@@ -1,3 +1,4 @@
+import '../lib/polyfill';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -10,6 +11,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Button } from '../components/ui/Button';
@@ -31,6 +33,7 @@ import {
   USDC_MINT,
   MIN_DEPOSIT_AMOUNT,
   USDC_DECIMALS,
+  CLUSTER_NAME,
 } from '../lib/solana';
 
 type RuleType = 'daily_limit' | 'schedule' | 'block_always';
@@ -64,10 +67,19 @@ export default function AddRuleScreen() {
   const [loading, setLoading]       = useState(false);
   const [showPicker, setShowPicker] = useState(false);
   const [walletAddr, setWalletAddr] = useState('');
-  const [usdcBalance, setUsdcBalance] = useState(0);
+  const [pendingRule, setPendingRule] = useState<{
+    packageName: string;
+    appName: string;
+    ruleType: RuleType;
+    limitMinutes?: number;
+    period?: 'daily' | 'hourly';
+    scheduleStart?: string;
+    scheduleEnd?: string;
+  } | null>(null);
   const [period, setPeriod]         = useState<'daily' | 'hourly'>('daily');
   const [depositDollars, setDepositDollars] = useState('10');
   const [depositing, setDepositing] = useState(false);
+  const [statusText, setStatusText] = useState('');
   const [errors, setErrors]         = useState<Record<string, string>>({});
   const [existingPackages, setExistingPackages] = useState<string[]>([]);
 
@@ -133,23 +145,20 @@ export default function AddRuleScreen() {
     if (!validateConfigure()) return;
     setLoading(true);
     try {
-      const body: any = {
+      const pending: any = {
         packageName,
         appName,
         ruleType,
-        enabled: true,
       };
       if (ruleType === 'daily_limit') {
-        body.limitMinutes = parseInt(limitMinutes);
-        body.period = period;
+        pending.limitMinutes = parseInt(limitMinutes);
+        pending.period = period;
       }
       if (ruleType === 'schedule') {
-        body.scheduleStart = to24h(startH, startM, startP);
-        body.scheduleEnd = to24h(endH, endM, endP);
+        pending.scheduleStart = to24h(startH, startM, startP);
+        pending.scheduleEnd = to24h(endH, endM, endP);
       }
-
-      await orpc('createRule', body);
-      syncRules();
+      setPendingRule(pending);
 
       // Load wallet for deposit step
       const wallet = await loadOrCreateWallet();
@@ -164,24 +173,112 @@ export default function AddRuleScreen() {
 
   async function handleDeposit() {
     setDepositing(true);
+    setStatusText('Validating deposit...');
     try {
       const dollars = parseFloat(depositDollars);
-      if (isNaN(dollars) || dollars < (MIN_DEPOSIT_AMOUNT / 10 ** USDC_DECIMALS)) {
-        Alert.alert('Invalid amount', `Minimum deposit is $${MIN_DEPOSIT_AMOUNT / 10 ** USDC_DECIMALS}`);
+      const minDepositDollars = MIN_DEPOSIT_AMOUNT / 10 ** USDC_DECIMALS;
+      if (isNaN(dollars) || dollars < minDepositDollars) {
+        Alert.alert('Invalid amount', `Minimum deposit is $${minDepositDollars}`);
         setDepositing(false);
+        setStatusText('');
         return;
       }
-      const amount = Math.floor(dollars * 10 ** USDC_DECIMALS);
+
       const wallet = await loadOrCreateWallet();
       const connection = getConnection();
+
+      // Check if we are on devnet. If so, request auto-funding from the backend first!
+      if (CLUSTER_NAME === 'devnet') {
+        setStatusText('Funding Devnet wallet...');
+        try {
+          await orpc('fundDevnetWallet', {
+            walletAddress: wallet.publicKey.toBase58(),
+            usdcAmount: dollars,
+          });
+        } catch (err: any) {
+          console.log('Devnet funding failed or timed out:', err);
+          // Don't fail the whole flow, try to proceed in case they already have funds
+        }
+      }
+
+      setStatusText('Verifying wallet balances...');
+
+      // 1. Verify SOL Balance (need >= 0.01 SOL to run transactions smoothly)
+      const balanceLamports = await connection.getBalance(wallet.publicKey);
+      const solBalance = balanceLamports / 1e9;
+      if (solBalance < 0.01) {
+        Alert.alert(
+          'Insufficient SOL',
+          `Your Screenly wallet has ${solBalance.toFixed(4)} SOL. Please send at least 0.01 SOL to pay for network transaction fees.`
+        );
+        setDepositing(false);
+        setStatusText('');
+        return;
+      }
+
+      // 2. Verify USDC Balance (need >= dollars)
       const userAta = getAssociatedTokenAddressSync(USDC_MINT, wallet.publicKey);
+      let balanceUsdc = 0;
+      try {
+        const tokenAccountInfo = await connection.getTokenAccountBalance(userAta);
+        balanceUsdc = tokenAccountInfo.value.uiAmount ?? 0;
+      } catch (err) {
+        // ATA doesn't exist on-chain yet, meaning USDC balance is 0
+        balanceUsdc = 0;
+      }
+
+      if (balanceUsdc < dollars) {
+        Alert.alert(
+          'Insufficient USDC',
+          `Your Screenly wallet has $${balanceUsdc.toFixed(2)} USDC. Please send at least $${dollars.toFixed(2)} USDC to cover your deposit.`
+        );
+        setDepositing(false);
+        setStatusText('');
+        return;
+      }
+
+      // 3. Funds are verified, execute the on-chain deposit
+      setStatusText('Locking commitment on-chain...');
+      const amount = Math.floor(dollars * 10 ** USDC_DECIMALS);
       const tx = buildDepositTx(wallet.publicKey, userAta, packageName, amount);
       await sendAndConfirmTx(connection, tx, wallet);
+
+      // 4. On-chain success! Now save the rule to the database
+      setStatusText('Activating rule...');
+      if (!pendingRule) {
+        throw new Error('No pending rule configuration found');
+      }
+
+      const body: any = {
+        packageName: pendingRule.packageName,
+        appName: pendingRule.appName,
+        ruleType: pendingRule.ruleType,
+        enabled: true,
+      };
+      if (pendingRule.ruleType === 'daily_limit') {
+        body.limitMinutes = pendingRule.limitMinutes;
+        body.period = pendingRule.period;
+      }
+      if (pendingRule.ruleType === 'schedule') {
+        body.scheduleStart = pendingRule.scheduleStart;
+        body.scheduleEnd = pendingRule.scheduleEnd;
+      }
+
+      await orpc('createRule', body);
+      await syncRules();
       setStep('done');
     } catch (e: any) {
       Alert.alert('Deposit failed', e?.message ?? 'Could not complete deposit');
     } finally {
       setDepositing(false);
+      setStatusText('');
+    }
+  }
+
+  async function handleCopyAddress() {
+    if (walletAddr) {
+      await Clipboard.setStringAsync(walletAddr);
+      Alert.alert('Copied', 'Solana address copied to clipboard.');
     }
   }
 
@@ -190,6 +287,9 @@ export default function AddRuleScreen() {
     else if (step === 'type') setStep('app');
     else if (step === 'configure') setStep('type');
   }
+
+  const parsedDollars = parseFloat(depositDollars);
+  const isAmountInvalid = isNaN(parsedDollars) || parsedDollars < (MIN_DEPOSIT_AMOUNT / 10 ** USDC_DECIMALS);
 
   return (
     <SafeAreaView style={styles.flex}>
@@ -434,22 +534,31 @@ export default function AddRuleScreen() {
               placeholder="10"
             />
 
+            {isAmountInvalid && (
+              <Text style={styles.warningText}>Amount must be at least $10 USDC</Text>
+            )}
+
             <Text style={styles.walletLabel}>Your wallet</Text>
-            <Text style={styles.walletAddr} selectable>{walletAddr || 'Loading…'}</Text>
+            <View style={styles.walletRow}>
+              <Text style={styles.walletAddr} numberOfLines={1} ellipsizeMode="middle" selectable>{walletAddr || 'Loading…'}</Text>
+              <TouchableOpacity style={styles.copyBtn} onPress={handleCopyAddress} disabled={!walletAddr}>
+                <Text style={styles.copyBtnText}>Copy</Text>
+              </TouchableOpacity>
+            </View>
             <Text style={styles.walletHint}>
-              Fund this address with USDC on Solana devnet if you haven't already.
+              Send at least ${isAmountInvalid ? '10' : depositDollars} USDC AND at least 0.01 SOL (to cover Solana network fees) to this address.
             </Text>
 
             <Button
-              title={depositing ? 'Depositing…' : 'Commit'}
+              title={depositing ? (statusText || 'Depositing…') : 'Commit'}
               onPress={handleDeposit}
-              disabled={depositing || !walletAddr}
+              disabled={depositing || !walletAddr || isAmountInvalid}
               style={{ marginTop: spacing.xl }}
             />
             <Button
-              title="Skip deposit for now"
+              title="Cancel"
               variant="secondary"
-              onPress={() => setStep('done')}
+              onPress={() => router.replace('/(tabs)')}
               style={{ marginTop: spacing.sm }}
             />
           </View>
@@ -599,14 +708,33 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginBottom: spacing.xs,
   },
+  walletRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
+  },
   walletAddr: {
+    flex: 1,
     fontFamily: fonts.regular,
     fontSize: 12,
     color: colors.text,
     backgroundColor: colors.surface,
     borderRadius: radius.sm,
     padding: spacing.sm,
-    marginBottom: spacing.xs,
+  },
+  copyBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: radius.sm,
+    backgroundColor: colors.primaryLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  copyBtnText: {
+    fontFamily: fonts.semiBold,
+    fontSize: 12,
+    color: colors.primary,
   },
   periodRow: {
     flexDirection: 'row',
@@ -638,6 +766,13 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: 12,
     color: colors.textMuted,
+    marginBottom: spacing.sm,
+  },
+  warningText: {
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    color: colors.danger,
+    marginTop: -spacing.xs,
     marginBottom: spacing.sm,
   },
 });

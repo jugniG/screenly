@@ -49,7 +49,7 @@ export const confirmRemove = authedProcedure
     const dodo = await getDodo()
     const payment = await dodo.payments.retrieve(input.paymentId)
 
-    if (payment.status !== 'succeeded' && payment.status !== 'paid') {
+    if (payment.status !== 'succeeded') {
       throw new Error(`Payment not completed (status: ${payment.status})`)
     }
 
