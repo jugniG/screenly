@@ -22,6 +22,8 @@ import {
   loadOrCreateWallet,
   buildGiveInTx,
   sendAndConfirmTx,
+  getEscrowPda,
+  getEscrowAta,
 } from '../lib/solana';
 
 export default function BlockScreen() {
@@ -31,6 +33,26 @@ export default function BlockScreen() {
   const dismissed = useRef(false);
   const [loading, setLoading] = useState(false);
   const [iconUri, setIconUri] = useState<string | null>(null);
+  const [commitmentAmount, setCommitmentAmount] = useState<number>(10);
+
+  useEffect(() => {
+    if (!packageName) return;
+    const fetchBalance = async () => {
+      try {
+        const connection = getConnection();
+        const wallet = await loadOrCreateWallet();
+        const [escrowPda] = getEscrowPda(wallet.publicKey, packageName);
+        const escrowAta = getEscrowAta(escrowPda);
+        const balanceInfo = await connection.getTokenAccountBalance(escrowAta);
+        if (balanceInfo?.value?.uiAmount !== null && balanceInfo?.value?.uiAmount !== undefined) {
+          setCommitmentAmount(balanceInfo.value.uiAmount);
+        }
+      } catch (err) {
+        console.log('Error fetching commitment amount:', err);
+      }
+    };
+    fetchBalance();
+  }, [packageName]);
 
   useEffect(() => {
     if (!packageName) return;
@@ -74,7 +96,7 @@ export default function BlockScreen() {
     if (!packageName) return;
     Alert.alert(
       'Give in?',
-      `You'll forfeit $5 USDC from your commitment to ${appName}. Are you sure?`,
+      `You'll forfeit $${commitmentAmount} USDC from your commitment to ${appName}. Are you sure?`,
       [
         { text: 'Stay strong', style: 'cancel' },
         {
@@ -88,7 +110,7 @@ export default function BlockScreen() {
               const tx = buildGiveInTx(wallet.publicKey, packageName);
               await sendAndConfirmTx(connection, tx, wallet);
               await unlockApp(packageName!);
-              Alert.alert('Give in', `${appName} is unlocked. $5 forfeited.`);
+              Alert.alert('Give in', `${appName} is unlocked. $${commitmentAmount} forfeited.`);
               router.replace('/(tabs)');
             } catch (e: any) {
               try {
@@ -132,7 +154,7 @@ export default function BlockScreen() {
         <>
           <TouchableOpacity onPress={handleGiveIn} style={styles.giveInBtn}>
             <Text style={styles.giveInText}>I give in</Text>
-            <Text style={styles.giveInSub}>Forfeit $5 commitment</Text>
+            <Text style={styles.giveInSub}>Forfeit ${commitmentAmount} USDC commitment</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={goHome} style={styles.backBtn}>
             <Text style={styles.backText}>Back to home</Text>

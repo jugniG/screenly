@@ -98,7 +98,7 @@ export function buildDepositTx(
 
 /**
  * Build a `give_in` transaction.
- * Forfeits the $5 from escrow → Screenly vault.
+ * Forfeits the committed USDC from escrow → Screenly vault.
  * User signs to admit they gave in.
  */
 export function buildGiveInTx(
@@ -132,7 +132,7 @@ export function buildGiveInTx(
 
 /**
  * Build a `remove` transaction.
- * Forfeits $5 from escrow → Screenly vault + closes escrow.
+ * Forfeits the committed USDC from escrow → Screenly vault + closes escrow.
  * User signs to confirm removal.
  */
 export function buildRemoveTx(

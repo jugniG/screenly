@@ -26,6 +26,8 @@ import {
   loadOrCreateWallet,
   buildRemoveTx,
   sendAndConfirmTx,
+  getEscrowPda,
+  getEscrowAta,
 } from '../../lib/solana';
 
 interface UnlockEvent {
@@ -103,24 +105,41 @@ export default function AccountScreen() {
   }
 
   async function handleRemoveApp(rule: Rule) {
+    setRemoving(rule.packageName);
+    let amount = 10;
+    try {
+      const connection = getConnection();
+      const wallet = await loadOrCreateWallet();
+      const [escrowPda] = getEscrowPda(wallet.publicKey, rule.packageName);
+      const escrowAta = getEscrowAta(escrowPda);
+      const balanceInfo = await connection.getTokenAccountBalance(escrowAta);
+      if (balanceInfo?.value?.uiAmount !== null && balanceInfo?.value?.uiAmount !== undefined) {
+        amount = balanceInfo.value.uiAmount;
+      }
+    } catch (err) {
+      console.log('Error fetching escrow balance for removal confirmation:', err);
+    } finally {
+      setRemoving(null);
+    }
+
     Alert.alert(
       `Remove ${rule.appName}?`,
-      `Your $5 USDC commitment for this app will be forfeited. You can re-add it anytime.`,
+      `Your $${amount} USDC commitment for this app will be forfeited. You can re-add it anytime.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Remove (Forfeit $5)',
+          text: `Remove (Forfeit $${amount})`,
           style: 'destructive',
-          onPress: () => startRemove(rule),
+          onPress: () => startRemove(rule, amount),
         },
       ],
     );
   }
 
-  async function startRemove(rule: Rule) {
+  async function startRemove(rule: Rule, amount: number) {
     setRemoving(rule.packageName);
     try {
-      // Execute Solana remove tx (forfeits $5 to Screenly + closes escrow)
+      // Execute Solana remove tx (forfeits USDC to Screenly + closes escrow)
       const connection = getConnection();
       const wallet = await loadOrCreateWallet();
       const tx = buildRemoveTx(wallet.publicKey, rule.packageName);
@@ -130,7 +149,7 @@ export default function AccountScreen() {
       await orpc('deleteRule', { id: rule.id });
       setRules(prev => prev.filter(r => r.id !== rule.id));
       syncRules();
-      Alert.alert('Removed', `${rule.appName} restriction removed. $5 forfeited.`);
+      Alert.alert('Removed', `${rule.appName} restriction removed. $${amount} forfeited.`);
     } catch (e: any) {
       try {
         if (e && typeof e.getLogs === 'function') {
