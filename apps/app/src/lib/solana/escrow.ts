@@ -4,6 +4,7 @@ import {
   SystemProgram,
   Connection,
   Keypair,
+  SYSVAR_RENT_PUBKEY,
 } from '@solana/web3.js';
 import {
   getAssociatedTokenAddressSync,
@@ -83,11 +84,11 @@ export function buildDepositTx(
       { pubkey: escrowPda, isSigner: false, isWritable: true },
       { pubkey: userTokenAccount, isSigner: false, isWritable: true },
       { pubkey: escrowAta, isSigner: false, isWritable: true },
-      { pubkey: VAULT_TOKEN_ACCOUNT, isSigner: false, isWritable: true },
       { pubkey: USDC_MINT, isSigner: false, isWritable: false },
       { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
       { pubkey: ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
       { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+      { pubkey: SYSVAR_RENT_PUBKEY, isSigner: false, isWritable: false },
     ],
     data,
   };

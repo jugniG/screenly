@@ -268,7 +268,8 @@ export default function AddRuleScreen() {
       await syncRules();
       setStep('done');
     } catch (e: any) {
-      Alert.alert('Deposit failed', e?.message ?? 'Could not complete deposit');
+      console.error('[AddRule - Deposit Failed]', e);
+      Alert.alert('Deposit failed', 'Failed to complete on-chain commitment. Please check your network and balance, then try again.');
     } finally {
       setDepositing(false);
       setStatusText('');

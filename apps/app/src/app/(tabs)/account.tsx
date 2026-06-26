@@ -132,7 +132,8 @@ export default function AccountScreen() {
       syncRules();
       Alert.alert('Removed', `${rule.appName} restriction removed. $5 forfeited.`);
     } catch (e: any) {
-      Alert.alert('Error', e.message ?? 'Something went wrong');
+      console.error('[AccountScreen - Remove Failed]', e);
+      Alert.alert('Removal failed', 'Failed to complete on-chain removal transaction. Please check your network connection and try again.');
     } finally {
       setRemoving(null);
     }

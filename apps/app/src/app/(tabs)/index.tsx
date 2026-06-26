@@ -142,8 +142,9 @@ export default function HomeScreen() {
       await orpc('updateRule', { id, enabled: !enabled });
       setRules(prev => prev.map(r => r.id === id ? { ...r, enabled: !enabled } : r));
       syncRules();
-    } catch {
-      Alert.alert('Error', 'Could not update app');
+    } catch (e) {
+      console.error('[Home - toggleRule Failed]', e);
+      Alert.alert('Error', 'Could not update app settings. Please try again.');
     }
   }
 
@@ -157,7 +158,10 @@ export default function HomeScreen() {
             await orpc('deleteRule', { id });
             setRules(prev => prev.filter(r => r.id !== id));
             syncRules();
-          } catch { Alert.alert('Error', 'Could not remove app'); }
+          } catch (e) {
+            console.error('[Home - deleteRule Failed]', e);
+            Alert.alert('Error', 'Could not remove app tracking. Please try again.');
+          }
         },
       },
     ]);

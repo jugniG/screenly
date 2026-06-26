@@ -91,7 +91,8 @@ export default function BlockScreen() {
               Alert.alert('Give in', `${appName} is unlocked. $5 forfeited.`);
               router.replace('/(tabs)');
             } catch (e: any) {
-              Alert.alert('Error', e?.message ?? 'Failed to process');
+              console.error('[BlockScreen - GiveIn Failed]', e);
+              Alert.alert('Unlock failed', 'Failed to forfeit commitment on-chain. Please check your network connection and try again.');
             } finally {
               setLoading(false);
             }
