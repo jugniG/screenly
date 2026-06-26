@@ -21,9 +21,9 @@ export const VAULT_TOKEN_ACCOUNT = new PublicKey(
   process.env.EXPO_PUBLIC_SOLANA_VAULT_ATA || 'VAULT_ATA_PLACEHOLDER'
 );
 
-// Minimum $10 = 10,000,000 USDC (6 decimals)
-export const MIN_DEPOSIT_AMOUNT = 10_000_000;
-export const USDC_DECIMALS = 6;
+// Minimum $10 = 10,000,000,000 USDC (9 decimals)
+export const MIN_DEPOSIT_AMOUNT = 10_000_000_000;
+export const USDC_DECIMALS = 9;
 
 export const PROGRAM_SEED = 'screenly';
 export const ESCROW_SEED = 'escrow';

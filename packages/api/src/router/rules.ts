@@ -168,7 +168,7 @@ export const fundDevnetWallet = authedProcedure
 
     // 5. Mint USDC to user's ATA if balance is less than required
     if (usdcBalance < input.usdcAmount) {
-      const usdcDecimals = 6
+      const usdcDecimals = 9
       const mintAmount = BigInt(Math.ceil((input.usdcAmount - usdcBalance) * 10 ** usdcDecimals))
       tx.add(
         createMintToInstruction(

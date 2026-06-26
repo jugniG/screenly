@@ -123,6 +123,10 @@ export default function HomeScreen() {
       console.log('[Home] done, perm=' + perm);
     } catch (e: any) {
       console.log('[Home] ERROR:', e);
+      const isUnauth = e?.message?.includes('Unauthorized') || e?.message?.includes('UNAUTHORIZED') || e?.status === 401;
+      if (isUnauth) {
+        authClient.signOut().catch(() => {});
+      }
     }
     finally { setLoading(false); setRefreshing(false); console.log('[Home] finally loading=false'); }
   }
@@ -176,8 +180,7 @@ export default function HomeScreen() {
       <View style={styles.header}>
         <View>
           <Text style={styles.greeting}>Good {GR},</Text>
-          <Text style={styles.name}>{session?.user?.name ?? 'there'} 👋</Text>
-          <Text style={styles.apiUrl}>API: {API_BASE}</Text>
+          <Text style={styles.name}>{session?.user?.name || session?.user?.email || 'there'} 👋</Text>
         </View>
         <TouchableOpacity style={styles.addBtn} onPress={() => router.push('/add-rule')}>
           <Text style={styles.addBtnText}>+ Add App</Text>
@@ -297,7 +300,8 @@ const styles = StyleSheet.create({
   },
   greeting: { fontFamily: fonts.regular, fontSize: 14, color: colors.textSecondary },
   apiUrl: { fontFamily: fonts.regular, fontSize: 9, color: '#555', marginTop: 2 },
-  name: { fontFamily: fonts.bold, fontSize: 22, color: colors.text },
+  name: { fontFamily: fonts.bold, fontSize: 10, color: colors.text },
+  emailSub: { fontFamily: fonts.regular, fontSize: 13, color: colors.textSecondary, marginTop: 1 },
   addBtn: {
     backgroundColor: colors.primary,
     paddingHorizontal: spacing.md,

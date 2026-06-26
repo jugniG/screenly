@@ -8,8 +8,8 @@ import {
   ScrollView,
   Alert,
   TouchableOpacity,
-  Image,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { authClient } from '../../lib/auth';
 import { Button } from '../../components/ui/Button';
@@ -171,6 +171,7 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 20,
+    overflow: 'hidden',
     marginBottom: spacing.md,
   },
   brandName: { fontFamily: fonts.bold, fontSize: 28, color: colors.text },

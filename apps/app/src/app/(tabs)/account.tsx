@@ -145,11 +145,13 @@ export default function AccountScreen() {
         text: 'Sign Out',
         style: 'destructive',
         onPress: async () => {
-          await authClient.signOut({fetchOptions:{
-            onSuccess:()=>{
-              router.replace('/(auth)/sign-in');
-            }
-          }});
+          try {
+            await authClient.signOut();
+          } catch (e) {
+            console.log('[Account] SignOut error:', e);
+          } finally {
+            router.replace('/(auth)/sign-in');
+          }
         },
       },
     ]);
@@ -164,12 +166,12 @@ export default function AccountScreen() {
         <View style={styles.profileSection}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>
-              {(session?.user?.name ?? 'U')[0].toUpperCase()}
+              {((session?.user?.name || session?.user?.email || 'U')[0]).toUpperCase()}
             </Text>
           </View>
 
           <TouchableOpacity onPress={() => { setEditing(true); setNameInput(session?.user?.name ?? ''); }} style={styles.nameRow}>
-            <Text style={styles.profileName}>{session?.user?.name ?? '—'}</Text>
+            <Text style={styles.profileName}>{session?.user?.name || '—'}</Text>
             <Text style={styles.editIcon}>✎</Text>
           </TouchableOpacity>
 
