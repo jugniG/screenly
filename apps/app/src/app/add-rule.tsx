@@ -268,6 +268,16 @@ export default function AddRuleScreen() {
       await syncRules();
       setStep('done');
     } catch (e: any) {
+      try {
+        if (e && typeof e.getLogs === 'function') {
+          const logs = await e.getLogs();
+          console.error('[AddRule - Deposit Failed] Solana logs:', logs);
+        } else if (e && e.logs) {
+          console.error('[AddRule - Deposit Failed] Solana logs:', e.logs);
+        }
+      } catch (logErr) {
+        console.error('Error fetching Solana transaction logs:', logErr);
+      }
       console.error('[AddRule - Deposit Failed]', e);
       Alert.alert('Deposit failed', 'Failed to complete on-chain commitment. Please check your network and balance, then try again.');
     } finally {

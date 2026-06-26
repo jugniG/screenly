@@ -132,6 +132,16 @@ export default function AccountScreen() {
       syncRules();
       Alert.alert('Removed', `${rule.appName} restriction removed. $5 forfeited.`);
     } catch (e: any) {
+      try {
+        if (e && typeof e.getLogs === 'function') {
+          const logs = await e.getLogs();
+          console.error('[AccountScreen - Remove Failed] Solana logs:', logs);
+        } else if (e && e.logs) {
+          console.error('[AccountScreen - Remove Failed] Solana logs:', e.logs);
+        }
+      } catch (logErr) {
+        console.error('Error fetching Solana transaction logs:', logErr);
+      }
       console.error('[AccountScreen - Remove Failed]', e);
       Alert.alert('Removal failed', 'Failed to complete on-chain removal transaction. Please check your network connection and try again.');
     } finally {

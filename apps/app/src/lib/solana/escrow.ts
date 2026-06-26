@@ -63,7 +63,7 @@ export function buildDepositTx(
   // Serialize instruction data: fn discriminator (anchor) + packageName + amount
   // Anchor instruction discriminator = sha256("global:deposit")[..8]
   const discriminator = Buffer.from([
-    238, 54, 211, 174, 240, 127, 54, 131,
+    242, 35, 198, 137, 82, 225, 242, 182,
   ]);
 
   // packageName as a string with length prefix
@@ -109,7 +109,7 @@ export function buildGiveInTx(
   const escrowAta = getEscrowAta(escrowPda);
 
   const discriminator = Buffer.from([
-    167, 109, 153, 56, 229, 118, 195, 123,
+    41, 43, 28, 76, 76, 38, 104, 25,
   ]);
 
   const data = discriminator;
@@ -143,7 +143,7 @@ export function buildRemoveTx(
   const escrowAta = getEscrowAta(escrowPda);
 
   const discriminator = Buffer.from([
-    5, 130, 205, 50, 171, 84, 206, 250,
+    199, 186, 9, 79, 96, 129, 24, 106,
   ]);
 
   const data = discriminator;
@@ -171,10 +171,21 @@ export async function sendAndConfirmTx(
   tx: Transaction,
   signer: Keypair,
 ): Promise<string> {
-  tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+  const latestBlockhash = await connection.getLatestBlockhash('confirmed');
+  tx.recentBlockhash = latestBlockhash.blockhash;
   tx.feePayer = signer.publicKey;
   tx.sign(signer);
-  const sig = await connection.sendRawTransaction(tx.serialize());
-  await connection.confirmTransaction(sig, 'confirmed');
+  const sig = await connection.sendRawTransaction(tx.serialize(), {
+    skipPreflight: false,
+    preflightCommitment: 'confirmed',
+  });
+  await connection.confirmTransaction(
+    {
+      signature: sig,
+      blockhash: latestBlockhash.blockhash,
+      lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
+    },
+    'confirmed'
+  );
   return sig;
 }

@@ -91,6 +91,16 @@ export default function BlockScreen() {
               Alert.alert('Give in', `${appName} is unlocked. $5 forfeited.`);
               router.replace('/(tabs)');
             } catch (e: any) {
+              try {
+                if (e && typeof e.getLogs === 'function') {
+                  const logs = await e.getLogs();
+                  console.error('[BlockScreen - GiveIn Failed] Solana logs:', logs);
+                } else if (e && e.logs) {
+                  console.error('[BlockScreen - GiveIn Failed] Solana logs:', e.logs);
+                }
+              } catch (logErr) {
+                console.error('Error fetching Solana transaction logs:', logErr);
+              }
               console.error('[BlockScreen - GiveIn Failed]', e);
               Alert.alert('Unlock failed', 'Failed to forfeit commitment on-chain. Please check your network connection and try again.');
             } finally {
