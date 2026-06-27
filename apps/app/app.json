@@ -16,7 +16,7 @@
       "package": "com.screenly_x8k2.runable",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
-        "backgroundColor": "#F97316"
+        "backgroundColor": "#0E0F11"
       },
       "edgeToEdgeEnabled": true,
       "permissions": [

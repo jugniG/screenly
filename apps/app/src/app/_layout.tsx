@@ -1,6 +1,6 @@
 import '../lib/polyfill';
 import { useEffect, useState, useCallback, Component, ReactNode } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { Stack, useRouter, useRootNavigationState } from 'expo-router';
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
@@ -73,7 +73,15 @@ export default function RootLayout() {
   }, [fontsLoaded, isPending, isFetching, session, setupDone, setupChecked, navigationState?.key]);
 
   if (!fontsLoaded || isPending || isFetching || !setupChecked) {
-    return <View style={{ flex: 1, backgroundColor: '#0E0E0E' }} />;
+    return (
+      <View style={{ flex: 1, backgroundColor: '#0E0F11', justifyContent: 'center', alignItems: 'center' }}>
+        <Image 
+          source={require('../../assets/images/splash-icon.png')} 
+          style={{ width: '100%', height: '100%' }} 
+          resizeMode="cover"
+        />
+      </View>
+    );
   }
 
   return (
