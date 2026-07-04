@@ -26,7 +26,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         content: 'width=device-width, initial-scale=1',
       },
       {
-        title: 'Screenly — Put money on your focus and actually stop scrolling',
+        title: 'Screenly - Put money on your focus and actually stop scrolling',
       },
       {
         name: 'description',
