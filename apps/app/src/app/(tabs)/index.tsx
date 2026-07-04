@@ -59,6 +59,15 @@ function formatMinutes(m: number) {
   return `${h}h ${min}m`;
 }
 
+function lerpColor(progress: number) {
+  const c1 = { r: 0xf3, g: 0x93, b: 0x5f };
+  const c2 = { r: 0xef, g: 0x44, b: 0x44 };
+  const r = Math.round(c1.r + (c2.r - c1.r) * progress);
+  const g = Math.round(c1.g + (c2.g - c1.g) * progress);
+  const b = Math.round(c1.b + (c2.b - c1.b) * progress);
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
 function getGreeting() {
   const h = new Date().getHours();
   if (h >= 5 && h < 12) return 'morning';
@@ -263,7 +272,7 @@ export default function HomeScreen() {
                       <View style={styles.progressTrack}>
                         <View style={[styles.progressFill, {
                           width: `${progress * 100}%` as any,
-                          backgroundColor: limitReached ? '#EF4444' : '#ff910065',
+                          backgroundColor: lerpColor(progress),
                         }]} />
                       </View>
                       <Text style={[styles.usedLabel, limitReached && styles.limitReachedLabel]}>
@@ -311,8 +320,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: 20,
-    borderColor:colors.borderSoft,
-    borderWidth:1
+    borderWidth: 1,
+    borderColor: 'rgba(225,101,64,0.15)',
+    shadowColor: '#e16540',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 14,
+    elevation: 10,
   },
   addBtnText: { fontFamily: fonts.semiBold, fontSize: 13, color: '#fff' },
   list: { padding: spacing.lg, paddingTop: spacing.sm, gap: spacing.sm, paddingBottom: spacing.xxl },
@@ -338,7 +352,7 @@ const styles = StyleSheet.create({
   progressTrack: {
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#2A2A2A',
+    backgroundColor: colors.surfaceAlt,
     overflow: 'hidden',
   },
   progressFill: {
