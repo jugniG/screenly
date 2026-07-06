@@ -74,7 +74,7 @@ class EnforcerAccessibilityService : AccessibilityService() {
 
     if (shouldBlock(rule, pkg)) {
       toast("BLOCKING $pkg (${rule.ruleType})")
-      launchBlockScreen(rule.packageName, rule.appName)
+      launchBlockScreen(rule.packageName, rule.appName, rule.id)
     } else {
       Log.i("Enforcer", "  -> rule found but not blocking (${rule.ruleType})")
     }
@@ -114,11 +114,11 @@ class EnforcerAccessibilityService : AccessibilityService() {
     }
   }
 
-  private fun launchBlockScreen(packageName: String, appName: String) {
+  private fun launchBlockScreen(packageName: String, appName: String, ruleId: String) {
     try {
       val intent = Intent(
         Intent.ACTION_VIEW,
-        Uri.parse("screenly://block?packageName=$packageName&appName=${Uri.encode(appName)}")
+        Uri.parse("screenly://block?packageName=$packageName&appName=${Uri.encode(appName)}&ruleId=$ruleId")
       ).apply {
         addFlags(
           Intent.FLAG_ACTIVITY_NEW_TASK or

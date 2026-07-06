@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
   footerLink: {
     fontFamily: fonts.semiBold,
     fontSize: 14,
-    color: colors.textMuted,
+    color: colors.primary,
     textDecorationLine: 'underline'
   },
 });

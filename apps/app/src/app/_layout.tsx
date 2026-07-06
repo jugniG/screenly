@@ -29,11 +29,12 @@ class RouteErrorBoundary extends Component<{ children: ReactNode }> {
 }
 
 export default function RootLayout() {
+
   const [fontsLoaded] = useFonts({
-    'Poppins-Regular':  require('../../assets/fonts/Poppins-Regular.ttf'),
-    'Poppins-Medium':   require('../../assets/fonts/Poppins-Medium.ttf'),
+    'Poppins-Regular': require('../../assets/fonts/Poppins-Regular.ttf'),
+    'Poppins-Medium': require('../../assets/fonts/Poppins-Medium.ttf'),
     'Poppins-SemiBold': require('../../assets/fonts/Poppins-SemiBold.ttf'),
-    'Poppins-Bold':     require('../../assets/fonts/Poppins-Bold.ttf'),
+    'Poppins-Bold': require('../../assets/fonts/Poppins-Bold.ttf'),
   });
 
   const { data: session, isPending, isFetching } = authClient.useSession() as any;
@@ -52,8 +53,8 @@ export default function RootLayout() {
   useEffect(() => {
     if (session?.user) {
       loadOrCreateWallet().then((wallet) => {
-        orpc('updateUserWallet', { solanaWallet: wallet.publicKey.toBase58() }).catch(() => {});
-      });
+        orpc('updateUserWallet', { solanaWallet: wallet.publicKey.toBase58() }).catch(() => { });
+      }).catch((e: any) => console.log('[Layout] wallet error:', e?.message));
     }
   }, [session]);
 
@@ -68,16 +69,15 @@ export default function RootLayout() {
       router.replace('/setup');
     } else {
       syncRules();
-      router.replace('/(tabs)');
     }
   }, [fontsLoaded, isPending, isFetching, session, setupDone, setupChecked, navigationState?.key]);
 
   if (!fontsLoaded || isPending || isFetching || !setupChecked) {
     return (
       <View style={{ flex: 1, backgroundColor: '#0E0F11', justifyContent: 'center', alignItems: 'center' }}>
-        <Image 
-          source={require('../../assets/images/splash-icon.png')} 
-          style={{ width: '100%', height: '100%' }} 
+        <Image
+          source={require('../../assets/images/splash-icon.png')}
+          style={{ width: '100%', height: '100%' }}
           resizeMode="cover"
         />
       </View>

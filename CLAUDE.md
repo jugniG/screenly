@@ -16,8 +16,11 @@ Key Folders:
 
 Run App Client:
 - cd apps/app
-- npm run android (builds and runs Android app)
+- npm run android (builds and runs Android app) — DO NOT run this automatically, user handles it in separate terminal
 - npm run start (starts Metro bundler)
+
+Long Running Commands:
+- Always ask the user before starting any long-running process (builds, dev servers, tests that take >30s, etc.).
 
 Smart Contract Commands:
 - cd apps/screenly-escrow

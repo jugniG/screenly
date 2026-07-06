@@ -10,12 +10,12 @@ import {
   Platform,
   AppState,
   Image,
-  ActivityIndicator,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import Constants from 'expo-constants';
 import { colors, fonts, spacing } from '../components/ui/theme';
-import { unlockApp } from '../lib/enforcer';
+import { syncRules } from '../lib/enforcer';
+import { orpc } from '../lib/orpc';
 import ScreenlyEnforcer from '../modules/screenly-enforcer/src/ScreenlyEnforcerModule';
 import {
   getConnection,
@@ -27,7 +27,8 @@ import {
 } from '../lib/solana';
 
 export default function BlockScreen() {
-  const { packageName, appName } = useLocalSearchParams<{ packageName: string; appName: string }>();
+
+  const { packageName, appName, ruleId } = useLocalSearchParams<{ packageName: string; appName: string; ruleId: string }>();
 
   const ownPackage = Constants.expoConfig?.android?.package;
   const dismissed = useRef(false);
@@ -48,7 +49,7 @@ export default function BlockScreen() {
           setCommitmentAmount(balanceInfo.value.uiAmount);
         }
       } catch (err) {
-        console.log('Error fetching commitment amount:', err);
+        console.log('[Block] balance fetch error:', err);
       }
     };
     fetchBalance();
@@ -56,12 +57,16 @@ export default function BlockScreen() {
 
   useEffect(() => {
     if (!packageName) return;
-    ScreenlyEnforcer.getAppIcons(JSON.stringify([packageName]))
-      .then((str: string) => {
+    const loadIcon = async () => {
+      try {
+        const str: string = await ScreenlyEnforcer.getAppIcons(JSON.stringify([packageName]));
         const map = JSON.parse(str);
         if (map[packageName]) setIconUri(map[packageName]);
-      })
-      .catch(() => {});
+      } catch (err: any) {
+        console.log('[Block] getAppIcons error:', err?.message);
+      }
+    };
+    loadIcon();
   }, [packageName]);
 
   function goHome() {
@@ -87,7 +92,7 @@ export default function BlockScreen() {
         if (fg && fg !== packageName && fg !== ownPackage) {
           goHome();
         }
-      } catch {}
+      } catch { }
     });
     return () => sub.remove();
   }, [packageName]);
@@ -107,10 +112,25 @@ export default function BlockScreen() {
             try {
               const connection = getConnection();
               const wallet = await loadOrCreateWallet();
-              const tx = buildGiveInTx(wallet.publicKey, packageName);
-              await sendAndConfirmTx(connection, tx, wallet);
-              await unlockApp(packageName!);
-              Alert.alert('Give in', `${appName} is unlocked. $${commitmentAmount} forfeited.`);
+              const [escrowPda] = getEscrowPda(wallet.publicKey, packageName);
+              const escrowAta = getEscrowAta(escrowPda);
+
+              let escrowHasFunds = false;
+              try {
+                const balance = await connection.getTokenAccountBalance(escrowAta);
+                escrowHasFunds = (balance?.value?.uiAmount ?? 0) > 0;
+              } catch {
+                escrowHasFunds = false;
+              }
+
+              if (escrowHasFunds) {
+                const tx = buildGiveInTx(wallet.publicKey, packageName);
+                await sendAndConfirmTx(connection, tx, wallet);
+              }
+
+              await orpc('deleteRule', { id: ruleId });
+              await syncRules();
+              Alert.alert('Give in', `${appName} has been removed. $${commitmentAmount} forfeited.`);
               router.replace('/(tabs)');
             } catch (e: any) {
               try {
@@ -147,20 +167,14 @@ export default function BlockScreen() {
         <Text style={styles.appName}>{appName}</Text>
         <Text style={styles.blockedLabel}>This app is blocked</Text>
       </View>
-
-      {loading ? (
-        <ActivityIndicator color={colors.primary} size="large" />
-      ) : (
-        <>
-          <TouchableOpacity onPress={handleGiveIn} style={styles.giveInBtn}>
-            <Text style={styles.giveInText}>I give in</Text>
-            <Text style={styles.giveInSub}>Forfeit ${commitmentAmount} USDC commitment</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={goHome} style={styles.backBtn}>
-            <Text style={styles.backText}>Back to home</Text>
-          </TouchableOpacity>
-        </>
-      )}
+      <View style={styles.btnRow}>
+        <TouchableOpacity onPress={goHome} style={styles.backBtn}>
+          <Text style={styles.backText}>Back to home</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={handleGiveIn} style={styles.giveInBtn}>
+          <Text style={styles.giveInText}>I give in</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -200,16 +214,17 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   giveInBtn: {
+    flex: 1,
     alignItems: 'center',
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.danger,
     backgroundColor: colors.dangerSoft,
   },
   giveInText: {
-    fontFamily: fonts.bold,
+    fontFamily: fonts.semiBold,
     fontSize: 18,
     color: colors.danger,
   },
@@ -220,9 +235,11 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   backBtn: {
-    marginTop: spacing.lg,
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: spacing.sm,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.borderSoft,
@@ -232,9 +249,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
   },
-  loadingText: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.textSecondary,
+  btnRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    paddingHorizontal: spacing.xl,
+    marginTop: spacing.xxl,
   },
 });
+
+export { };  // needed because we have a default export
