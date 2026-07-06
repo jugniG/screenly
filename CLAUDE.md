@@ -36,6 +36,11 @@ Database Commands:
 Dev Server Command:
 - npm run dev (starts Hono server via turbo)
 
+Code Style:
+- Always use modular, reusable code structure
+- Render lists/repeated UI from arrays, never manually duplicate JSX blocks
+- Extract repeated logic into helper functions or components
+
 
 === DETAILED PRODUCT OVERVIEW (FOR AI LANDING PAGE GENERATOR) ===
 

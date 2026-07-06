@@ -22,15 +22,15 @@ export default function FeaturesSection() {
         </svg>
       )
     },
-    {
-      title: '3. Emergency unlock costs $5 for 10 min',
-      description: 'Need to check something urgently? You can unlock an app for 10 minutes by forfeiting $5 to the treasury. It\'s there for emergencies — but expensive enough that you won\'t abuse it.',
-      icon: (
-        <svg className="w-8 h-8 text-brand-orange filter drop-shadow-[0_0_8px_rgba(249,115,22,0.4)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5l-3-3" />
-        </svg>
-      )
-    }
+    // {
+    //   title: '3. Emergency unlock costs $5 for 10 min',
+    //   description: 'Need to check something urgently? You can unlock an app for 10 minutes by forfeiting $5 to the treasury. It\'s there for emergencies — but expensive enough that you won\'t abuse it.',
+    //   icon: (
+    //     <svg className="w-8 h-8 text-brand-orange filter drop-shadow-[0_0_8px_rgba(249,115,22,0.4)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    //       <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5l-3-3" />
+    //     </svg>
+    //   )
+    // }
   ]
 
   return (
