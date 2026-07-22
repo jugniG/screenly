@@ -29,23 +29,33 @@ export const auth = betterAuth({
       otpLength: 6,
       expiresIn: 300,
       sendVerificationOTP: async ({ email, otp }) => {
-        const { Resend } = await import("resend");
-        const resend = new Resend(process.env.RESEND_API_KEY);
-        await resend.emails.send({
-          from: "screenly@syncmate.xyz",
-          to: email,
-          subject: "Your Screenly sign-in code",
-          html: `
-            <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px">
-              <h2 style="color:#6C63FF">Sign in to Screenly</h2>
-              <p>Your one-time code is:</p>
-              <div style="font-size:36px;font-weight:700;letter-spacing:8px;color:#6C63FF;text-align:center;padding:24px;background:#f5f3ff;border-radius:12px;margin:16px 0">
-                ${otp}
+        try {
+          const { Resend } = await import("resend");
+          const resend = new Resend(process.env.RESEND_API_KEY);
+          const { data, error } = await resend.emails.send({
+            from: "auth@chatcash.live",
+            to: email,
+            subject: "Your Screenly sign-in code",
+            html: `
+              <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px">
+                <h2 style="color:#6C63FF">Sign in to Screenly</h2>
+                <p>Your one-time code is:</p>
+                <div style="font-size:36px;font-weight:700;letter-spacing:8px;color:#6C63FF;text-align:center;padding:24px;background:#f5f3ff;border-radius:12px;margin:16px 0">
+                  ${otp}
+                </div>
+                <p style="color:#888;font-size:12px">This code expires in 5 minutes.</p>
               </div>
-              <p style="color:#888;font-size:12px">This code expires in 5 minutes.</p>
-            </div>
-          `,
-        });
+            `,
+          });
+
+          if (error) {
+            console.error("Resend API error:", error);
+            throw new Error(`Resend failed: ${error.name} - ${error.message}`);
+          }
+        } catch (err) {
+          console.error("Failed to send verification OTP via Resend:", err);
+          throw err instanceof Error ? err : new Error("Failed to send verification email");
+        }
       },
     }),
     tanstackStartCookies(),

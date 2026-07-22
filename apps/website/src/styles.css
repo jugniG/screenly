@@ -1,21 +1,22 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 /* @import url('https://fonts.googleapis.com/css2?family=Geist+Pixel:ELSH@0..100&display=swap'); */
 @plugin '../hero.ts';
 
 @theme {
-  --color-brand-bg: black;
-  --color-brand-card: #17181C;
-  --color-brand-border: #26272E;
-  --color-brand-orange: #FE6401;
-  --color-brand-orange-soft: rgba(249, 115, 22, 0.15);
-  --color-brand-emerald: #10B981;
-  --color-brand-white: #F3F4F6;
-  --color-brand-gray: #9CA3AF;
-  
-  --font-geist: "Geist Pixel", sans-serif;
-  --font-recursive: "Recursive", sans-serif;
-  --font-outfit: "Outfit", sans-serif;
-  --font-inter: "Inter", sans-serif;
+  --color-brand-bg: #fcf4ed;
+  --color-brand-card: #ffffff;
+  --color-brand-border: #e2e8f0;
+  --color-brand-orange: #fe6401;
+  --color-brand-orange-soft: rgba(254, 100, 1, 0.1);
+  --color-brand-emerald: #10b981;
+  --color-brand-white: #0f172a;
+  --color-brand-gray: #475569;
+
+  --font-geist: 'Geist Pixel', sans-serif;
+  --font-recursive: 'Recursive', sans-serif;
+  --font-outfit: 'Outfit', sans-serif;
+  --font-inter: 'Inter', sans-serif;
+  --font-montserrat: "Montserrat", sans-serif;
 }
 
 * {
@@ -31,4 +32,3 @@ body,
 body {
   margin: 0;
 }
-

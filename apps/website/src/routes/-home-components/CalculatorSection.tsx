@@ -24,7 +24,7 @@ export default function CalculatorSection() {
       </div>
 
       {/* Main Calculator Slate Box */}
-      <div className="mx-auto max-w-4xl bg-brand-card border border-brand-border/60 rounded-3xl p-6 sm:p-10 shadow-xl">
+      <div className="mx-auto max-w-4xl bg-brand-card border border-brand-border rounded-3xl p-6 sm:p-10 shadow-sm border-brand-border">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
           
           {/* Sliders (Left Column, 7 Cols) */}
@@ -102,7 +102,7 @@ export default function CalculatorSection() {
               <span className="text-xxs font-bold text-brand-gray tracking-widest uppercase">
                 Annual Cost of Scroll
               </span>
-              <div className="font-outfit font-extrabold text-3xl sm:text-4xl text-brand-white mt-1 filter drop-shadow-[0_0_8px_rgba(243,244,246,0.1)]">
+              <div className="font-outfit font-extrabold text-3xl sm:text-4xl text-brand-white mt-1">
                 ${lostProductivity.toLocaleString()}
               </div>
               <p className="text-xs text-brand-gray mt-2 leading-relaxed">

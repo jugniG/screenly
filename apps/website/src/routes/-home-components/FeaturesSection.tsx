@@ -50,7 +50,7 @@ export default function FeaturesSection() {
         {features.map((feature, idx) => (
           <div
             key={idx}
-            className="group relative bg-brand-card border border-brand-border rounded-2xl p-8 hover:border-brand-orange transition-all duration-300 hover:shadow-[0_0_24px_rgba(249,115,22,0.1)]"
+            className="group relative bg-brand-card border border-brand-border rounded-2xl p-8 hover:border-brand-orange transition-all duration-300 shadow-sm hover:shadow-lg hover:shadow-orange-500/5"
           >
             <div className="absolute inset-0 rounded-2xl border border-transparent group-hover:border-brand-orange/40 transition-colors duration-300 pointer-events-none" />
 

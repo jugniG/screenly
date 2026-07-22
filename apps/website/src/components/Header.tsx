@@ -50,9 +50,8 @@ export default function Header() {
           <a href="/app-release.apk" download="Screenly.apk" className="no-underline">
             <Button
               size="sm"
-              variant="ghost"
               endContent={<GoArrowRight />}
-              className='bg-brand-orange-soft text-brand-orange font-inter font-bold rounded-full p-4'
+              className='bg-brand-orange text-white font-inter font-semibold rounded-full px-5 py-2 shadow-[0_4px_14px_rgba(254,100,1,0.25)] hover:shadow-[0_6px_18px_rgba(254,100,1,0.4)] hover:scale-105 transition-all duration-200'
             >
               Install App
             </Button>

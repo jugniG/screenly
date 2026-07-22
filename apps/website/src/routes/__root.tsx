@@ -67,16 +67,12 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="light">
       <head>
         <HeadContent />
         <link rel="preconnect" href="https://fonts.googleapis.com"></link>
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin=""></link>
-        <link href="https://fonts.googleapis.com/css2?family=Geist+Pixel:ELSH@0..100&display=swap" rel="stylesheet"></link>
-
-        <link rel="preconnect" href="https://fonts.googleapis.com"></link>
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin=""></link>
-        <link href="https://fonts.googleapis.com/css2?family=Geist+Pixel:ELSH@0..100&family=Recursive:wght@300..1000&display=swap" rel="stylesheet"></link>
+        <link href="https://fonts.googleapis.com/css2?family=Geist+Pixel:ELSH@0..100&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Recursive:wght@300..1000&display=swap" rel="stylesheet"></link>
       </head>
       <body className=" text-brand-white min-h-screen antialiased selection:bg-brand-orange selection:text-white">
         <HeroUIProvider>

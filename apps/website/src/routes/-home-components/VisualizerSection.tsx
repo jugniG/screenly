@@ -47,7 +47,7 @@ export default function VisualizerSection() {
 
       <div className="mt-12 space-y-8 text-brand-gray">
         {cards.map((card, idx) => (
-          <div key={idx} className="bg-brand-card border border-brand-border rounded-2xl p-6 sm:p-8">
+          <div key={idx} className="bg-brand-card border border-brand-border rounded-2xl p-6 sm:p-8 shadow-sm">
             <div className="flex items-center gap-3 mb-4">
               <span className="text-2xl">{card.icon}</span>
               <h3 className="font-outfit font-semibold text-lg text-brand-white">{card.title}</h3>

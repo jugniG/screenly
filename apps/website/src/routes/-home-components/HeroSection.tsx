@@ -6,9 +6,9 @@ import { TbAlertTriangle } from "react-icons/tb";
 import { type IconType } from "react-icons";
 
 const FEATURES: { icon: IconType; title: string; subtitle: string }[] = [
-  { icon: FaShieldAlt, title: 'Lock apps',       subtitle: 'that distract you' },
-  { icon: AiOutlineDollar,  title: 'Stake to lock',   subtitle: 'your screentime' },
-  { icon: TbAlertTriangle,   title: 'Real consequences',  subtitle: 'lose money if you slip' },
+  { icon: FaShieldAlt, title: 'Lock apps', subtitle: 'that distract you' },
+  { icon: AiOutlineDollar, title: 'Stake to lock', subtitle: 'your screentime' },
+  { icon: TbAlertTriangle, title: 'Real consequences', subtitle: 'lose money if you slip' },
 ]
 
 export default function HeroSection() {
@@ -18,28 +18,31 @@ export default function HeroSection() {
       {/* Background radial glow */}
 
       <div className=" text-center lg:text-left">
-        <a href="https://solana.com">
-          <div className="inline-flex items-center gap-2 rounded-full  bg-brand-orange-soft px-3.5 py-2 text-xs font-semibold tracking-wide text-brand-orange uppercase mb-6 ">
-            <img src="https://solana.com/_next/static/media/favicon.b615f892.png" alt="" className="h-4 w-4" />
+        <a href="https://solana.com" className="no-underline">
+          <div className="inline-flex items-center gap-1.5 rounded-full border border-brand-border bg-brand-card px-3.5 py-1.5 text-xs font-semibold tracking-wide text-brand-gray mb-6 shadow-sm hover:border-brand-orange/40 transition-colors duration-200">
+            <img src="https://solana.com/_next/static/media/favicon.b615f892.png" alt="" className="h-3.5 w-3.5" />
             Backed by Solana
           </div>
         </a>
-        <h1 className="text-5xl font-geist  tracking-tight text-brand-white sm:text-6xl lg:text-7xl leading-tight">
-          Want to control your<br />
-          <span className="text-brand-orange filter drop-shadow-[0_0_15px_rgba(249,115,22,0.3)]">
-            screentime?
+        <h1 className="tracking-tight text-brand-white leading-tight">
+          <span className="font-montserrat font-black text-5xl sm:text-6xl lg:text-7xl block">
+            Make distractions{' '}
+            <span className="text-brand-orange filter drop-shadow-[0_0_20px_rgba(254,100,1,0.35)]">
+              more expensive,
+            </span>
+          </span>
+          <span className="font-montserrat font-medium text-xl sm:text-2xl lg:text-3xl text-brand-gray block mt-2">
+            so you don't lose your time.
           </span>
         </h1>
         <p className="mt-6 text-lg leading-8 text-brand-gray max-w-2xl mx-auto lg:mx-0">
-          We know self control is hard, so we bet on it.
-          <br />
-          When it's about money, self control reaches to its max level.
+          Screenly helps you to not overuse your apps by guarding it with monetary penalty.
         </p>
         <div className="mt-10 flex flex-col sm:flex-row items-center gap-8">
           <a href="#download" className="no-underline">
             <Button
               size="lg"
-              className="bg-brand-orange text-brand-white font-semibold font-inter! rounded-2xl hover:shadow-[0_0_30px_rgba(249,115,22,0.6)] hover:scale-102 transition-all duration-250 w-full sm:w-auto h-14 px-8"
+              className="bg-brand-orange text-white font-semibold font-inter! rounded-2xl shadow-[0_4px_14px_rgba(254,100,1,0.3)] hover:shadow-[0_6px_20px_rgba(254,100,1,0.45)] hover:scale-102 transition-all duration-250 w-full sm:w-auto h-14 px-8"
               endContent={<GoArrowRight />}
             >
               Get Screenly
@@ -47,7 +50,7 @@ export default function HeroSection() {
           </a>
           <a href="#science" className="no-underline">
             <button
-              className="relative flex gap-2 items-center cursor-pointer hover:gap-4 group font-inter border-brand-border  hover:border-brand-gray text-brand-white  rounded-xl transition-all duration-200 w-full sm:w-auto"
+              className="relative flex gap-2 items-center cursor-pointer hover:gap-4 group font-inter border-brand-border hover:border-brand-gray text-brand-white rounded-xl transition-all duration-200 w-full sm:w-auto"
             >
               Learn the Science
               <GoArrowRight />
@@ -74,8 +77,9 @@ export default function HeroSection() {
       <img
         src="/hero-image.png"
         alt="Screenly App"
-        className="w-[50%] mt-12"
+        className="w-full scale-[1.2] max-w-[480px] lg:w-[45%] mt-8 object-contain [mask-image:radial-gradient(ellipse_at_center,black_70%,transparent_100%)]"
       />
     </section>
   )
 }
+

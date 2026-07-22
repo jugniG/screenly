@@ -24,7 +24,7 @@ function Home() {
           <a href="/app-release.apk" download="Screenly.apk" className="no-underline">
             <Button
               size="lg"
-              className="bg-brand-orange text-brand-white font-bold rounded-xl shadow-[0_0_20px_rgba(249,115,22,0.4)] hover:shadow-[0_0_30px_rgba(249,115,22,0.6)] hover:scale-102 transition-all duration-250 h-14 px-10"
+              className="bg-brand-orange text-white font-bold rounded-xl shadow-[0_4px_14px_rgba(254,100,1,0.3)] hover:shadow-[0_6px_20px_rgba(254,100,1,0.45)] hover:scale-102 transition-all duration-250 h-14 px-10"
             >
               Download APK for Android
             </Button>
