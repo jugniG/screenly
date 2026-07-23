@@ -23,7 +23,19 @@ export const Route = createFileRoute('/api/dodo/webhook')({
             const meta = payload.data?.metadata ?? {}
             const paymentId = payload.data.payment_id
 
-            if (meta.action === 'remove' && meta.userId && meta.packageName) {
+            if (meta.action === 'add_rule' && meta.userId && meta.packageName) {
+              await db
+                .update(schema.appRules)
+                .set({
+                  paymentStatus: 'completed',
+                  enabled: true,
+                  paymentId: paymentId,
+                })
+                .where(and(
+                  eq(schema.appRules.packageName, meta.packageName),
+                  eq(schema.appRules.userId, meta.userId),
+                ))
+            } else if (meta.action === 'remove' && meta.userId && meta.packageName) {
               await db
                 .delete(schema.appRules)
                 .where(and(

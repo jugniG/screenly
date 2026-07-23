@@ -13,6 +13,9 @@ export const appRules = screenly.table('app_rules', {
   scheduleEnd:   text('schedule_end'),
   enabled:       boolean('enabled').notNull().default(true),
   createdAt:     timestamp('created_at').$defaultFn(() => new Date()).notNull(),
+  paymentStatus: text('payment_status', { enum: ['pending', 'completed'] }).notNull().default('completed'),
+  paymentId:     text('payment_id'),
+  lockedAmount:  integer('locked_amount'),
 });
 
 export const usageLogs = screenly.table('usage_logs', {

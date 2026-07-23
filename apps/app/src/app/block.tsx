@@ -17,14 +17,6 @@ import { colors, fonts, spacing } from '../components/ui/theme';
 import { syncRules } from '../lib/enforcer';
 import { orpc } from '../lib/orpc';
 import ScreenlyEnforcer from '../modules/screenly-enforcer/src/ScreenlyEnforcerModule';
-import {
-  getConnection,
-  loadOrCreateWallet,
-  buildGiveInTx,
-  sendAndConfirmTx,
-  getEscrowPda,
-  getEscrowAta,
-} from '../lib/solana';
 
 export default function BlockScreen() {
 
@@ -34,26 +26,6 @@ export default function BlockScreen() {
   const dismissed = useRef(false);
   const [loading, setLoading] = useState(false);
   const [iconUri, setIconUri] = useState<string | null>(null);
-  const [commitmentAmount, setCommitmentAmount] = useState<number>(10);
-
-  useEffect(() => {
-    if (!packageName) return;
-    const fetchBalance = async () => {
-      try {
-        const connection = getConnection();
-        const wallet = await loadOrCreateWallet();
-        const [escrowPda] = getEscrowPda(wallet.publicKey, packageName);
-        const escrowAta = getEscrowAta(escrowPda);
-        const balanceInfo = await connection.getTokenAccountBalance(escrowAta);
-        if (balanceInfo?.value?.uiAmount !== null && balanceInfo?.value?.uiAmount !== undefined) {
-          setCommitmentAmount(balanceInfo.value.uiAmount);
-        }
-      } catch (err) {
-        console.log('[Block] balance fetch error:', err);
-      }
-    };
-    fetchBalance();
-  }, [packageName]);
 
   useEffect(() => {
     if (!packageName) return;
@@ -101,7 +73,7 @@ export default function BlockScreen() {
     if (!packageName) return;
     Alert.alert(
       'Give in?',
-      `You'll forfeit $${commitmentAmount} USDC from your commitment to ${appName}. Are you sure?`,
+      `You'll forfeit your commitment to ${appName}. Are you sure?`,
       [
         { text: 'Stay strong', style: 'cancel' },
         {
@@ -110,41 +82,13 @@ export default function BlockScreen() {
           onPress: async () => {
             setLoading(true);
             try {
-              const connection = getConnection();
-              const wallet = await loadOrCreateWallet();
-              const [escrowPda] = getEscrowPda(wallet.publicKey, packageName);
-              const escrowAta = getEscrowAta(escrowPda);
-
-              let escrowHasFunds = false;
-              try {
-                const balance = await connection.getTokenAccountBalance(escrowAta);
-                escrowHasFunds = (balance?.value?.uiAmount ?? 0) > 0;
-              } catch {
-                escrowHasFunds = false;
-              }
-
-              if (escrowHasFunds) {
-                const tx = buildGiveInTx(wallet.publicKey, packageName);
-                await sendAndConfirmTx(connection, tx, wallet);
-              }
-
               await orpc('deleteRule', { id: ruleId });
               await syncRules();
-              Alert.alert('Give in', `${appName} has been removed. $${commitmentAmount} forfeited.`);
+              Alert.alert('Give in', `${appName} has been removed.`);
               router.replace('/(tabs)');
             } catch (e: any) {
-              try {
-                if (e && typeof e.getLogs === 'function') {
-                  const logs = await e.getLogs();
-                  console.error('[BlockScreen - GiveIn Failed] Solana logs:', logs);
-                } else if (e && e.logs) {
-                  console.error('[BlockScreen - GiveIn Failed] Solana logs:', e.logs);
-                }
-              } catch (logErr) {
-                console.error('Error fetching Solana transaction logs:', logErr);
-              }
               console.error('[BlockScreen - GiveIn Failed]', e);
-              Alert.alert('Unlock failed', 'Failed to forfeit commitment on-chain. Please check your network connection and try again.');
+              Alert.alert('Unlock failed', 'Failed to remove restriction. Please try again.');
             } finally {
               setLoading(false);
             }

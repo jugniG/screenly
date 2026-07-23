@@ -72,7 +72,25 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, isPending, isFetching, session, setupDone, setupChecked, navigationState?.key]);
 
+  // --- DEBUG: log what's blocking the loading screen ---
+  useEffect(() => {
+    console.log('[Layout:DEBUG] fontsLoaded:', fontsLoaded);
+    console.log('[Layout:DEBUG] isPending:', isPending);
+    console.log('[Layout:DEBUG] isFetching:', isFetching);
+    console.log('[Layout:DEBUG] setupChecked:', setupChecked);
+    console.log('[Layout:DEBUG] session:', session);
+    console.log('[Layout:DEBUG] navigationState?.key:', navigationState?.key);
+    console.log('[Layout:DEBUG] EXPO_PUBLIC_API_URL:', process.env.EXPO_PUBLIC_API_URL);
+  }, [fontsLoaded, isPending, isFetching, setupChecked, session, navigationState?.key]);
+
   if (!fontsLoaded || isPending || isFetching || !setupChecked) {
+    const blockers = [
+      !fontsLoaded && 'fontsLoaded=false',
+      isPending && 'isPending=true',
+      isFetching && 'isFetching=true',
+      !setupChecked && 'setupChecked=false',
+    ].filter(Boolean);
+
     return (
       <View style={{ flex: 1, backgroundColor: '#0E0F11', justifyContent: 'center', alignItems: 'center' }}>
         <Image
@@ -80,6 +98,13 @@ export default function RootLayout() {
           style={{ width: '100%', height: '100%' }}
           resizeMode="cover"
         />
+        <View style={{ position: 'absolute', bottom: 60, left: 16, right: 16, backgroundColor: 'rgba(0,0,0,0.85)', borderRadius: 8, padding: 12 }}>
+          <Text style={{ color: '#FF6B6B', fontSize: 12, fontWeight: 'bold', marginBottom: 4 }}>⏳ Stuck on loading — blockers:</Text>
+          {blockers.map((b, i) => (
+            <Text key={i} style={{ color: '#FFD93D', fontSize: 11 }}>• {b}</Text>
+          ))}
+          <Text style={{ color: '#888', fontSize: 10, marginTop: 6 }}>API: {process.env.EXPO_PUBLIC_API_URL ?? 'fallback (10.0.2.2:3000)'}</Text>
+        </View>
       </View>
     );
   }

@@ -21,14 +21,6 @@ import { colors, fonts, spacing, radius } from '../../components/ui/theme';
 import { orpc } from '../../lib/orpc';
 import { syncRules } from '../../lib/enforcer';
 import ScreenlyEnforcer from '../../modules/screenly-enforcer/src/ScreenlyEnforcerModule';
-import {
-  getConnection,
-  loadOrCreateWallet,
-  buildRemoveTx,
-  sendAndConfirmTx,
-  getEscrowPda,
-  getEscrowAta,
-} from '../../lib/solana';
 
 interface UnlockEvent {
   id: string;
@@ -46,6 +38,8 @@ interface Rule {
   ruleType: string;
   period?: 'daily' | 'hourly';
   enabled: boolean;
+  lockedAmount?: number | null;
+  paymentStatus?: string | null;
 }
 
 export default function AccountScreen() {
@@ -105,64 +99,30 @@ export default function AccountScreen() {
   }
 
   async function handleRemoveApp(rule: Rule) {
-    setRemoving(rule.packageName);
-    let amount = 10;
-    try {
-      const connection = getConnection();
-      const wallet = await loadOrCreateWallet();
-      const [escrowPda] = getEscrowPda(wallet.publicKey, rule.packageName);
-      const escrowAta = getEscrowAta(escrowPda);
-      const balanceInfo = await connection.getTokenAccountBalance(escrowAta);
-      if (balanceInfo?.value?.uiAmount !== null && balanceInfo?.value?.uiAmount !== undefined) {
-        amount = balanceInfo.value.uiAmount;
-      }
-    } catch (err) {
-      console.log('Error fetching escrow balance for removal confirmation:', err);
-    } finally {
-      setRemoving(null);
-    }
-
     Alert.alert(
       `Remove ${rule.appName}?`,
-      `Your $${amount} USDC commitment for this app will be forfeited. You can re-add it anytime.`,
+      `Your commitment for this app will be forfeited. You can re-add it anytime.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: `Remove (Forfeit $${amount})`,
+          text: 'Remove (Forfeit)',
           style: 'destructive',
-          onPress: () => startRemove(rule, amount),
+          onPress: () => startRemove(rule),
         },
       ],
     );
   }
 
-  async function startRemove(rule: Rule, amount: number) {
+  async function startRemove(rule: Rule) {
     setRemoving(rule.packageName);
     try {
-      // Execute Solana remove tx (forfeits USDC to Screenly + closes escrow)
-      const connection = getConnection();
-      const wallet = await loadOrCreateWallet();
-      const tx = buildRemoveTx(wallet.publicKey, rule.packageName);
-      await sendAndConfirmTx(connection, tx, wallet);
-
-      // Delete rule from API
       await orpc('deleteRule', { id: rule.id });
       setRules(prev => prev.filter(r => r.id !== rule.id));
-      syncRules();
-      Alert.alert('Removed', `${rule.appName} restriction removed. $${amount} forfeited.`);
+      await syncRules();
+      Alert.alert('Removed', `${rule.appName} restriction removed.`);
     } catch (e: any) {
-      try {
-        if (e && typeof e.getLogs === 'function') {
-          const logs = await e.getLogs();
-          console.error('[AccountScreen - Remove Failed] Solana logs:', logs);
-        } else if (e && e.logs) {
-          console.error('[AccountScreen - Remove Failed] Solana logs:', e.logs);
-        }
-      } catch (logErr) {
-        console.error('Error fetching Solana transaction logs:', logErr);
-      }
       console.error('[AccountScreen - Remove Failed]', e);
-      Alert.alert('Removal failed', 'Failed to complete on-chain removal transaction. Please check your network connection and try again.');
+      Alert.alert('Removal failed', 'Could not remove the restriction. Please try again.');
     } finally {
       setRemoving(null);
     }
@@ -240,9 +200,14 @@ export default function AccountScreen() {
                           {rule.ruleType === 'daily_limit' ? (rule.period === 'hourly' ? 'Hourly Limit' : 'Daily Limit') : rule.ruleType === 'schedule' ? 'Schedule' : 'Blocked'}
                         </Text>
                       </View>
-                      {removing === rule.packageName && (
-                        <ActivityIndicator size="small" color={colors.danger} />
-                      )}
+                      <View style={styles.amountContainer}>
+                        <Text style={styles.amountText}>
+                          ${rule.lockedAmount ? (rule.lockedAmount / 100).toFixed(0) : '10'}
+                        </Text>
+                        {removing === rule.packageName && (
+                          <ActivityIndicator size="small" color={colors.danger} style={{ marginLeft: 6 }} />
+                        )}
+                      </View>
                     </View>
                   </Card>
                 </TouchableOpacity>
@@ -364,6 +329,17 @@ const styles = StyleSheet.create({
   removeAppIcon: { width: 36, height: 36, borderRadius: 10, marginRight: spacing.sm },
   removeAppName: { fontFamily: fonts.medium, fontSize: 14, color: colors.text },
   removeType: { fontFamily: fonts.semiBold, fontSize: 12, color: colors.textSecondary, marginTop: 1 },
+  amountContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    marginLeft: spacing.sm,
+  },
+  amountText: {
+    fontFamily: fonts.bold,
+    fontSize: 15,
+    color: colors.primary,
+  },
   section: { marginBottom: spacing.xl },
   sectionTitle: { fontFamily: fonts.semiBold, fontSize: 16, color: colors.text, marginBottom: spacing.sm },
   historyRow: { marginBottom: spacing.sm },

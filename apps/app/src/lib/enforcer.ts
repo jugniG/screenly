@@ -4,7 +4,8 @@ import { orpc } from './orpc';
 export async function syncRules() {
   try {
     const rules = await orpc<Record<string, never>, any[]>('listRules');
-    await ScreenlyEnforcer.updateRules(JSON.stringify(rules));
+    const activeRules = rules.filter(r => r.paymentStatus === 'completed' && r.enabled);
+    await ScreenlyEnforcer.updateRules(JSON.stringify(activeRules));
   } catch {}
 }
 

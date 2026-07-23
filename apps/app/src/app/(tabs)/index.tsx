@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, RefreshControl, ActivityIndicator, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import { authClient } from '../../lib/auth';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -21,6 +22,9 @@ interface Rule {
   scheduleStart: string | null;
   scheduleEnd: string | null;
   enabled: boolean;
+  paymentStatus?: 'pending' | 'completed';
+  paymentId?: string | null;
+  lockedAmount?: number | null;
 }
 
 interface UsageInfo {
@@ -84,6 +88,20 @@ export default function HomeScreen() {
   const [unlockedApps, setUnlockedApps] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  const resumePayment = async (ruleId: string) => {
+    if (!ruleId) return;
+    try {
+      const res = await orpc<any, { checkout_url: string }>('resumeRuleCheckout', { id: ruleId });
+      await WebBrowser.openBrowserAsync(res.checkout_url, {
+        showTitle: true,
+        enableBarCollapsing: true,
+      });
+    } catch (err) {
+      console.error('Failed to resume checkout', err);
+      Alert.alert('Error', 'Failed to open payment screen. Please try again.');
+    }
+  };
   const [hasPermission, setHasPermission] = useState(true);
 
   async function load() {
@@ -246,8 +264,10 @@ export default function HomeScreen() {
             const isLimit = item.ruleType === 'daily_limit';
             const isUnlocked = unlockedApps.has(item.packageName);
 
+            const isPendingPayment = item.paymentStatus === 'pending';
+
             return (
-              <Card style={[styles.appCard, !item.enabled && styles.appCardDisabled,{marginVertical:3}]}>
+              <Card style={[styles.appCard, (!item.enabled && !isPendingPayment) && styles.appCardDisabled, { marginVertical: 3 }]}>
                   {/* Row 1: icon + name + delete + right info */}
                   <View style={styles.cardRow}>
                     {iconUri ? (
@@ -259,44 +279,68 @@ export default function HomeScreen() {
                     )}
                     <Text style={styles.appName}>{item.appName}</Text>
                     <View style={styles.rightInfo}>
-                      {isLimit && limitMin > 0 && (
-                        <Text style={styles.limitLabel}>{formatMinutes(limitMin)} / {item.period === 'hourly' ? 'hr' : 'day'}</Text>
-                      )}
-                      {isSchedule && item.scheduleStart && item.scheduleEnd && (
-                        <Text style={styles.limitLabel}>
-                          {format12h(item.scheduleStart)} – {format12h(item.scheduleEnd)}
-                        </Text>
-                      )}
-                      {isBlocked && (
-                        <Text style={styles.blockedLabel}>Blocked</Text>
+                      {isPendingPayment ? (
+                        <Text style={styles.pendingBadge}>Awaiting Payment</Text>
+                      ) : (
+                        <>
+                          {isLimit && limitMin > 0 && (
+                            <Text style={styles.limitLabel}>{formatMinutes(limitMin)} / {item.period === 'hourly' ? 'hr' : 'day'}</Text>
+                          )}
+                          {isSchedule && item.scheduleStart && item.scheduleEnd && (
+                            <Text style={styles.limitLabel}>
+                              {format12h(item.scheduleStart)} – {format12h(item.scheduleEnd)}
+                            </Text>
+                          )}
+                          {isBlocked && (
+                            <Text style={styles.blockedLabel}>Blocked</Text>
+                          )}
+                        </>
                       )}
                     </View>
                   </View>
 
                   {/* Row 2: progress bar (limit) or sub-info (schedule/blocked) */}
-                  {isLimit && limitMin > 0 && (
-                    <View style={styles.progressWrap}>
-                      <View style={styles.progressTrack}>
-                        <View style={[styles.progressFill, {
-                          width: `${progress * 100}%` as any,
-                          backgroundColor: lerpColor(progress),
-                        }]} />
-                      </View>
-                      <Text style={[styles.usedLabel, limitReached && styles.limitReachedLabel]}>
-                        {limitReached ? 'Limit reached' : `${formatMinutes(usedMin)} used`}
+                  {isPendingPayment ? (
+                    <View style={styles.pendingContainer}>
+                      <Text style={styles.pendingText}>
+                        Waiting for payment confirmation. If you already checked out, pull down to refresh.
                       </Text>
+                      {item.paymentId && (
+                        <TouchableOpacity
+                          style={styles.payNowBtn}
+                          onPress={() => resumePayment(item.id)}
+                        >
+                          <Text style={styles.payNowBtnText}>Resume Checkout</Text>
+                        </TouchableOpacity>
+                      )}
                     </View>
-                  )}
-                  {isSchedule && item.scheduleStart && item.scheduleEnd && (
-                    <View style={styles.scheduleRow}>
-                      <Text style={styles.scheduleSubtitle}>Time window</Text>
-                      <Text style={styles.scheduleDuration}>{windowDuration(item.scheduleStart, item.scheduleEnd)}/day</Text>
-                    </View>
-                  )}
-                  {isUnlocked && (
-                    <View style={styles.unlockedBadge}>
-                      <Text style={styles.unlockedText}>Unlocked until midnight</Text>
-                    </View>
+                  ) : (
+                    <>
+                      {isLimit && limitMin > 0 && (
+                        <View style={styles.progressWrap}>
+                          <View style={styles.progressTrack}>
+                            <View style={[styles.progressFill, {
+                              width: `${progress * 100}%` as any,
+                              backgroundColor: lerpColor(progress),
+                            }]} />
+                          </View>
+                          <Text style={[styles.usedLabel, limitReached && styles.limitReachedLabel]}>
+                            {limitReached ? 'Limit reached' : `${formatMinutes(usedMin)} used`}
+                          </Text>
+                        </View>
+                      )}
+                      {isSchedule && item.scheduleStart && item.scheduleEnd && (
+                        <View style={styles.scheduleRow}>
+                          <Text style={styles.scheduleSubtitle}>Time window</Text>
+                          <Text style={styles.scheduleDuration}>{windowDuration(item.scheduleStart, item.scheduleEnd)}/day</Text>
+                        </View>
+                      )}
+                      {isUnlocked && (
+                        <View style={styles.unlockedBadge}>
+                          <Text style={styles.unlockedText}>Unlocked until midnight</Text>
+                        </View>
+                      )}
+                    </>
                   )}
                 </Card>
             );
@@ -382,6 +426,37 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   unlockedText: { fontFamily: fonts.semiBold, fontSize: 11, color: '#4ADE80' },
+  pendingBadge: {
+    fontFamily: fonts.semiBold,
+    fontSize: 12,
+    color: '#e16540',
+    backgroundColor: 'rgba(225,101,64,0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  pendingContainer: {
+    marginTop: 4,
+    gap: 8,
+  },
+  pendingText: {
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    color: colors.textSecondary,
+    lineHeight: 16,
+  },
+  payNowBtn: {
+    backgroundColor: '#e16540',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  payNowBtnText: {
+    fontFamily: fonts.semiBold,
+    fontSize: 12,
+    color: '#fff',
+  },
   permBanner: {
     flexDirection: 'row',
     alignItems: 'center',

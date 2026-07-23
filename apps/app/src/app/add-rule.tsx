@@ -12,6 +12,7 @@ import {
   Platform,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
+import * as WebBrowser from 'expo-web-browser';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Button } from '../components/ui/Button';
@@ -173,113 +174,43 @@ export default function AddRuleScreen() {
 
   async function handleDeposit() {
     setDepositing(true);
-    setStatusText('Validating deposit...');
+    setStatusText('Creating checkout session...');
     try {
       const dollars = parseFloat(depositDollars);
-      const minDepositDollars = MIN_DEPOSIT_AMOUNT / 10 ** USDC_DECIMALS;
-      if (isNaN(dollars) || dollars < minDepositDollars) {
-        Alert.alert('Invalid amount', `Minimum deposit is $${minDepositDollars}`);
+      if (isNaN(dollars) || dollars < 10) {
+        Alert.alert('Invalid amount', 'Minimum deposit is $10');
         setDepositing(false);
         setStatusText('');
         return;
       }
 
-      const wallet = await loadOrCreateWallet();
-      const connection = getConnection();
-
-      // Check if we are on devnet. If so, request auto-funding from the backend first!
-      if (CLUSTER_NAME === 'devnet') {
-        setStatusText('Funding Devnet wallet...');
-        try {
-          await orpc('fundDevnetWallet', {
-            walletAddress: wallet.publicKey.toBase58(),
-            usdcAmount: dollars,
-          });
-        } catch (err: any) {
-          console.log('Devnet funding failed or timed out:', err);
-          // Don't fail the whole flow, try to proceed in case they already have funds
-        }
-      }
-
-      setStatusText('Verifying wallet balances...');
-
-      // 1. Verify SOL Balance (need >= 0.01 SOL to run transactions smoothly)
-      const balanceLamports = await connection.getBalance(wallet.publicKey);
-      const solBalance = balanceLamports / 1e9;
-      if (solBalance < 0.01) {
-        Alert.alert(
-          'Insufficient SOL',
-          `Your Screenly wallet has ${solBalance.toFixed(4)} SOL. Please send at least 0.01 SOL to pay for network transaction fees.`
-        );
-        setDepositing(false);
-        setStatusText('');
-        return;
-      }
-
-      // 2. Verify USDC Balance (need >= dollars)
-      const userAta = getAssociatedTokenAddressSync(USDC_MINT, wallet.publicKey);
-      let balanceUsdc = 0;
-      try {
-        const tokenAccountInfo = await connection.getTokenAccountBalance(userAta);
-        balanceUsdc = tokenAccountInfo.value.uiAmount ?? 0;
-      } catch (err) {
-        // ATA doesn't exist on-chain yet, meaning USDC balance is 0
-        balanceUsdc = 0;
-      }
-
-      if (balanceUsdc < dollars) {
-        Alert.alert(
-          'Insufficient USDC',
-          `Your Screenly wallet has $${balanceUsdc.toFixed(2)} USDC. Please send at least $${dollars.toFixed(2)} USDC to cover your deposit.`
-        );
-        setDepositing(false);
-        setStatusText('');
-        return;
-      }
-
-      // 3. Funds are verified, execute the on-chain deposit
-      setStatusText('Locking commitment on-chain...');
-      const amount = Math.floor(dollars * 10 ** USDC_DECIMALS);
-      const tx = buildDepositTx(wallet.publicKey, userAta, packageName, amount);
-      await sendAndConfirmTx(connection, tx, wallet);
-
-      // 4. On-chain success! Now save the rule to the database
-      setStatusText('Activating rule...');
       if (!pendingRule) {
         throw new Error('No pending rule configuration found');
       }
 
-      const body: any = {
+      const res = await orpc<any, { checkout_url: string; session_id: string }>('createRuleCheckout', {
         packageName: pendingRule.packageName,
         appName: pendingRule.appName,
         ruleType: pendingRule.ruleType,
-        enabled: true,
-      };
-      if (pendingRule.ruleType === 'daily_limit') {
-        body.limitMinutes = pendingRule.limitMinutes;
-        body.period = pendingRule.period;
-      }
-      if (pendingRule.ruleType === 'schedule') {
-        body.scheduleStart = pendingRule.scheduleStart;
-        body.scheduleEnd = pendingRule.scheduleEnd;
-      }
+        limitMinutes: pendingRule.limitMinutes ? parseInt(pendingRule.limitMinutes) : undefined,
+        period: pendingRule.period || 'daily',
+        scheduleStart: pendingRule.scheduleStart,
+        scheduleEnd: pendingRule.scheduleEnd,
+        amount: dollars,
+      });
 
-      await orpc('createRule', body);
-      await syncRules();
-      setStep('done');
-    } catch (e: any) {
-      try {
-        if (e && typeof e.getLogs === 'function') {
-          const logs = await e.getLogs();
-          console.error('[AddRule - Deposit Failed] Solana logs:', logs);
-        } else if (e && e.logs) {
-          console.error('[AddRule - Deposit Failed] Solana logs:', e.logs);
-        }
-      } catch (logErr) {
-        console.error('Error fetching Solana transaction logs:', logErr);
+      setStatusText('Opening browser...');
+      const result = await WebBrowser.openBrowserAsync(res.checkout_url, {
+        showTitle: true,
+        enableBarCollapsing: true,
+      });
+
+      if (result.type === 'cancel') {
+        router.replace('/(tabs)');
       }
-      console.error('[AddRule - Deposit Failed]', e);
-      Alert.alert('Deposit failed', 'Failed to complete on-chain commitment. Please check your network and balance, then try again.');
+    } catch (e: any) {
+      console.error('[AddRule - Checkout Creation Failed]', e);
+      Alert.alert('Checkout failed', 'Failed to create payment checkout session. Please try again.');
     } finally {
       setDepositing(false);
       setStatusText('');
@@ -529,16 +460,11 @@ export default function AddRuleScreen() {
           <View style={styles.stepContainer}>
             <Text style={styles.stepTitle}>Lock in your commitment</Text>
             <Text style={styles.stepSubtitle}>
-              Deposit USDC to commit to staying focused. If you give in, you lose it.
+              Choose an amount that will keep you accountable so you don't easily give in.
             </Text>
 
-            <View style={styles.depositCard}>
-              <Text style={styles.depositAmount}>${depositDollars || '0'} USDC</Text>
-              <Text style={styles.depositLabel}>per app</Text>
-            </View>
-
             <Input
-              label={`Amount (min $${MIN_DEPOSIT_AMOUNT / 10 ** USDC_DECIMALS} USDC)`}
+              label="Amount (min $10 USD)"
               value={depositDollars}
               onChangeText={setDepositDollars}
               keyboardType="number-pad"
@@ -546,24 +472,13 @@ export default function AddRuleScreen() {
             />
 
             {isAmountInvalid && (
-              <Text style={styles.warningText}>Amount must be at least $10 USDC</Text>
+              <Text style={styles.warningText}>Amount must be at least $10</Text>
             )}
 
-            <Text style={styles.walletLabel}>Your wallet</Text>
-            <View style={styles.walletRow}>
-              <Text style={styles.walletAddr} numberOfLines={1} ellipsizeMode="middle" selectable>{walletAddr || 'Loading…'}</Text>
-              <TouchableOpacity style={styles.copyBtn} onPress={handleCopyAddress} disabled={!walletAddr}>
-                <Text style={styles.copyBtnText}>Copy</Text>
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.walletHint}>
-              Send at least ${isAmountInvalid ? '10' : depositDollars} USDC AND at least 0.01 SOL (to cover Solana network fees) to this address.
-            </Text>
-
             <Button
-              title={depositing ? (statusText || 'Depositing…') : 'Commit'}
+              title={depositing ? (statusText || 'Redirecting to payment…') : 'Commit & Pay'}
               onPress={handleDeposit}
-              disabled={depositing || !walletAddr || isAmountInvalid}
+              disabled={depositing || isAmountInvalid}
               style={{ marginTop: spacing.xl }}
             />
             <Button
@@ -693,26 +608,6 @@ const styles = StyleSheet.create({
   ampmText: { fontFamily: fonts.semiBold, fontSize: 13, color: colors.text },
   ampmTextActive: { color: '#fff' },
   timeError: { fontFamily: fonts.regular, fontSize: 12, color: colors.danger, marginTop: 4 },
-  depositCard: {
-    alignItems: 'center',
-    backgroundColor: colors.accentSoft,
-    borderRadius: radius.lg,
-    padding: spacing.xl,
-    marginBottom: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-  },
-  depositAmount: {
-    fontFamily: fonts.bold,
-    fontSize: 36,
-    color: colors.primary,
-  },
-  depositLabel: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginTop: 4,
-  },
   walletLabel: {
     fontFamily: fonts.semiBold,
     fontSize: 13,
