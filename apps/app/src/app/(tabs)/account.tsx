@@ -54,6 +54,9 @@ export default function AccountScreen() {
   const [nameInput, setNameInput] = useState(session?.user?.name ?? '');
   const [saving, setSaving] = useState(false);
   const [icons, setIcons] = useState<Record<string, string>>({});
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedbackText, setFeedbackText] = useState('');
+  const [submittingFeedback, setSubmittingFeedback] = useState(false);
 
   useFocusEffect(useCallback(() => {
     orpc<Record<string, never>, UnlockEvent[]>('unlockHistory')
@@ -145,6 +148,41 @@ export default function AccountScreen() {
         },
       },
     ]);
+  }
+
+  async function handleSubmitFeedback() {
+    if (!feedbackText.trim()) {
+      Alert.alert('Feedback', 'Please enter your feedback.');
+      return;
+    }
+    setSubmittingFeedback(true);
+    try {
+      const apiKey = process.env.EXPO_PUBLIC_QUICKFEED_API_KEY;
+      const websiteId = process.env.EXPO_PUBLIC_QUICKFEED_WEBSITE_ID;
+      if (!apiKey || !websiteId) {
+        throw new Error('QuickFeed credentials not configured');
+      }
+      const res = await fetch('https://www.quickfeed.live/api/feedback/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          websiteId,
+          message: feedbackText.trim(),
+        }),
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      Alert.alert('Thank you!', 'We appreciate your feedback 💪');
+      setFeedbackText('');
+      setShowFeedback(false);
+    } catch (e: any) {
+      console.error('[Feedback] error:', e);
+      Alert.alert('Error', 'Could not send feedback. Please try again.');
+    } finally {
+      setSubmittingFeedback(false);
+    }
   }
 
   const enabledRules = rules.filter(r => r.enabled);
@@ -261,6 +299,40 @@ export default function AccountScreen() {
           onPress={handleSignOut}
           style={{ marginTop: spacing.sm }}
         />
+
+        {/* Give us feedback */}
+        <TouchableOpacity style={styles.feedbackBtn} onPress={() => setShowFeedback(true)} activeOpacity={0.7}>
+          <Text style={styles.feedbackBtnText}>Give us feedback 🤗</Text>
+        </TouchableOpacity>
+
+        {/* Feedback Modal */}
+        <Modal visible={showFeedback} transparent animationType="fade" onRequestClose={() => setShowFeedback(false)}>
+          <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowFeedback(false)}>
+            <TouchableOpacity style={styles.modalContent} activeOpacity={1} onPress={() => {}}>
+              <Text style={styles.modalTitle}>Give us feedback 🤗</Text>
+              <Text style={styles.feedbackSubtitle}>What do you like, what should we improve?</Text>
+              <TextInput
+                style={styles.feedbackInput}
+                value={feedbackText}
+                onChangeText={setFeedbackText}
+                multiline
+                numberOfLines={4}
+                placeholder="Your feedback..."
+                placeholderTextColor={colors.textMuted}
+                autoFocus
+              />
+              <TouchableOpacity
+                style={[styles.feedbackSendBtn, submittingFeedback && { opacity: 0.6 }]}
+                onPress={handleSubmitFeedback}
+                disabled={submittingFeedback}
+              >
+                <Text style={styles.feedbackSendText}>
+                  {submittingFeedback ? 'Sending…' : 'Send Feedback'}
+                </Text>
+              </TouchableOpacity>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </Modal>
       </ScrollView>
 
       {/* Edit Name Modal */}
@@ -414,4 +486,45 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   modalSaveText: { fontFamily: fonts.semiBold, fontSize: 14, color: '#fff' },
+  feedbackBtn: {
+    marginTop: spacing.md,
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+  },
+  feedbackBtnText: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  feedbackSubtitle: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginBottom: spacing.md,
+  },
+  feedbackInput: {
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    color: colors.text,
+    borderWidth: 1.5,
+    borderColor: colors.textSecondary,
+    borderRadius: radius.md,
+    padding: spacing.sm,
+    marginBottom: spacing.md,
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
+  feedbackSendBtn: {
+    height: 44,
+    borderRadius: radius.md,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  feedbackSendText: { fontFamily: fonts.semiBold, fontSize: 14, color: '#fff' },
 });
