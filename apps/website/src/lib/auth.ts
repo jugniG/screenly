@@ -35,13 +35,15 @@ export const auth = betterAuth({
         // If it's the reviewer account, force fixed OTP '123456' in database with long expiry
         if (reviewerEmail && email === reviewerEmail) {
           try {
-            await db
+            const result = await db
               .update(schema.verification)
               .set({
                 value: "123456:0",
                 expiresAt: new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000), // 100 years
               })
               .where(eq(schema.verification.identifier, `sign-in-otp-${reviewerEmail}`));
+              console.log(JSON.stringify({result}));
+              
           } catch (e) {
             console.error("Failed to set static reviewer OTP:", e);
           }
