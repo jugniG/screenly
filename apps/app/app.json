@@ -7,8 +7,8 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "splash": {
-      "image": "./assets/images/splash-icon.png",
-      "resizeMode": "cover",
+      "image": "./assets/images/icon.png",
+      "resizeMode": "contain",
       "backgroundColor": "#0E0F11"
     },
     "userInterfaceStyle": "automatic",
@@ -42,8 +42,8 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#0E0F11",
-          "image": "./assets/images/splash-icon.png",
-          "resizeMode": "cover"
+          "image": "./assets/images/icon.png",
+          "resizeMode": "contain"
         }
       ]
     ],
