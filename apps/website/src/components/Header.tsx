@@ -8,11 +8,11 @@ export default function Header() {
     <header className="sticky top-0 z-50 h-18 border-b border-brand-border bg-brand-bg/80 backdrop-blur-md">
       <nav className="mx-auto flex max-w-7xl h-full items-center justify-between">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2.5 no-underline">
+        <Link to="/" className="flex items-center  no-underline">
           <img
             src="/favicon.ico"
             alt="Screenly Logo"
-            className="w-6 h-6 object-contain filter"
+            className="size-12  object-contain "
           />
           <span className="font-outfit text-xl  tracking-tight text-brand-white">
             Screenly

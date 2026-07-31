@@ -13,7 +13,7 @@
     },
     "userInterfaceStyle": "automatic",
     "android": {
-      "package": "com.screenly_x8k2.runable",
+      "package": "com.screenly.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#0E0F11"
@@ -29,7 +29,7 @@
       ]
     },
     "ios": {
-      "bundleIdentifier": "com.screenly_x8k2.runable",
+      "bundleIdentifier": "com.screenly.app",
       "supportsTablet": false
     },
     "web": {
@@ -50,6 +50,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "56f8e993-db94-431f-91d1-e4235c527cfe"
+      }
     }
   }
 }

@@ -22,7 +22,13 @@ export default function Footer() {
 
         <div className="flex flex-col items-center sm:items-end gap-2 text-sm">
           <p className="m-0">Solana Program: <code className="bg-brand-card px-2 py-0.5 rounded text-brand-orange text-xs">9e9aVVCf...Myfb</code></p>
-          <div className="flex gap-4 mt-2">
+          <div className="flex gap-4 mt-2 items-center">
+            <a
+              href="/privacy"
+              className="text-xs text-brand-gray hover:text-brand-white transition duration-200"
+            >
+              Privacy Policy
+            </a>
             <a
               href="https://github.com/sahil-Gupta584/screenly"
               target="_blank"
