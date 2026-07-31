@@ -30,6 +30,12 @@ export default function Footer() {
               Privacy Policy
             </a>
             <a
+              href="/delete-account"
+              className="text-xs text-brand-gray hover:text-brand-white transition duration-200"
+            >
+              Delete Account
+            </a>
+            <a
               href="https://github.com/sahil-Gupta584/screenly"
               target="_blank"
               rel="noreferrer"
