@@ -4,6 +4,7 @@ import { emailOTP } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { db } from "@screen/db";
 import * as schema from "@screen/db/schema";
+import { eq } from "drizzle-orm";
 
 export const auth = betterAuth({
   basePath: "/api/auth",
@@ -29,6 +30,24 @@ export const auth = betterAuth({
       otpLength: 6,
       expiresIn: 300,
       sendVerificationOTP: async ({ email, otp }) => {
+        const reviewerEmail = process.env.REVIEWER_EMAIL
+
+        // If it's the reviewer account, force fixed OTP '123456' in database with long expiry
+        if (reviewerEmail && email === reviewerEmail) {
+          try {
+            await db
+              .update(schema.verification)
+              .set({
+                value: "123456:0",
+                expiresAt: new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000), // 100 years
+              })
+              .where(eq(schema.verification.identifier, `sign-in-otp${reviewerEmail}`));
+          } catch (e) {
+            console.error("Failed to set static reviewer OTP:", e);
+          }
+          return; // Skip sending email via Resend
+        }
+
         try {
           const { Resend } = await import("resend");
           const resend = new Resend(process.env.RESEND_API_KEY);

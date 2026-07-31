@@ -111,7 +111,7 @@ function PrivacyPolicy() {
           <p>
             If you have questions or concerns about this Privacy Policy, please contact us at:
           </p>
-          <p className="mt-2 text-brand-orange font-medium">support@screenly.app</p>
+          <p className="mt-2 text-brand-orange font-medium">guptas3067@gmail.com</p>
         </section>
       </div>
     </div>
