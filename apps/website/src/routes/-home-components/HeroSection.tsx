@@ -26,17 +26,17 @@ export default function HeroSection() {
         </a>
         <h1 className="tracking-tight text-brand-white leading-tight">
           <span className="font-montserrat font-black text-5xl sm:text-6xl lg:text-7xl block">
-            Make distractions{' '}
+            Make your day{' '}
             <span className="text-brand-orange filter drop-shadow-[0_0_20px_rgba(254,100,1,0.35)]">
-              more expensive,
+              longer,
             </span>
           </span>
           <span className="font-montserrat font-medium text-xl sm:text-2xl lg:text-3xl text-brand-gray block mt-2">
-            so you don't lose your time.
+            by reducing your screentime.
           </span>
         </h1>
         <p className="mt-6 text-lg leading-8 text-brand-gray max-w-2xl mx-auto lg:mx-0">
-          Screenly helps you to not overuse your apps by guarding it with monetary penalty.
+          Screenly helps you stay disciplined by backing your focus goals with real financial stakes.
         </p>
         <div className="mt-10 flex flex-col sm:flex-row items-center gap-8">
           <a href="#download" className="no-underline">
