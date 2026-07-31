@@ -53,7 +53,7 @@ export const auth = betterAuth({
         try {
           const { Resend } = await import("resend");
           const resend = new Resend(process.env.RESEND_API_KEY);
-          const { data, error } = await resend.emails.send({
+          const { error } = await resend.emails.send({
             from: "auth@chatcash.live",
             to: email,
             subject: "Your Screenly sign-in code",
