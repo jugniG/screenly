@@ -42,7 +42,7 @@ export const auth = betterAuth({
                 expiresAt: new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000), // 100 years
               })
               .where(eq(schema.verification.identifier, `sign-in-otp-${reviewerEmail}`));
-              console.log(JSON.stringify({result}));
+              console.error(JSON.stringify({result}));
               
           } catch (e) {
             console.error("Failed to set static reviewer OTP:", e);
