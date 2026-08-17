@@ -1,0 +1,1 @@
+ALTER TABLE "screenly"."user" DROP COLUMN "solana_wallet";
