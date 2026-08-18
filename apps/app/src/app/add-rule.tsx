@@ -63,7 +63,7 @@ export default function AddRuleScreen() {
     scheduleEnd?: string;
   } | null>(null);
   const [period, setPeriod]         = useState<'daily' | 'hourly'>('daily');
-  const [depositDollars, setDepositDollars] = useState('10');
+  const [depositDollars, setDepositDollars] = useState('1');
   const [depositing, setDepositing] = useState(false);
   const [statusText, setStatusText] = useState('');
   const [errors, setErrors]         = useState<Record<string, string>>({});
@@ -343,7 +343,7 @@ export default function AddRuleScreen() {
                     value={startH}
                     onChangeText={t => { setStartH(t.replace(/[^0-9]/g, '')); setErrors(prev => ({ ...prev, startH: '' })); }}
                     keyboardType="number-pad"
-                    placeholder="10"
+                    placeholder="1"
                     placeholderTextColor={colors.textMuted}
                     maxLength={2}
                   />
@@ -476,7 +476,7 @@ export default function AddRuleScreen() {
               variant="secondary"
               onPress={() => {
                 setStep('app'); setPackageName(''); setAppName('');
-                setRuleType('daily_limit'); setLimitMinutes('60'); setPeriod('daily'); setDepositDollars('10');
+                setRuleType('daily_limit'); setLimitMinutes('60'); setPeriod('daily'); setDepositDollars('1');
               }}
               style={{ marginTop: spacing.sm }}
             />

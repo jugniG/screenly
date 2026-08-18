@@ -239,7 +239,7 @@ export default function AccountScreen() {
                       </View>
                       <View style={styles.amountContainer}>
                         <Text style={styles.amountText}>
-                          ${rule.lockedAmount ? (rule.lockedAmount / 100).toFixed(0) : '10'}
+                          ${rule.lockedAmount ? (rule.lockedAmount / 100).toFixed(0) : '1'}
                         </Text>
                         {removing === rule.packageName && (
                           <ActivityIndicator size="small" color={colors.danger} style={{ marginLeft: 6 }} />

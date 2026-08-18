@@ -89,35 +89,38 @@ function Login() {
   }
 
   return (
-    <div className="flex min-h-[80vh] items-center justify-center px-4 py-12">
-      <Card className="w-full max-w-[420px] p-2" shadow="sm">
-        <CardHeader className="flex-col items-center gap-2 pt-6 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-500/10">
-            <img src="/favicon.ico" alt="Screenly" className="h-8 w-8 object-contain" />
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight text-neutral-900">
-            Welcome to Screenly
-          </h1>
-          <p className="text-sm text-neutral-500">
-            Sign in or create an account with Google or Magic Link
-          </p>
-        </CardHeader>
+    <div className="relative overflow-hidden">
+      <div className="warm-glow pointer-events-none absolute inset-0" />
+      <div className="relative flex min-h-[80vh] items-center justify-center px-4 py-12">
+        <Card className="w-full max-w-[420px] border border-border bg-card p-2 shadow-soft" shadow="none">
+          <CardHeader className="flex-col items-center gap-2 pt-6 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-ink shadow-2xl border border-foreground/10">
+              <img src="/favicon.ico" alt="Screenly" className="h-8 w-8 object-contain" />
+            </div>
+            <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
+              Welcome to Screenly
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Sign in or create an account with Google or Magic Link
+            </p>
+          </CardHeader>
 
-        <CardBody className="gap-4 px-6 pb-6 pt-4">
+          <CardBody className="gap-4 px-6 pb-6 pt-4">
           {sent ? (
             <div className="py-4 text-center">
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-orange-500/10">
-                <svg className="h-7 w-7 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+                <svg className="h-7 w-7 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 002-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
               </div>
-              <h2 className="mb-1 text-lg font-bold text-neutral-900">Check your email</h2>
-              <p className="mb-6 text-sm leading-relaxed text-neutral-600">
+              <h2 className="font-display mb-1 text-lg font-bold text-foreground">Check your email</h2>
+              <p className="mb-6 text-sm leading-relaxed text-muted-foreground">
                 We sent a magic sign-in link to <span className="font-semibold text-neutral-800">{sentEmail}</span>. Click the link in your email to sign in.
               </p>
               <Button
                 variant="flat"
                 fullWidth
+                className="bg-primary/10 font-semibold text-foreground"
                 onPress={() => {
                   setSent(false)
                   setError(null)
@@ -136,7 +139,7 @@ function Login() {
                 isDisabled={isSubmitting}
                 onPress={handleGoogle}
                 startContent={!googleLoading && <GoogleLogo />}
-                className="font-semibold"
+                className="btn-outline-premium font-semibold"
               >
                 Continue with Google
               </Button>
@@ -144,7 +147,7 @@ function Login() {
               {/* Divider */}
               <div className="flex items-center gap-3 my-2">
                 <Divider className="flex-1" />
-                <span className="text-xs text-neutral-400 font-medium">or magic link</span>
+                <span className="text-xs font-medium text-muted-foreground/60">or magic link</span>
                 <Divider className="flex-1" />
               </div>
 
@@ -171,18 +174,17 @@ function Login() {
                 />
 
                 {error && (
-                  <p className="rounded-lg bg-danger-50 px-3 py-2 text-xs font-medium text-danger-600">
+                  <p className="rounded-lg bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive">
                     {error}
                   </p>
                 )}
 
                 <Button
                   type="submit"
-                  color="primary"
                   fullWidth
                   isLoading={isSubmitting}
                   isDisabled={googleLoading}
-                  className="bg-orange-500 font-semibold text-white shadow-md shadow-orange-500/20 hover:bg-orange-600"
+                  className="btn-premium bg-primary font-semibold text-primary-foreground"
                 >
                   {isSubmitting ? 'Sending link…' : 'Send Magic Link'}
                 </Button>
@@ -191,6 +193,7 @@ function Login() {
           )}
         </CardBody>
       </Card>
+      </div>
     </div>
   )
 }

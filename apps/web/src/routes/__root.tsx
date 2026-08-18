@@ -5,8 +5,8 @@ import {
   Outlet,
 } from '@tanstack/react-router'
 import appCss from '../styles.css?url'
-import Header from '../components/Header'
-import Footer from '../components/Footer'
+// import Header from '../components/Header'
+// import Footer from '../components/Footer'
 
 import type { QueryClient } from '@tanstack/react-query'
 
@@ -53,10 +53,17 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       },
     ],
     links: [
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
-        rel: 'stylesheet',
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Work+Sans:wght@400;500;600&family=Urbanist:wght@400;600;700&display=swap",
+      },
+      {
+        rel: "stylesheet",
         href: appCss,
       },
+      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
   }),
   shellComponent: RootDocument,
@@ -68,11 +75,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="light">
       <head>
-        <HeadContent />
-        <link rel="preconnect" href="https://fonts.googleapis.com"></link>
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin=""></link>
-        <link href="https://fonts.googleapis.com/css2?family=Geist+Pixel:ELSH@0..100&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Recursive:wght@300..1000&display=swap" rel="stylesheet"></link>
-      </head>
+        <HeadContent /></head>
       <body className=" text-brand-white min-h-screen antialiased selection:bg-brand-orange selection:text-white">
           {children}
           <Scripts />
@@ -84,11 +87,11 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 function RootLayout() {
   return (
     <div className="flex min-h-screen flex-col bg-brand-bg text-brand-white font-recursive">
-      <Header />
+      {/* <Header /> */}
       <main className="flex-grow">
         <Outlet />
       </main>
-      <Footer />
+      {/* <Footer /> */}
     </div>
   )
 }
