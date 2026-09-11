@@ -3,6 +3,7 @@ import { listRules, createRule, updateRule, deleteRule, createRuleCheckout, resu
 import { getTodayUsage, syncUsage } from './usage'
 import { freeUnlock, createCheckout, confirmPayment, unlockHistory } from './unlock'
 import { createRemoveCheckout, confirmRemove } from './remove'
+import { sendInvite, acceptInvite, declineInvite, removeFriend, listFriends, listInvites, syncSnapshot, getLeaderboard } from './leaderboard'
 
 export default {
   listTodos,
@@ -21,4 +22,12 @@ export default {
   unlockHistory,
   createRemoveCheckout,
   confirmRemove,
+  sendInvite,
+  acceptInvite,
+  declineInvite,
+  removeFriend,
+  listFriends,
+  listInvites,
+  syncSnapshot,
+  getLeaderboard,
 }

@@ -1,0 +1,13 @@
+{
+  "name": "screenly-enforcer",
+  "version": "0.1.0",
+  "description": "Screenly native enforcement module for Android",
+  "main": "index",
+  "files": [
+    "android",
+    "src",
+    "index.ts",
+    "expo-module.config.json"
+  ],
+  "private": true
+}
