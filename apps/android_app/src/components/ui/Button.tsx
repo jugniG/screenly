@@ -8,6 +8,7 @@ import {
   View,
   StyleProp,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts, radius, spacing } from './theme';
 
 type Variant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
@@ -65,17 +66,8 @@ export function Button({
         <ActivityIndicator color={variant === 'primary' || variant === 'danger' ? '#fff' : colors.primary} size="small" />
       ) : (
         <View style={styles.content}>
-          <Text style={[styles.label, { color: textColor }]}>{text}</Text>
-          {icon === 'google' && (
-            <View style={styles.googleG}>
-              <Text style={[styles.googleChar, { color: '#4285F4' }]}>G</Text>
-              <Text style={[styles.googleChar, { color: '#EA4335' }]}>o</Text>
-              <Text style={[styles.googleChar, { color: '#FBBC05' }]}>o</Text>
-              <Text style={[styles.googleChar, { color: '#4285F4' }]}>g</Text>
-              <Text style={[styles.googleChar, { color: '#34A853' }]}>l</Text>
-              <Text style={[styles.googleChar, { color: '#EA4335' }]}>e</Text>
-            </View>
-          )}
+          {icon === 'google' && <Ionicons name="logo-google" size={18} color={textColor} style={{ marginRight: 8, marginTop: -1, lineHeight: 18 }} />}
+          <Text style={[styles.label, { color: textColor, lineHeight: 18, textAlignVertical: 'center' }]}>{text}</Text>
         </View>
       )}
     </TouchableOpacity>
@@ -101,14 +93,6 @@ const styles = StyleSheet.create({
   },
   iconText: {
     fontSize: 15,
-    fontFamily: fonts.bold,
-  },
-  googleG: {
-    flexDirection: 'row',
-    marginRight: 8,
-  },
-  googleChar: {
-    fontSize: 18,
     fontFamily: fonts.bold,
   },
 });

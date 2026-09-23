@@ -1,0 +1,259 @@
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Alert,
+  TouchableOpacity,
+  Image,
+} from 'react-native';
+import { router } from 'expo-router';
+import { authClient } from '../../lib/auth';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
+import { colors, fonts, spacing } from '../../components/ui/theme';
+
+export default function SignInScreen() {
+  const { data: session, refetch } = authClient.useSession() as any;
+  const [email, setEmail] = useState('');
+  const [otp, setOtp] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [step, setStep] = useState<'email' | 'otp'>('email');
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (session) router.replace('/(tabs)');
+  }, [session]);
+
+  async function handleGoogle() {
+    setError('');
+    setGoogleLoading(true);
+    try {
+      const { error: err } = await (authClient as any).signIn.social({
+        provider: 'google',
+        callbackURL: 'screenly:///',
+      });
+      if (err) {
+        console.log({ err });
+        setError(err.message ?? 'Could not sign in with Google');
+        setGoogleLoading(false);
+      } else {
+        await refetch();
+        setGoogleLoading(false);
+      }
+    } catch (e: any) {
+      setError(e.message ?? 'Something went wrong');
+      setGoogleLoading(false);
+    }
+  }
+
+  async function handleSendCode() {
+    if (!email.trim()) { setError('Enter your email'); return; }
+    setError('');
+    setLoading(true);
+    try {
+      const { error: err } = await (authClient as any).emailOtp.sendVerificationOtp({
+        email: email.trim(),
+        type: 'sign-in',
+      });
+      if (err) {
+        console.log({err});
+        
+        Alert.alert('Error', err.message ?? 'Could not send code');
+      } else {
+        setStep('otp');
+      }
+    } catch (e: any) {
+      Alert.alert('Error', e.message ?? 'Something went wrong');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSignIn() {
+    if (!otp.trim()) { setError('Enter the code'); return; }
+    setError('');
+    setLoading(true);
+    try {
+      const { error: err } = await (authClient as any).signIn.emailOtp({
+        email: email.trim(),
+        otp: otp.trim(),
+      });
+      if (err) {
+        Alert.alert('Error', err.message ?? 'Invalid code');
+      } else {
+        await refetch();
+        router.replace('/(tabs)');
+      }
+    } catch (e: any) {
+      Alert.alert('Error', e.message ?? 'Something went wrong');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <KeyboardAvoidingView
+      style={styles.flex}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <View style={styles.brand}>
+          <Image source={require('../../../assets/images/icon.png')} style={styles.logoImage} />
+          <Text style={styles.brandName}>Screenly</Text>
+          <Text style={styles.tagline}>Take back your screen time</Text>
+        </View>
+
+        <View style={styles.form}>
+          <Text style={styles.formTitle}>Sign in</Text>
+
+          {step === 'email' ? (
+            <>
+              <Button
+                title="Continue with Google"
+                variant="outline"
+                icon="google"
+                onPress={handleGoogle}
+                loading={googleLoading}
+                disabled={loading}
+                style={{ marginBottom: spacing.md }}
+              />
+              <View style={styles.divider}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>or</Text>
+                <View style={styles.dividerLine} />
+              </View>
+              <Input
+                label="Email"
+                value={email}
+                onChangeText={v => { setEmail(v); setError(''); }}
+                autoCapitalize="none"
+                autoComplete="email"
+                textContentType="emailAddress"
+                keyboardType="email-address"
+                placeholder="you@example.com"
+                error={error}
+              />
+              <Button
+                title={loading ? 'Sending…' : 'Send code'}
+                onPress={handleSendCode}
+                disabled={loading}
+                style={{ marginTop: spacing.lg }}
+              />
+            </>
+          ) : (
+            <>
+              <Text style={styles.otpSentText}>
+                Code sent to{'\n'}
+                <Text style={styles.otpSentEmail}>{email}</Text>
+              </Text>
+              <Input
+                label="Code"
+                value={otp}
+                onChangeText={v => { setOtp(v); setError(''); }}
+                autoComplete="one-time-code"
+                textContentType="oneTimeCode"
+                keyboardType="number-pad"
+                placeholder="000000"
+                maxLength={6}
+                error={error}
+              />
+              <Button
+                title={loading ? 'Signing in…' : 'Sign in'}
+                onPress={handleSignIn}
+                disabled={loading}
+                style={{ marginTop: spacing.lg }}
+              />
+              <Button
+                title="Back"
+                variant="outline"
+                onPress={() => { setStep('email'); setOtp(''); setError(''); }}
+                style={{ marginTop: spacing.sm }}
+              />
+            </>
+          )}
+        </View>
+
+        <TouchableOpacity style={styles.footer} onPress={() => router.push('/(auth)/sign-up')}>
+          <Text style={styles.footerText}>Don't have an account? </Text>
+          <Text style={styles.footerLink}>Sign up</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
+}
+
+const styles = StyleSheet.create({
+  flex: { flex: 1, backgroundColor: colors.background },
+  container: {
+    flexGrow: 1,
+    paddingHorizontal: spacing.xl,
+    paddingTop: 48,
+    paddingBottom: spacing.xxl,
+  },
+  brand: {
+    alignItems: 'center',
+    marginBottom: spacing.xxl,
+  },
+  logoImage: {
+    width: 72,
+    height: 72,
+    borderRadius: 20,
+    overflow: 'hidden',
+    marginBottom: spacing.md,
+  },
+  brandName: { fontFamily: fonts.bold, fontSize: 28, color: colors.text },
+  tagline: { fontFamily: fonts.regular, fontSize: 14, color: colors.textSecondary, marginTop: 4 },
+  form: {},
+  formTitle: {
+    fontFamily: fonts.semiBold,
+    fontSize: 22,
+    color: colors.text,
+    marginBottom: spacing.lg,
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: spacing.lg,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.border,
+  },
+  dividerText: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.textMuted,
+  },
+  otpSentText: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: spacing.lg,
+    lineHeight: 22,
+  },
+  otpSentEmail: { fontFamily: fonts.semiBold, color: colors.text },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: spacing.xl,
+  },
+  footerText: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  footerLink: {
+    fontFamily: fonts.semiBold,
+    fontSize: 14,
+    color: colors.primary,
+    textDecorationLine: 'underline'
+  },
+});

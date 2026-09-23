@@ -9,7 +9,6 @@ import { eq } from "drizzle-orm";
 import { addEmailToGooglePlayTesters } from "./google-play";
 
 export const auth = betterAuth({
-  basePath: "/api/auth",
   baseURL: process.env.BETTER_AUTH_URL,
   database: drizzleAdapter(db, {
     provider: "pg",
@@ -20,12 +19,9 @@ export const auth = betterAuth({
       verification: schema.verification,
     },
   }),
+  logger:{level:'debug'},
   secret: process.env.BETTER_AUTH_SECRET,
   trustedOrigins: ["*", "screenly://", "exp://"],
-  account: {
-    storeStateStrategy: "cookie",
-    skipStateCookieCheck: true,
-  },
   databaseHooks: {
     user: {
       create: {
