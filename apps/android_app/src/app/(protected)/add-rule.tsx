@@ -1,4 +1,4 @@
-import '../lib/polyfill';
+import '@/lib/polyfill';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -14,14 +14,14 @@ import {
 import * as Clipboard from 'expo-clipboard';
 import * as WebBrowser from 'expo-web-browser';
 import { router } from 'expo-router';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
-import { Card } from '../components/ui/Card';
-import AppPicker from '../components/ui/AppPicker';
-import { colors, fonts, spacing, radius } from '../components/ui/theme';
-import { orpc } from '../lib/orpc';
-import { BackButton } from '../components/ui/BackButton';
-import { syncRules } from '../lib/enforcer';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Card } from '@/components/ui/Card';
+import AppPicker from '@/components/ui/AppPicker';
+import { colors, fonts, spacing, radius } from '@/components/ui/theme';
+import { orpc } from '@/lib/orpc';
+import { BackButton } from '@/components/ui/BackButton';
+import { syncRules } from '@/lib/enforcer';
 
 type RuleType = 'daily_limit' | 'schedule' | 'block_always';
 type Step = 'app' | 'type' | 'configure' | 'deposit' | 'done';
@@ -188,7 +188,7 @@ export default function AddRuleScreen() {
 
       await syncRules().catch(() => {});
       if (result.type === 'cancel') {
-        router.replace('/(tabs)');
+        router.replace('/(protected)/(tabs)' as any);
       }
     } catch (e: any) {
       console.error('[AddRule - Checkout Creation Failed]', e);
@@ -459,7 +459,7 @@ export default function AddRuleScreen() {
             <Button
               title="Cancel"
               variant="secondary"
-              onPress={() => router.replace('/(tabs)')}
+              onPress={() => router.replace('/(protected)/(tabs)' as any)}
               style={{ marginTop: spacing.sm }}
             />
           </View>
@@ -471,7 +471,7 @@ export default function AddRuleScreen() {
             <Text style={styles.doneEmoji}>✅</Text>
             <Text style={styles.doneTitle}>App added!</Text>
             <Text style={styles.doneSubtitle}>{appName} is now being tracked</Text>
-            <Button title="Go Home" onPress={() => router.replace('/(tabs)')} style={{ marginTop: spacing.xl }} />
+            <Button title="Go Home" onPress={() => router.replace('/(protected)/(tabs)' as any)} style={{ marginTop: spacing.xl }} />
             <Button
               title="Add Another"
               variant="secondary"

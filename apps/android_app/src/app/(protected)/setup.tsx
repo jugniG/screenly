@@ -9,9 +9,9 @@ import {
 import { Redirect, router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
-import ScreenlyEnforcer from '../modules/screenly-enforcer/src/ScreenlyEnforcerModule';
-import { authClient } from '../lib/auth';
-import { colors, fonts, spacing } from '../components/ui/theme';
+import ScreenlyEnforcer from '@/modules/screenly-enforcer/src/ScreenlyEnforcerModule';
+import { authClient } from '@/lib/auth';
+import { colors, fonts, spacing } from '@/components/ui/theme';
 
 type Step = 'usage_stats' | 'accessibility';
 
@@ -80,7 +80,7 @@ export default function SetupScreen() {
         if (ok) {
           if (stepIndex === STEPS.length - 1) {
             await AsyncStorage.setItem('setup_done', '1');
-            router.replace('/(tabs)');
+            router.replace('/(protected)/(tabs)' as any);
           } else {
             await new Promise(r => setTimeout(r, 900));
             if (cancelled) return;

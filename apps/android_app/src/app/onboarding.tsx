@@ -48,7 +48,7 @@ export default function OnboardingScreen() {
   }
 
   return (
-    <View style={[styles.root]}>
+    <View style={styles.root}>
       <StatusBar barStyle="light-content" />
 
       <Animated.FlatList

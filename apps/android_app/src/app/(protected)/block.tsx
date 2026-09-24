@@ -1,4 +1,4 @@
-import '../lib/polyfill';
+import '@/lib/polyfill';
 import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
@@ -13,10 +13,10 @@ import {
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import Constants from 'expo-constants';
-import { colors, fonts, spacing } from '../components/ui/theme';
-import { syncRules } from '../lib/enforcer';
-import { orpc } from '../lib/orpc';
-import ScreenlyEnforcer from '../modules/screenly-enforcer/src/ScreenlyEnforcerModule';
+import { colors, fonts, spacing } from '@/components/ui/theme';
+import { syncRules } from '@/lib/enforcer';
+import { orpc } from '@/lib/orpc';
+import ScreenlyEnforcer from '@/modules/screenly-enforcer/src/ScreenlyEnforcerModule';
 
 export default function BlockScreen() {
 
@@ -44,7 +44,7 @@ export default function BlockScreen() {
   function goHome() {
     if (dismissed.current) return;
     dismissed.current = true;
-    router.replace('/(tabs)');
+    router.replace('/(protected)/(tabs)' as any);
   }
 
   // Block back button — trap user on this screen
@@ -85,7 +85,7 @@ export default function BlockScreen() {
               await orpc('deleteRule', { id: ruleId });
               await syncRules();
               Alert.alert('Give in', `${appName} has been removed.`);
-              router.replace('/(tabs)');
+              router.replace('/(protected)/(tabs)' as any);
             } catch (e: any) {
               console.error('[BlockScreen - GiveIn Failed]', e);
               Alert.alert('Unlock failed', 'Failed to remove restriction. Please try again.');

@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
 import { View, ActivityIndicator, Text, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
-import { colors, fonts } from '../components/ui/theme';
+import { colors, fonts } from '@/components/ui/theme';
 
-export default function RemoveConfirm() {
+export default function UnlockConfirm() {
   useEffect(() => {
-    const t = setTimeout(() => router.replace('/(tabs)'), 100);
+    const t = setTimeout(() => router.replace('/(protected)/(tabs)' as any), 100);
     return () => clearTimeout(t);
   }, []);
 

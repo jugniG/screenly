@@ -26,7 +26,18 @@ function SharedHeader(): JSX.Element {
   const displayName = user.name ?? user.email;
 
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderColor: "#E5E7EB" }}>
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderColor: "#E5E7EB",
+        backgroundColor: "#fff",
+      }}
+    >
       <Pressable onPress={() => router.push("/account" as any)} style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
         <Avatar size="sm" alt={displayName}>
           <Avatar.Image source={{ uri: user.image ?? undefined }} />

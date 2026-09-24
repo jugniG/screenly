@@ -14,12 +14,12 @@ export default function AuthCallbackScreen() {
         if (error) {
           router.replace('/(auth)/sign-in');
         } else {
-          router.replace('/(tabs)');
+          router.replace('/(protected)/(tabs)' as any);
         }
       } else {
         const { data: session } = await authClient.getSession();
         if (session) {
-          router.replace('/(tabs)');
+          router.replace('/(protected)/(tabs)' as any);
         } else {
           router.replace('/(auth)/sign-in');
         }

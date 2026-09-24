@@ -2,13 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, RefreshControl, ActivityIndicator, Image } from 'react-native';
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { authClient } from '../../lib/auth';
-import { Card } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
-import { colors, fonts, spacing } from '../../components/ui/theme';
-import { orpc } from '../../lib/orpc';
-import { syncRules } from '../../lib/enforcer';
-import ScreenlyEnforcer from '../../modules/screenly-enforcer/src/ScreenlyEnforcerModule';
+import { authClient } from '@/lib/auth';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { colors, fonts, spacing } from '@/components/ui/theme';
+import { orpc } from '@/lib/orpc';
+import { syncRules } from '@/lib/enforcer';
+import ScreenlyEnforcer from '@/modules/screenly-enforcer/src/ScreenlyEnforcerModule';
 
 interface Rule {
   id: string;
@@ -154,10 +154,6 @@ export default function HomeScreen() {
       console.log('[Home] done, perm=' + perm);
     } catch (e: any) {
       console.log('[Home] ERROR:', e);
-      const isUnauth = e?.message?.includes('Unauthorized') || e?.message?.includes('UNAUTHORIZED') || e?.status === 401;
-      if (isUnauth) {
-        authClient.signOut().catch(() => {});
-      }
     }
     finally { setLoading(false); setRefreshing(false); console.log('[Home] finally loading=false'); }
   }

@@ -1,12 +1,12 @@
 import "../lib/polyfill";
-import { Component, type ReactNode, useEffect, useState } from "react";
+import { Component, type ReactNode, useEffect } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
-import { Stack, useRouter, useRootNavigationState } from "expo-router";
+import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
 import { HeroUINativeProvider } from "heroui-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { authClient } from "@/lib/auth";
 import { syncRules } from "@/lib/enforcer";
 import { colors } from "@/components/ui/theme";
@@ -44,55 +44,30 @@ export default function RootLayout() {
     "Poppins-Bold": require("../../assets/fonts/Poppins-Bold.ttf"),
   });
 
-  const { data: session, isPending, isFetching } = authClient.useSession() as any;
-  const [setupDone, setSetupDone] = useState(false);
-  const [setupChecked, setSetupChecked] = useState(false);
-  const navigationState = useRootNavigationState();
-  const router = useRouter();
+  const { data: session } = authClient.useSession() as any;
 
   useEffect(() => {
-    let isMounted = true;
-    AsyncStorage.getItem("setup_done")
-      .then((val) => {
-        if (isMounted) {
-          setSetupDone(!!val);
-          setSetupChecked(true);
-        }
-      })
-      .catch(() => {
-        if (isMounted) setSetupChecked(true);
-      });
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!fontsLoaded || isPending || isFetching || !setupChecked) return;
-    if (!navigationState?.key) return;
-    if (!session) {
-      router.replace("/onboarding" as any);
-    } else if (!setupDone) {
-      router.replace("/setup" as any);
-    } else {
+    if (session) {
       syncRules().catch(() => {});
     }
-  }, [fontsLoaded, isPending, isFetching, session, setupDone, setupChecked, navigationState?.key]);
+  }, [session]);
 
-  if (!fontsLoaded || isPending || isFetching || !setupChecked) {
+  if (!fontsLoaded) {
     return <View style={{ flex: 1, backgroundColor: "#0E0F11", justifyContent: "center", alignItems: "center" }} />;
   }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <HeroUINativeProvider>
-        <RouteErrorBoundary>
-          <View style={{ flex: 1, backgroundColor: colors.background }}>
-            <Stack screenOptions={{ headerShown: false }} />
-          </View>
-        </RouteErrorBoundary>
-        <StatusBar style="dark" />
-      </HeroUINativeProvider>
+      <SafeAreaProvider>
+        <HeroUINativeProvider>
+          <RouteErrorBoundary>
+            <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top', 'bottom', 'left', 'right']}>
+              <Stack screenOptions={{ headerShown: false }} />
+            </SafeAreaView>
+          </RouteErrorBoundary>
+          <StatusBar style="dark" />
+        </HeroUINativeProvider>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }

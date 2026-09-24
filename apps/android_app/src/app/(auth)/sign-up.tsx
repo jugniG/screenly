@@ -16,6 +16,8 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { colors, fonts, spacing } from '../../components/ui/theme';
 
+import * as SecureStore from 'expo-secure-store';
+
 export default function SignUpScreen() {
   const { data: session, refetch } = authClient.useSession() as any;
   const [name, setName] = useState('');
@@ -27,26 +29,41 @@ export default function SignUpScreen() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (session) router.replace('/(tabs)');
+    console.log('[GoogleAuth:SignUp] useSession updated:', session ? `User logged in: ${session?.user?.email} (${session?.user?.id})` : 'No active session');
+    if (session) {
+      console.log('[GoogleAuth:SignUp] Active session detected -> Navigating to /(protected)/(tabs)');
+      router.replace('/(protected)/(tabs)' as any);
+    }
   }, [session]);
 
   async function handleGoogle() {
     setError('');
     setGoogleLoading(true);
+    console.log('[GoogleAuth:SignUp] Initiating Google social login (callback: screenly:///)...');
     try {
-      const { error: err } = await (authClient as any).signIn.social({
+      const res = await (authClient as any).signIn.social({
         provider: 'google',
         callbackURL: 'screenly:///',
       });
-      if (err) {
-        console.log({ err });
-        setError(err.message ?? 'Could not sign in with Google');
+      console.log('[GoogleAuth:SignUp] signIn.social response:', JSON.stringify(res));
+
+      const storedCookie = await SecureStore.getItemAsync('screenly_cookie');
+      console.log('[GoogleAuth:SignUp] Stored screenly_cookie in SecureStore:', storedCookie ? `Present (length ${storedCookie.length})` : 'MISSING/NULL');
+
+      const sessionCheck = await authClient.getSession();
+      console.log('[GoogleAuth:SignUp] authClient.getSession() result:', JSON.stringify(sessionCheck));
+
+      if (res?.error) {
+        console.error('[GoogleAuth:SignUp] Error from signIn.social:', res.error);
+        setError(res.error.message ?? 'Could not sign in with Google');
         setGoogleLoading(false);
       } else {
+        console.log('[GoogleAuth:SignUp] Refetching session...');
         await refetch();
         setGoogleLoading(false);
       }
     } catch (e: any) {
+      console.error('[GoogleAuth:SignUp] Caught exception during Google sign-in:', e);
       setError(e.message ?? 'Something went wrong');
       setGoogleLoading(false);
     }
@@ -88,7 +105,7 @@ export default function SignUpScreen() {
       } else {
         await (authClient as any).updateUser({ name: name.trim() });
         await refetch();
-        router.replace('/(tabs)');
+        router.replace('/(protected)/(tabs)' as any);
       }
     } catch (e: any) {
       Alert.alert('Error', e.message ?? 'Something went wrong');

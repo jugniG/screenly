@@ -16,6 +16,8 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { colors, fonts, spacing } from '../../components/ui/theme';
 
+import * as SecureStore from 'expo-secure-store';
+
 export default function SignInScreen() {
   const { data: session, refetch } = authClient.useSession() as any;
   const [email, setEmail] = useState('');
@@ -26,26 +28,41 @@ export default function SignInScreen() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (session) router.replace('/(tabs)');
+    console.log('[GoogleAuth:SignIn] useSession updated:', session ? `User logged in: ${session?.user?.email} (${session?.user?.id})` : 'No active session');
+    if (session) {
+      console.log('[GoogleAuth:SignIn] Active session detected -> Navigating to /(protected)/(tabs)');
+      router.replace('/(protected)/(tabs)' as any);
+    }
   }, [session]);
 
   async function handleGoogle() {
     setError('');
     setGoogleLoading(true);
+    console.log('[GoogleAuth:SignIn] Initiating Google social login (callback: screenly:///)...');
     try {
-      const { error: err } = await (authClient as any).signIn.social({
+      const res = await (authClient as any).signIn.social({
         provider: 'google',
         callbackURL: 'screenly:///',
       });
-      if (err) {
-        console.log({ err });
-        setError(err.message ?? 'Could not sign in with Google');
+      console.log('[GoogleAuth:SignIn] signIn.social response:', JSON.stringify(res));
+
+      const storedCookie = await SecureStore.getItemAsync('screenly_cookie');
+      console.log('[GoogleAuth:SignIn] Stored screenly_cookie in SecureStore:', storedCookie ? `Present (length ${storedCookie.length})` : 'MISSING/NULL');
+
+      const sessionCheck = await authClient.getSession();
+      console.log('[GoogleAuth:SignIn] authClient.getSession() result:', JSON.stringify(sessionCheck));
+
+      if (res?.error) {
+        console.error('[GoogleAuth:SignIn] Error from signIn.social:', res.error);
+        setError(res.error.message ?? 'Could not sign in with Google');
         setGoogleLoading(false);
       } else {
+        console.log('[GoogleAuth:SignIn] Refetching session...');
         await refetch();
         setGoogleLoading(false);
       }
     } catch (e: any) {
+      console.error('[GoogleAuth:SignIn] Caught exception during Google sign-in:', e);
       setError(e.message ?? 'Something went wrong');
       setGoogleLoading(false);
     }
@@ -87,7 +104,7 @@ export default function SignInScreen() {
         Alert.alert('Error', err.message ?? 'Invalid code');
       } else {
         await refetch();
-        router.replace('/(tabs)');
+        router.replace('/(protected)/(tabs)' as any);
       }
     } catch (e: any) {
       Alert.alert('Error', e.message ?? 'Something went wrong');
@@ -96,12 +113,12 @@ export default function SignInScreen() {
     }
   }
 
-  return (
-    <KeyboardAvoidingView
-      style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+    return (
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <View style={styles.brand}>
           <Image source={require('../../../assets/images/icon.png')} style={styles.logoImage} />
           <Text style={styles.brandName}>Screenly</Text>
