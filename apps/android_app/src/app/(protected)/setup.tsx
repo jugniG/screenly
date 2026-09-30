@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: colors.border,
   },
   dotActive: {
     backgroundColor: colors.primary,
@@ -262,13 +262,12 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   dotDone: {
-    backgroundColor: '#22C55E',
+    backgroundColor: colors.success,
   },
   stepCount: {
     fontFamily: fonts.medium,
     fontSize: 13,
-    color: 'rgba(255,255,255,0.5)',
-
+    color: colors.textSecondary,
   },
   body: {
     flex: 1,
@@ -288,14 +287,14 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: fonts.bold,
     fontSize: 22,
-    color: '#fff',
+    color: colors.text,
     textAlign: 'center',
     marginBottom: spacing.md,
   },
   desc: {
     fontFamily: fonts.regular,
     fontSize: 14,
-    color: 'rgba(255,255,255,0.6)',
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 22,
     maxWidth: 300,
@@ -307,8 +306,9 @@ const styles = StyleSheet.create({
     gap: 12,
     borderRadius: 14,
     padding: spacing.md,
-    borderWidth: 0.5,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
   },
   instructionRow: {
     flexDirection: 'row',
@@ -330,19 +330,17 @@ const styles = StyleSheet.create({
   },
   instructionText: {
     fontFamily: fonts.medium,
-    color: '#FFFFFF',
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    fontSize: 14,
+    color: colors.text,
   },
   tipBox: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
     width: '100%',
-    backgroundColor: 'rgba(243,147,95,0.10)',
+    backgroundColor: colors.primaryLight,
     borderWidth: 1,
-    borderColor: 'rgba(243,147,95,0.35)',
+    borderColor: 'rgba(249, 87, 33, 0.25)',
     borderRadius: 12,
     padding: spacing.md,
     marginBottom: spacing.xl,
@@ -351,13 +349,13 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: fonts.regular,
     fontSize: 13,
-    color: 'rgba(255,255,255,0.75)',
+    color: colors.text,
     lineHeight: 19,
   },
   checkingText: {
     fontFamily: fonts.medium,
     fontSize: 14,
-    color: 'rgba(255,255,255,0.4)',
+    color: colors.textMuted,
   },
   grantedBadge: {
     flexDirection: 'row',
@@ -365,13 +363,13 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 20,
     paddingVertical: 10,
-    backgroundColor: 'rgba(34,197,94,0.12)',
+    backgroundColor: colors.successSoft,
     borderRadius: 24,
   },
   grantedText: {
     fontFamily: fonts.semiBold,
     fontSize: 14,
-    color: '#22C55E',
+    color: colors.success,
   },
   settingsBtn: {
     flexDirection: 'row',
@@ -381,6 +379,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: 14,
     borderRadius: 12,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
   },
   settingsBtnText: {
     fontFamily: fonts.semiBold,
@@ -393,6 +396,6 @@ const styles = StyleSheet.create({
   checkAgainText: {
     fontFamily: fonts.medium,
     fontSize: 14,
-    color: 'rgba(255,255,255,0.35)',
+    color: colors.textSecondary,
   },
 });

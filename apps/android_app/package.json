@@ -4,8 +4,7 @@
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
-    "dev": "cmd /c \"cd /d .\\android && gradlew.bat --stop && cd /d .. && expo run:android\"",
-    "android": "expo run:android",
+    "dev": "cd android && gradlew --stop && cd .. && expo run:android",
     "ios": "expo run:ios",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -38,6 +37,7 @@
     "react-dom": "19.2.3",
     "react-native": "0.86.3",
     "react-native-calendars": "^1.1309.0",
+    "react-native-chart-kit": "7.0.4",
     "react-native-gesture-handler": "~2.32.0",
     "react-native-get-random-values": "2.0.0",
     "react-native-reanimated": "4.5.1",

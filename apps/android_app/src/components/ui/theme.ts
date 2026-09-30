@@ -1,31 +1,31 @@
 export const colors = {
-  background:    '#0E0F11',     // Deeper black background
-  surface:       '#242629',     // Noticeably lighter cards — more contrast vs bg
-  surfaceAlt:    '#3d3737',     // Alt surface for inputs, sections
+  background:    '#F4F1EB',     // Warm faded stone / paper (gentle, zero glare)
+  surface:       '#FCFBF9',     // Soft warm card surface (not harsh neon white)
+  surfaceAlt:    '#EAE5DC',     // Subtle warm stone for pills, inputs, track
 
-  border:        '#d42d2d1a',     // Subtle dark border
-  borderSoft:    '#705f40bb',     // Slightly more visible divider
+  border:        '#DFD8CC',     // Subtle warm border
+  borderSoft:    '#D2C9BB',     // Slightly more visible divider
 
-  text:          '#F5F5F5',     // Near-white primary text
-  textSecondary: '#A0A0A0',     // Muted secondary text
-  textMuted:     '#606060',     // Very muted / placeholder
+  text:          '#1F242D',     // Soft ink charcoal text (not harsh pure black)
+  textSecondary: '#6B7280',     // Warm muted secondary text
+  textMuted:     '#9CA3AF',     // Soft rank / placeholder text
 
-  primary:       '#f3935fce',     // Warm orange accent (matches screenshot)
-  primaryLight:  '#444242',     // Dark tinted orange bg for badges/highlights
-  primarySoft:   'rgb(65, 41, 18)',     // Alias
+  primary:       '#F95721',     // Signature vibrant warm orange
+  primaryLight:  '#FCEEE5',     // Soft warm peach tint for badges/highlights
+  primarySoft:   '#F8E7DB',     // Alias
 
-  success:       '#22C55E',
-  successSoft:   '#0D2818',
+  success:       '#16A34A',
+  successSoft:   '#DCFCE7',
 
-  danger:        '#8f4d4d',
-  dangerSoft:    '#2D1010',
+  danger:        '#DC2626',
+  dangerSoft:    '#FEE2E2',
 
-  overlay:       'rgba(0, 0, 0, 0.75)',
+  overlay:       'rgba(31, 36, 45, 0.45)',
 
   // Legacy aliases used across codebase
-  bg:            '#121212',
-  accent:        '#F97316',
-  accentSoft:    '#2A1A0A',
+  bg:            '#F4F1EB',
+  accent:        '#F95721',
+  accentSoft:    '#FCEEE5',
 };
 
 export const fonts = {

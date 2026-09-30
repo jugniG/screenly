@@ -6,3 +6,20 @@
 /* End-user path: heroui-native lives in the project's node_modules, one
    level up from this src/global.css file. */
 @source '../node_modules/heroui-native/lib';
+
+@theme {
+  --color-background: #F4F1EB;
+  --color-foreground: #1F242D;
+  --color-surface: #FCFBF9;
+  --color-surface-alt: #EAE5DC;
+  --color-border: #DFD8CC;
+  --color-border-soft: #D2C9BB;
+  --color-text: #1F242D;
+  --color-text-secondary: #6B7280;
+  --color-text-muted: #9CA3AF;
+  --color-muted-foreground: #6B7280;
+  --color-primary: #F95721;
+  --color-primary-light: #FCEEE5;
+  --color-success: #16A34A;
+  --color-danger: #DC2626;
+}

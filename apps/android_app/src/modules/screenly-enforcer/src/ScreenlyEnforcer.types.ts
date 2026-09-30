@@ -19,6 +19,7 @@ export interface ScreenlyEnforcerModule {
   unlockApp(packageName: string): Promise<void>;
   isAppUnlocked(packageName: string): Promise<boolean>;
   getTodayUsage(): Promise<AppUsage[]>;
+  queryUsageStats(interval: number, startTimeMs: number, endTimeMs: number): Promise<AppUsage[]>;
   isAccessibilityServiceEnabled(): Promise<boolean>;
   requestAccessibilityService(): Promise<void>;
 

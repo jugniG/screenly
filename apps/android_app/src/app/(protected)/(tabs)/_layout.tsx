@@ -2,16 +2,17 @@ import { Ionicons } from "@expo/vector-icons";
 import { Tabs, Redirect, useRouter } from "expo-router";
 import type { ComponentProps, JSX } from "react";
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, AppState, Pressable, View } from "react-native";
+import { ActivityIndicator, AppState, Pressable, TouchableOpacity, View } from "react-native";
 import type { ColorValue } from "react-native";
-import { Avatar, Button } from "heroui-native";
+import { Avatar } from "heroui-native";
 import { Text } from "react-native";
-import { getScreenTimeData, getTopApps, getTotalMinutes } from "@/lib/screenTime";
+import { getLocalDateString, getScreenTimeData, getTopApps, getTotalMinutes } from "@/lib/screenTime";
 import { orpcClient } from "@/lib/orpc";
 import { syncRules } from "@/lib/enforcer";
 
 import { authClient } from "@/lib/auth";
 import ScreenlyEnforcer from "@/modules/screenly-enforcer/src/ScreenlyEnforcerModule";
+import { colors } from "@/components/ui/theme";
 
 type IoniconName = ComponentProps<typeof Ionicons>["name"];
 
@@ -34,20 +35,42 @@ function SharedHeader(): JSX.Element {
         paddingHorizontal: 16,
         paddingVertical: 12,
         borderBottomWidth: 1,
-        borderColor: "#E5E7EB",
-        backgroundColor: "#fff",
+        borderColor: colors.border,
+        backgroundColor: colors.surface,
       }}
     >
-      <Pressable onPress={() => router.push("/account" as any)} style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+      <Pressable onPress={() => router.push("/account" as any)} style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
         <Avatar size="sm" alt={displayName}>
           <Avatar.Image source={{ uri: user.image ?? undefined }} />
-          <Avatar.Fallback>{displayName.slice(0, 1).toUpperCase()}</Avatar.Fallback>
+          <Avatar.Fallback style={{ backgroundColor: colors.surfaceAlt }}>
+            <Text style={{ color: colors.primary, fontWeight: "700", fontSize: 14 }}>{displayName.slice(0, 1).toUpperCase()}</Text>
+          </Avatar.Fallback>
         </Avatar>
-        <Text style={{ color: "#111", fontWeight: "600" }}>Hi, {displayName}</Text>
+        <View>
+          <Text style={{ color: colors.textSecondary, fontSize: 11, fontWeight: "500" }}>Hi,</Text>
+          <Text style={{ color: colors.text, fontWeight: "700", fontSize: 15 }}>{displayName}</Text>
+        </View>
       </Pressable>
-      <Button size="sm" onPress={() => router.push("/add-rule" as any)}>
-        + Add App
-      </Button>
+      <TouchableOpacity
+        onPress={() => router.push("/add-rule" as any)}
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 4,
+          backgroundColor: colors.primary,
+          paddingHorizontal: 14,
+          paddingVertical: 7,
+          borderRadius: 20,
+          shadowColor: colors.primary,
+          shadowOffset: { width: 0, height: 3 },
+          shadowOpacity: 0.25,
+          shadowRadius: 6,
+          elevation: 3,
+        }}
+      >
+        <Ionicons name="add" size={16} color="#FFFFFF" />
+        <Text style={{ color: "#FFFFFF", fontWeight: "600", fontSize: 13 }}>Add App</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -75,7 +98,7 @@ export default function TabsLayout(): JSX.Element {
     const sub = AppState.addEventListener("change", (state) => {
       if (state === "active") {
         checkPerms();
-        syncRules().catch(() => {});
+        syncRules().catch(() => { });
       }
     });
     return () => sub.remove();
@@ -89,21 +112,21 @@ export default function TabsLayout(): JSX.Element {
     (async () => {
       try {
         await syncRules();
-      } catch {}
+      } catch { }
       try {
-        const today = new Date().toISOString().split("T")[0];
+        const today = getLocalDateString();
         const data = await getScreenTimeData();
         const totalMinutes = getTotalMinutes(data);
         const topApps = getTopApps(data, 3);
         await orpcClient.syncSnapshot({ date: today, totalMinutes, topApps });
-      } catch {}
+      } catch { }
     })();
   }, [permsOk]);
 
   if (isPending || permsOk === null) {
     return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#fff" }}>
-        <ActivityIndicator />
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background }}>
+        <ActivityIndicator color={colors.primary} />
       </View>
     );
   }
@@ -117,9 +140,20 @@ export default function TabsLayout(): JSX.Element {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#fff" }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <SharedHeader />
-      <Tabs screenOptions={{ headerShown: false }}>
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          tabBarStyle: {
+            backgroundColor: colors.surface,
+            borderTopColor: colors.border,
+            borderTopWidth: 1,
+          },
+          tabBarActiveTintColor: colors.primary,
+          tabBarInactiveTintColor: colors.textSecondary,
+        }}
+      >
         <Tabs.Screen
           name="index"
           options={{

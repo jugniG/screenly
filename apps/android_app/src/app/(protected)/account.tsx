@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Image, Modal, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, Image, Modal, Pressable, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useRouter } from "expo-router";
-import { Avatar, Button, Card } from "heroui-native";
+import { Avatar } from "heroui-native";
+import { Card } from "@/components/ui/Card";
+import { colors } from "@/components/ui/theme";
 import { authClient } from "@/lib/auth";
 import { orpcClient } from "@/lib/orpc";
 import ScreenlyEnforcer from "@/modules/screenly-enforcer/src/ScreenlyEnforcerModule";
@@ -45,44 +47,78 @@ export default function AccountScreen() {
   const email = session?.user?.email ?? "";
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#F8F9FA" }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
         {/* Header back */}
-        <Pressable onPress={() => router.back()} style={{ paddingVertical: 8 }}>
-          <Text style={{ color: "#111", fontWeight: "600" }}>← Back</Text>
+        <Pressable onPress={() => router.back()} style={{ paddingVertical: 8, flexDirection: "row", alignItems: "center", gap: 6 }}>
+          <Text style={{ color: colors.primary, fontWeight: "600", fontSize: 15 }}>← Back</Text>
         </Pressable>
 
         {/* Profile */}
         <Card style={{ alignItems: "center", padding: 24, gap: 12 }}>
           <Avatar size="lg" alt={displayName}>
             <Avatar.Image source={{ uri: session?.user?.image ?? undefined }} />
-            <Avatar.Fallback>{displayName.slice(0, 1).toUpperCase()}</Avatar.Fallback>
+            <Avatar.Fallback style={{ backgroundColor: colors.surfaceAlt }}>
+              <Text style={{ color: colors.text, fontWeight: "700", fontSize: 24 }}>
+                {displayName.slice(0, 1).toUpperCase()}
+              </Text>
+            </Avatar.Fallback>
           </Avatar>
-          <Pressable onPress={() => { setNameInput(session?.user?.name ?? ""); setEditing(true); }} style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-            <Text style={{ fontWeight: "700", fontSize: 18 }}>{displayName}</Text>
-            <Text style={{ color: "#6B7280" }}>✎</Text>
+          <Pressable
+            onPress={() => {
+              setNameInput(session?.user?.name ?? "");
+              setEditing(true);
+            }}
+            style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+          >
+            <Text style={{ fontWeight: "700", fontSize: 20, color: colors.text }}>{displayName}</Text>
+            <Text style={{ color: colors.primary, fontSize: 16 }}>✎</Text>
           </Pressable>
-          <Text style={{ color: "#6B7280" }}>{email}</Text>
+          <Text style={{ color: colors.textSecondary, fontSize: 14 }}>{email}</Text>
         </Card>
 
         {/* Rules */}
         <Card style={{ padding: 16, gap: 12 }}>
-          <Text style={{ fontWeight: "700" }}>App Restrictions ({rules.filter((r) => r.enabled).length})</Text>
+          <Text style={{ fontWeight: "700", fontSize: 16, color: colors.text }}>
+            App Restrictions ({rules.filter((r) => r.enabled).length})
+          </Text>
           {rules.length === 0 ? (
-            <Text style={{ color: "#6B7280", textAlign: "center", paddingVertical: 12 }}>No apps restricted</Text>
+            <Text style={{ color: colors.textSecondary, textAlign: "center", paddingVertical: 16 }}>No apps restricted</Text>
           ) : (
             rules.map((r) => (
-              <View key={r.id} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 8, borderBottomWidth: 1, borderColor: "#F3F4F6" }}>
-                <View style={{ width: 36, height: 36, borderRadius: 8, backgroundColor: "#F3F4F6", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-                  {icons[r.packageName] ? <Image source={{ uri: icons[r.packageName] }} style={{ width: 36, height: 36 }} /> : <Text style={{ fontWeight: "700" }}>{r.appName[0]}</Text>}
+              <View
+                key={r.id}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 12,
+                  paddingVertical: 10,
+                  borderBottomWidth: 1,
+                  borderColor: colors.border,
+                }}
+              >
+                <View
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 8,
+                    backgroundColor: colors.surfaceAlt,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    overflow: "hidden",
+                  }}
+                >
+                  {icons[r.packageName] ? (
+                    <Image source={{ uri: icons[r.packageName] }} style={{ width: 36, height: 36 }} />
+                  ) : (
+                    <Text style={{ fontWeight: "700", color: colors.primary }}>{r.appName[0]}</Text>
+                  )}
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontWeight: "600" }}>{r.appName}</Text>
-                  <Text style={{ color: "#6B7280", fontSize: 12 }}>{r.ruleType}</Text>
+                  <Text style={{ fontWeight: "600", fontSize: 14, color: colors.text }}>{r.appName}</Text>
+                  <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 1 }}>{r.ruleType}</Text>
                 </View>
-                <Button
-                  size="sm"
-                  variant="ghost"
+                <TouchableOpacity
                   onPress={async () => {
                     try {
                       await orpcClient.deleteRule({ id: r.id });
@@ -91,39 +127,64 @@ export default function AccountScreen() {
                       Alert.alert("Error", "Could not remove");
                     }
                   }}
+                  style={{
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    borderRadius: 6,
+                    backgroundColor: colors.surfaceAlt,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                  }}
                 >
-                  Remove
-                </Button>
+                  <Text style={{ color: colors.danger, fontSize: 12, fontWeight: "600" }}>Remove</Text>
+                </TouchableOpacity>
               </View>
             ))
           )}
         </Card>
 
-        <Button
-          variant="secondary"
+        <TouchableOpacity
           onPress={async () => {
             await authClient.signOut();
             router.replace("/(auth)/sign-in" as any);
           }}
+          style={{
+            backgroundColor: colors.surface,
+            borderWidth: 1,
+            borderColor: colors.danger,
+            borderRadius: 12,
+            paddingVertical: 14,
+            alignItems: "center",
+          }}
         >
-          Sign Out
-        </Button>
+          <Text style={{ color: colors.danger, fontWeight: "600", fontSize: 15 }}>Sign Out</Text>
+        </TouchableOpacity>
       </ScrollView>
 
       <Modal visible={editing} transparent animationType="fade" onRequestClose={() => setEditing(false)}>
-        <Pressable onPress={() => setEditing(false)} style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center", padding: 16 }}>
-          <Pressable onPress={() => {}} style={{ backgroundColor: "#fff", borderRadius: 16, padding: 16, width: "100%", maxWidth: 320, gap: 12 }}>
-            <Text style={{ fontWeight: "700", textAlign: "center" }}>Edit name</Text>
-            <View style={{ borderWidth: 1, borderColor: "#E5E7EB", borderRadius: 12, paddingHorizontal: 12 }}>
-              <TextInput value={nameInput} onChangeText={setNameInput} placeholder="Your name" autoFocus />
+        <Pressable onPress={() => setEditing(false)} style={{ flex: 1, backgroundColor: colors.overlay, justifyContent: "center", alignItems: "center", padding: 20 }}>
+          <Pressable onPress={() => {}} style={{ backgroundColor: colors.surface, borderRadius: 16, borderWidth: 1, borderColor: colors.border, padding: 20, width: "100%", maxWidth: 340, gap: 14 }}>
+            <Text style={{ fontWeight: "700", fontSize: 16, textAlign: "center", color: colors.text }}>Edit Name</Text>
+            <View style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 10, paddingHorizontal: 12, backgroundColor: colors.surfaceAlt }}>
+              <TextInput
+                value={nameInput}
+                onChangeText={setNameInput}
+                placeholder="Your name"
+                placeholderTextColor={colors.textMuted}
+                style={{ color: colors.text, fontSize: 15, height: 44 }}
+                autoFocus
+              />
             </View>
-            <View style={{ flexDirection: "row", gap: 8 }}>
-              <Button variant="secondary" style={{ flex: 1 }} onPress={() => setEditing(false)}>
-                Cancel
-              </Button>
-              <Button
-                style={{ flex: 1 }}
-                isDisabled={saving}
+            <View style={{ flexDirection: "row", gap: 10 }}>
+              <TouchableOpacity
+                style={{ flex: 1, backgroundColor: colors.surfaceAlt, paddingVertical: 12, borderRadius: 10, alignItems: "center", borderWidth: 1, borderColor: colors.border }}
+                onPress={() => setEditing(false)}
+              >
+                <Text style={{ color: colors.textSecondary, fontWeight: "600" }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                disabled={saving}
+                style={{ flex: 1, backgroundColor: colors.primary, paddingVertical: 12, borderRadius: 10, alignItems: "center" }}
                 onPress={async () => {
                   if (!nameInput.trim()) return;
                   setSaving(true);
@@ -137,8 +198,8 @@ export default function AccountScreen() {
                   }
                 }}
               >
-                {saving ? <ActivityIndicator color="#fff" /> : "Save"}
-              </Button>
+                {saving ? <ActivityIndicator color="#fff" size="small" /> : <Text style={{ color: "#fff", fontWeight: "600" }}>Save</Text>}
+              </TouchableOpacity>
             </View>
           </Pressable>
         </Pressable>
@@ -146,3 +207,4 @@ export default function AccountScreen() {
     </View>
   );
 }
+

@@ -48,12 +48,12 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (session) {
-      syncRules().catch(() => {});
+      syncRules().catch(() => { });
     }
   }, [session]);
 
   if (!fontsLoaded) {
-    return <View style={{ flex: 1, backgroundColor: "#0E0F11", justifyContent: "center", alignItems: "center" }} />;
+    return <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: "center", alignItems: "center" }} />;
   }
 
   return (
@@ -61,7 +61,7 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <HeroUINativeProvider>
           <RouteErrorBoundary>
-            <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top', 'bottom', 'left', 'right']}>
+            <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top', 'left', 'right']}>
               <Stack screenOptions={{ headerShown: false }} />
             </SafeAreaView>
           </RouteErrorBoundary>

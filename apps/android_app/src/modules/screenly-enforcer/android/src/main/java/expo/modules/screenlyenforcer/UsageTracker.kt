@@ -110,54 +110,82 @@ class UsageTracker(context: Context) {
   // ── Public API ────────────────────────────────────────────────────────────
 
   /**
+   * Queries usage stats for any specified interval and time range.
+   */
+  fun queryUsageStats(interval: Int, startTime: Long, endTime: Long): List<AppUsage> {
+    val manager = usm ?: run {
+      Log.w("UsageTracker", "[USAGE] usm is null — UsageStatsManager unavailable")
+      return emptyList()
+    }
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+      return emptyList()
+    }
+
+    return try {
+      Log.i("UsageTracker", "[USAGE] queryUsageStats interval=$interval start=$startTime end=$endTime")
+      var stats = manager.queryUsageStats(interval, startTime, endTime)
+      if (stats.isNullOrEmpty() && interval != UsageStatsManager.INTERVAL_DAILY) {
+        stats = manager.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, startTime, endTime)
+      }
+
+      if (stats.isNullOrEmpty()) {
+        Log.w("UsageTracker", "[USAGE] queryUsageStats returned empty")
+        return emptyList()
+      }
+
+      val usageMs = mutableMapOf<String, Long>()
+      for (stat in stats) {
+        if (stat.totalTimeInForeground > 0) {
+          usageMs[stat.packageName] = (usageMs[stat.packageName] ?: 0L) + stat.totalTimeInForeground
+        }
+      }
+
+      // If querying today (or current time window), add live running session to compensate for OS batching lag
+      val now = System.currentTimeMillis()
+      if (endTime >= todayStartMs() && endTime >= now - 60_000L) {
+        val fgPkg = prefs.getString("fg_pkg", null)
+        val fgStart = prefs.getLong("fg_start", 0)
+        if (fgPkg != null && fgStart > 0) {
+          val running = now - fgStart
+          if (running > 0) {
+            usageMs[fgPkg] = (usageMs[fgPkg] ?: 0L) + running
+          }
+        }
+      }
+
+      val result = usageMs
+        .filter { it.value > 0 }
+        .mapNotNull { (pkg, ms) ->
+          val name = try {
+            val appInfo = pm.getApplicationInfo(pkg, 0)
+            pm.getApplicationLabel(appInfo).toString()
+          } catch (_: Exception) {
+            pkg
+          }
+          AppUsage(
+            packageName = pkg,
+            appName = name,
+            totalMinutes = (ms / 60000).toInt().coerceAtLeast(0),
+          )
+        }
+        .sortedByDescending { it.totalMinutes }
+
+      Log.i("UsageTracker", "[USAGE] queryUsageStats returning ${result.size} AppUsage entries")
+      result
+    } catch (ex: Exception) {
+      Log.e("UsageTracker", "[USAGE] queryUsageStats exception: ${ex.message}")
+      emptyList()
+    }
+  }
+
+  /**
    * Returns today's usage for all tracked apps.
    *
    * Source: Android OS UsageStatsManager (accurate, matches Digital Wellbeing).
    */
   fun getTodayUsage(): List<AppUsage> {
     Log.i("UsageTracker", "[USAGE] getTodayUsage() called")
-    val osUsage = queryOsUsageMs()
-
-    if (osUsage == null) {
-      Log.w("UsageTracker", "[USAGE] OS data unavailable, returning empty")
-      return emptyList()
-    }
-
-    Log.i("UsageTracker", "[USAGE] using OS data path (${osUsage.size} packages)")
-    val fgPkg = prefs.getString("fg_pkg", null)
-    val fgStart = prefs.getLong("fg_start", 0)
-    val usageMs = if (fgPkg != null && fgStart > 0) {
-      val running = System.currentTimeMillis() - fgStart
-      if (running > 0) {
-        val mutable = osUsage.toMutableMap()
-        mutable[fgPkg] = (osUsage[fgPkg] ?: 0L) + running
-        Log.i("UsageTracker", "[USAGE] live session top-up: $fgPkg +${running / 60000}min (running ${running}ms)")
-        mutable
-      } else osUsage
-    } else {
-      Log.i("UsageTracker", "[USAGE] no live session in prefs (fg_pkg=null)")
-      osUsage
-    }
-
-    val result = usageMs
-      .filter { it.value > 0 }
-      .mapNotNull { (pkg, ms) ->
-        val name = try {
-          val appInfo = pm.getApplicationInfo(pkg, 0)
-          pm.getApplicationLabel(appInfo).toString()
-        } catch (_: Exception) {
-          pkg
-        }
-        AppUsage(
-          packageName = pkg,
-          appName = name,
-          totalMinutes = (ms / 60000).toInt().coerceAtLeast(0),
-        )
-      }
-      .sortedByDescending { it.totalMinutes }
-
-    Log.i("UsageTracker", "[USAGE] returning ${result.size} AppUsage entries")
-    return result
+    return queryUsageStats(UsageStatsManager.INTERVAL_BEST, todayStartMs(), System.currentTimeMillis())
   }
 
   /**

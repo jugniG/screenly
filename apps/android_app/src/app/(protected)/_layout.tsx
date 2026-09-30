@@ -1,6 +1,7 @@
 import { Redirect, Stack } from "expo-router";
 import { ActivityIndicator, View } from "react-native";
 import { authClient } from "@/lib/auth";
+import { colors } from "@/components/ui/theme";
 
 export default function ProtectedLayout() {
   const { data: session, isPending } = authClient.useSession() as any;
@@ -9,8 +10,8 @@ export default function ProtectedLayout() {
 
   if (isPending) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#fff" }}>
-        <ActivityIndicator size="large" color="#5C6EFF" />
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: colors.background }}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }

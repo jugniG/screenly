@@ -34,6 +34,7 @@ export default function AppPicker({ onSelect, onCancel, existingPackages = [] }:
   const [manualName, setManualName] = useState('');
   const [manualPkg, setManualPkg] = useState('');
 
+
   useEffect(() => {
     (async () => {
       try {

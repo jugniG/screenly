@@ -20,12 +20,12 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
-    borderWidth: 0.5,
+    borderWidth: 1,
     borderColor: colors.border,
-    // shadowColor: 'rgba(255, 255, 255, 0.55)',
+    shadowColor: 'rgba(28, 25, 23, 0.08)',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 8,
-    elevation: 6,
+    elevation: 2,
   },
 });

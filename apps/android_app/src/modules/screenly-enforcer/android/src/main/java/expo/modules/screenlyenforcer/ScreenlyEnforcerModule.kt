@@ -111,6 +111,27 @@ class ScreenlyEnforcerModule : Module() {
       return@Function false
     }
 
+    Function("queryUsageStats") { interval: Int, startTimeMs: Double, endTimeMs: Double ->
+      Log.i("ScreenlyEnforcer", "queryUsageStats called: interval=$interval, start=${startTimeMs.toLong()}, end=${endTimeMs.toLong()}")
+      val ctx = appContext.reactContext
+      if (ctx == null) {
+        Log.w("ScreenlyEnforcer", "queryUsageStats: reactContext is null, returning empty")
+        return@Function emptyList<Map<String, Any>>()
+      }
+      if (!this@ScreenlyEnforcerModule::usageTracker.isInitialized) {
+        usageTracker = UsageTracker(ctx)
+      }
+      val result = usageTracker.queryUsageStats(interval, startTimeMs.toLong(), endTimeMs.toLong())
+      Log.i("ScreenlyEnforcer", "queryUsageStats: got ${result.size} entries")
+      return@Function result.map { usage ->
+        mapOf(
+          "packageName" to usage.packageName,
+          "appName" to usage.appName,
+          "totalMinutes" to usage.totalMinutes,
+        )
+      }
+    }
+
     Function("getTodayUsage") {
       Log.i("ScreenlyEnforcer", "getTodayUsage called")
       val ctx = appContext.reactContext
