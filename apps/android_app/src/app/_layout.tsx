@@ -61,7 +61,7 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <HeroUINativeProvider>
           <RouteErrorBoundary>
-            <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top', 'left', 'right']}>
+            <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, overflow:'scroll' }}>
               <Stack screenOptions={{ headerShown: false }} />
             </SafeAreaView>
           </RouteErrorBoundary>

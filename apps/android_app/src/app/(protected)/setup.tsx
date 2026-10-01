@@ -144,7 +144,7 @@ export default function SetupScreen() {
             <Text style={styles.prevGrantedTitle}>
               {STEPS[stepIndex - 1].title} — Done!
             </Text>
-            <Text style={styles.prevGrantedSub}>
+            <Text>
               That one worked. Now just this last permission.
             </Text>
           </View>
@@ -153,7 +153,7 @@ export default function SetupScreen() {
 
       <View style={styles.body}>
         <View style={styles.iconCircle}>
-          <Ionicons name={step.icon} size={40} color={colors.primary} />
+          <Ionicons name={step.icon} size={20} color={colors.primary} />
         </View>
 
         <Text style={styles.title}>{step.title}</Text>
@@ -276,8 +276,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   iconCircle: {
-    width: 88,
-    height: 88,
+    width: 44,
+    height: 44,
     borderRadius: 44,
     backgroundColor: colors.primaryLight,
     alignItems: 'center',
@@ -314,6 +314,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    fontSize: 8,
   },
   stepNum: {
     width: 26,
@@ -325,12 +326,12 @@ const styles = StyleSheet.create({
   },
   stepNumText: {
     fontFamily: fonts.semiBold,
-    fontSize: 13,
+    fontSize: 10,
     color: colors.primary,
   },
   instructionText: {
     fontFamily: fonts.medium,
-    fontSize: 14,
+    fontSize: 10,
     color: colors.text,
   },
   tipBox: {
