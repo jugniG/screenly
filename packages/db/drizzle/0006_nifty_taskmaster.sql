@@ -1,0 +1,1 @@
+ALTER TABLE "screenly"."app_rules" ADD COLUMN "stake_tier_id" text;

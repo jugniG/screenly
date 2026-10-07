@@ -13,7 +13,8 @@
   "dependencies": {
     "@orpc/client": "*",
     "@screen/db": "*",
-    "dodopayments": "2.46.0",
+    "@screen/monetization": "*",
+    "google-auth-library": "11.1.0",
     "zod": "*"
   },
   "devDependencies": {

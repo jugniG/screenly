@@ -4,6 +4,8 @@ import * as schema from '@screen/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { authedProcedure } from '../base'
 import { ORPCError } from '@orpc/client'
+import { forfeitAmount, minutesUntilMidnight, challengeEndsAt, tierMinor } from '@screen/monetization'
+import { verifyStakePurchase, refundPlayPurchase, type RefundStatus } from '../play'
 
 export const listRules = authedProcedure
   .route({ method: 'GET', path: '/rules' })
@@ -81,8 +83,77 @@ export const deleteRule = authedProcedure
     return { success: true }
   })
 
-export const createRuleCheckout = authedProcedure
-  .route({ method: 'POST', path: '/rules/checkout' })
+// --- Challenge stakes -------------------------------------------------------
+// A challenge is the period a user commits to leaving an app blocked. The stake
+// is their own money: 0% forfeited if they complete it, a slice if they unlock
+// temporarily, all of it if they give up. Percentages live in
+// @screen/monetization so the app can quote the exact same numbers.
+
+const loadOwnedRule = async (id: string, userId: string) => {
+  const [rule] = await db
+    .select()
+    .from(schema.appRules)
+    .where(and(eq(schema.appRules.id, id), eq(schema.appRules.userId, userId)))
+    .limit(1)
+  if (!rule) throw new ORPCError('Rule not found')
+  return rule
+}
+
+export const unlockChallenge = authedProcedure
+  .route({ method: 'POST', path: '/rules/{id}/unlock' })
+  .input(z.object({ id: z.string() }))
+  .handler(async ({ input, context }) => {
+    const rule = await loadOwnedRule(input.id, context.user.id)
+    if (rule.stakeStatus !== 'active') throw new ORPCError('This challenge is already over')
+    // One temporary unlock per challenge — otherwise "pay once, unlock all day"
+    // is cheaper than any fee and the lock stops meaning anything.
+    if (rule.forfeitedAmount > 0) throw new ORPCError('You already used your unlock on this challenge')
+
+    const stake = rule.lockedAmount ?? 0
+    const cost = forfeitAmount(stake, 'unlock')
+    await db
+      .update(schema.appRules)
+      .set({ forfeitedAmount: cost })
+      .where(eq(schema.appRules.id, rule.id))
+
+    return {
+      forfeitedAmount: cost,
+      stakeAmount: stake,
+      remainingAmount: stake - cost,
+      currency: rule.stakeCurrency ?? 'INR',
+      minutesUnlocked: minutesUntilMidnight(),
+    }
+  })
+
+export const giveUpChallenge = authedProcedure
+  .route({ method: 'POST', path: '/rules/{id}/give-up' })
+  .input(z.object({ id: z.string() }))
+  .handler(async ({ input, context }) => {
+    const rule = await loadOwnedRule(input.id, context.user.id)
+    const stake = rule.lockedAmount ?? 0
+    // The row stays so the stake has a record; enabled=false stops the enforcer
+    // from blocking (syncRules filters on paymentStatus + enabled).
+    await db
+      .update(schema.appRules)
+      .set({ enabled: false, stakeStatus: 'forfeited', forfeitedAmount: stake })
+      .where(eq(schema.appRules.id, rule.id))
+
+    return {
+      forfeitedAmount: stake,
+      stakeAmount: stake,
+      remainingAmount: 0,
+      currency: rule.stakeCurrency ?? 'INR',
+    }
+  })
+
+// --- Google Play stake purchases -------------------------------------------
+
+/**
+ * Step 1 of buying a stake on Android: reserve the rule, disabled, with the
+ * amount it will cost. Nothing is active until Play confirms the payment.
+ */
+export const beginStake = authedProcedure
+  .route({ method: 'POST', path: '/rules/begin-stake' })
   .input(z.object({
     packageName: z.string(),
     appName: z.string(),
@@ -91,45 +162,14 @@ export const createRuleCheckout = authedProcedure
     period: z.enum(['daily', 'hourly']).optional(),
     scheduleStart: z.string().optional(),
     scheduleEnd: z.string().optional(),
-    amount: z.number(),
+    tierId: z.string(),
+    currency: z.enum(['INR', 'USD']).default('INR'),
   }))
   .handler(async ({ input, context }) => {
-    const productId = process.env.DODO_ADD_RULE_PRODUCT_ID || process.env.DODO_UNLOCK_PRODUCT_ID
-    if (!productId) throw new ORPCError('Add Rule Product ID not configured')
+    const stake = tierMinor(input.tierId, input.currency)
+    if (stake === null) throw new ORPCError('Unknown stake amount')
 
-    const amountInCents = Math.round(input.amount * 100)
-
-    const { default: DodoPayments } = await import('dodopayments')
-    const dodo = new DodoPayments({
-      bearerToken: process.env.DODO_PAYMENTS_API_KEY!,
-      environment: process.env.DODO_ENVIRONMENT === 'live' ? 'live_mode' : 'test_mode',
-    })
-
-    const checkoutSession = await dodo.checkoutSessions.create({
-      product_cart: [{
-        product_id: productId,
-        quantity: 1,
-        amount: amountInCents,
-      }],
-      customer: { email: context.user.email, name: context.user.name },
-      return_url: `${process.env.BETTER_AUTH_URL ?? 'http://localhost:3000'}/api/dodo/return?action=add_rule`,
-      metadata: {
-        userId: context.user.id,
-        packageName: input.packageName,
-        appName: input.appName,
-        ruleType: input.ruleType,
-        limitMinutes: input.limitMinutes ? String(input.limitMinutes) : '',
-        period: input.period || 'daily',
-        scheduleStart: input.scheduleStart || '',
-        scheduleEnd: input.scheduleEnd || '',
-        action: 'add_rule',
-        amount: String(input.amount),
-      },
-      customization: { theme: 'light' },
-    })
-
-    // Pre-create/Upsert the rule with status 'pending' and enabled = false in the database
-    const existingRule = await db
+    const [existing] = await db
       .select()
       .from(schema.appRules)
       .where(and(
@@ -138,111 +178,129 @@ export const createRuleCheckout = authedProcedure
       ))
       .limit(1)
 
-    if (existingRule.length > 0) {
-      await db
-        .update(schema.appRules)
-        .set({
-          appName: input.appName,
-          ruleType: input.ruleType,
-          limitMinutes: input.limitMinutes ?? null,
-          period: input.period ?? 'daily',
-          scheduleStart: input.scheduleStart ?? null,
-          scheduleEnd: input.scheduleEnd ?? null,
-          enabled: false,
-          paymentStatus: 'pending',
-          paymentId: checkoutSession.session_id,
-          lockedAmount: amountInCents,
-        })
-        .where(eq(schema.appRules.id, existingRule[0].id))
-    } else {
-      await db
-        .insert(schema.appRules)
-        .values({
-          userId: context.user.id,
-          packageName: input.packageName,
-          appName: input.appName,
-          ruleType: input.ruleType,
-          limitMinutes: input.limitMinutes ?? null,
-          period: input.period ?? 'daily',
-          scheduleStart: input.scheduleStart ?? null,
-          scheduleEnd: input.scheduleEnd ?? null,
-          enabled: false,
-          paymentStatus: 'pending',
-          paymentId: checkoutSession.session_id,
-          lockedAmount: amountInCents,
-        })
+    const values = {
+      appName: input.appName,
+      ruleType: input.ruleType,
+      limitMinutes: input.limitMinutes ?? null,
+      period: input.period ?? 'daily',
+      scheduleStart: input.scheduleStart ?? null,
+      scheduleEnd: input.scheduleEnd ?? null,
+      enabled: false,
+      paymentStatus: 'pending' as const,
+      lockedAmount: stake,
+      stakeCurrency: input.currency,
+      stakeTierId: input.tierId,
+      stakeStatus: 'active' as const,
+      forfeitedAmount: 0,
+      playPurchaseToken: null,
+      playOrderId: null,
     }
 
-    return {
-      checkout_url: checkoutSession.checkout_url,
-      session_id: checkoutSession.session_id,
+    if (existing) {
+      const [updated] = await db
+        .update(schema.appRules)
+        .set(values)
+        .where(eq(schema.appRules.id, existing.id))
+        .returning()
+      return { ruleId: updated.id }
     }
+    const [inserted] = await db
+      .insert(schema.appRules)
+      .values({ userId: context.user.id, packageName: input.packageName, ...values })
+      .returning()
+    return { ruleId: inserted.id }
   })
 
-export const resumeRuleCheckout = authedProcedure
-  .route({ method: 'POST', path: '/rules/{id}/resume-checkout' })
-  .input(z.object({ id: z.string() }))
+/**
+ * Step 2: Google Play says the user paid. Verify it on Google's servers (never
+ * trust the client), store the token, and start the challenge clock.
+ */
+export const confirmStakePurchase = authedProcedure
+  .route({ method: 'POST', path: '/rules/confirm-stake' })
+  .input(z.object({ ruleId: z.string(), purchaseToken: z.string() }))
   .handler(async ({ input, context }) => {
-    // 1. Fetch the rule
-    const [rule] = await db
-      .select()
-      .from(schema.appRules)
-      .where(and(
-        eq(schema.appRules.id, input.id),
-        eq(schema.appRules.userId, context.user.id),
-      ))
-      .limit(1)
+    const rule = await loadOwnedRule(input.ruleId, context.user.id)
+    if (rule.paymentStatus === 'completed') return { success: true, alreadyPaid: true }
+    if (!rule.stakeTierId) throw new ORPCError('This challenge has no stake product')
 
-    if (!rule) throw new ORPCError('Rule not found')
-    if (rule.paymentStatus === 'completed') throw new ORPCError('Rule is already paid')
+    // Ask Google what was actually charged, then price the challenge from our
+    // own table for that currency. The client is never the source of the amount.
+    const { orderId, paidMinor, currency } = await verifyStakePurchase(
+      input.purchaseToken,
+      rule.stakeTierId,
+    )
+    if (currency !== 'INR' && currency !== 'USD') {
+      throw new ORPCError(`Unsupported stake currency: ${currency}`)
+    }
+    const expected = tierMinor(rule.stakeTierId, currency)
+    if (expected === null || expected !== paidMinor) {
+      throw new ORPCError(
+        `Stake mismatch: Google charged ${paidMinor} ${currency}, this challenge costs ${expected ?? '?'}`,
+      )
+    }
 
-    const productId = process.env.DODO_ADD_RULE_PRODUCT_ID || process.env.DODO_UNLOCK_PRODUCT_ID
-    if (!productId) throw new ORPCError('Add Rule Product ID not configured')
-
-    const amountInCents = rule.lockedAmount ?? 1000 // default to $10 if null
-
-    const { default: DodoPayments } = await import('dodopayments')
-    const dodo = new DodoPayments({
-      bearerToken: process.env.DODO_PAYMENTS_API_KEY!,
-      environment: process.env.DODO_ENVIRONMENT === 'live' ? 'live_mode' : 'test_mode',
-    })
-
-    const checkoutSession = await dodo.checkoutSessions.create({
-      product_cart: [{
-        product_id: productId,
-        quantity: 1,
-        amount: amountInCents,
-      }],
-      customer: { email: context.user.email, name: context.user.name },
-      return_url: `${process.env.BETTER_AUTH_URL ?? 'http://localhost:3000'}/api/dodo/return?action=add_rule`,
-      metadata: {
-        userId: context.user.id,
-        packageName: rule.packageName,
-        appName: rule.appName,
-        ruleType: rule.ruleType,
-        limitMinutes: rule.limitMinutes ? String(rule.limitMinutes) : '',
-        period: rule.period || 'daily',
-        scheduleStart: rule.scheduleStart || '',
-        scheduleEnd: rule.scheduleEnd || '',
-        action: 'add_rule',
-        amount: String(amountInCents / 100),
-      },
-      customization: { theme: 'light' },
-    })
-
-    // 2. Update checkout session ID
     await db
       .update(schema.appRules)
       .set({
-        paymentId: checkoutSession.session_id,
+        paymentStatus: 'completed',
+        enabled: true,
+        paymentRail: 'play',
+        playPurchaseToken: input.purchaseToken,
+        playOrderId: orderId,
+        stakeStatus: 'active',
+        stakeCurrency: currency,
+        challengeEndsAt: challengeEndsAt(new Date()),
       })
       .where(eq(schema.appRules.id, rule.id))
 
-    return {
-      checkout_url: checkoutSession.checkout_url,
-      session_id: checkoutSession.session_id,
-    }
+    return { success: true, alreadyPaid: false, orderId }
   })
 
+export const settleChallenge = authedProcedure
+  .route({ method: 'POST', path: '/rules/{id}/settle' })
+  .input(z.object({ id: z.string() }))
+  .handler(async ({ input, context }) => {
+    const rule = await loadOwnedRule(input.id, context.user.id)
+    if (rule.stakeStatus !== 'active') {
+      return {
+        forfeitedAmount: rule.forfeitedAmount,
+        stakeAmount: rule.lockedAmount ?? 0,
+        refundedAmount: (rule.lockedAmount ?? 0) - rule.forfeitedAmount,
+        currency: rule.stakeCurrency ?? 'INR',
+        refundStatus: 'settled' as const,
+      }
+    }
+    if (rule.challengeEndsAt && new Date() < rule.challengeEndsAt) {
+      throw new ORPCError('Challenge is still running')
+    }
 
+    const stake = rule.lockedAmount ?? 0
+    // Whatever was forfeited to partial unlocks is never returned; the rest of
+    // the stake is the user's, and this is the moment they get it.
+    const refundAmount = stake - rule.forfeitedAmount
+
+    // Refund first, settle second. If Google rejects the refund the rule stays
+    // active so the next attempt can retry instead of silently eating the money.
+    let refundStatus: RefundStatus = 'succeeded'
+    if (refundAmount > 0) {
+      if (!rule.playOrderId) throw new ORPCError('No Google Play order recorded for this challenge')
+      refundStatus = await refundPlayPurchase(rule.playOrderId)
+      if (refundStatus === 'failed') {
+        throw new ORPCError('Refund failed — your stake is safe, please retry')
+      }
+    }
+
+    await db
+      .update(schema.appRules)
+      .set({ stakeStatus: 'settled' })
+      .where(eq(schema.appRules.id, rule.id))
+
+    return {
+      forfeitedAmount: rule.forfeitedAmount,
+      stakeAmount: stake,
+      refundedAmount: refundAmount,
+      currency: rule.stakeCurrency ?? 'INR',
+      refundStatus,
+    }
+  })
 

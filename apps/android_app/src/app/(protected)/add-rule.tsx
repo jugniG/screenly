@@ -11,17 +11,17 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import * as Clipboard from 'expo-clipboard';
-import * as WebBrowser from 'expo-web-browser';
 import { router } from 'expo-router';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
 import AppPicker from '@/components/ui/AppPicker';
 import { colors, fonts, spacing, radius } from '@/components/ui/theme';
-import { orpc } from '@/lib/orpc';
+import { orpc, orpcClient } from '@/lib/orpc';
 import { BackButton } from '@/components/ui/BackButton';
 import { syncRules } from '@/lib/enforcer';
+import { getStakeTiers, purchaseStake, type StakeTier } from '@/lib/purchases';
+import { CHALLENGE_DAYS, FORFEIT_PERCENT, type CurrencyCode } from '@screen/monetization';
 
 type RuleType = 'daily_limit' | 'schedule' | 'block_always';
 type Step = 'app' | 'type' | 'configure' | 'deposit' | 'done';
@@ -63,9 +63,12 @@ export default function AddRuleScreen() {
     scheduleEnd?: string;
   } | null>(null);
   const [period, setPeriod]         = useState<'daily' | 'hourly'>('daily');
-  const [depositDollars, setDepositDollars] = useState('1');
   const [depositing, setDepositing] = useState(false);
   const [statusText, setStatusText] = useState('');
+  // Play prices the stake tiers, so the amount is a price the store reports,
+  // never something the user types.
+  const [stakeTiers, setStakeTiers] = useState<StakeTier[]>([]);
+  const [selectedTier, setSelectedTier] = useState<StakeTier | null>(null);
   const [errors, setErrors]         = useState<Record<string, string>>({});
   const [existingPackages, setExistingPackages] = useState<string[]>([]);
 
@@ -74,6 +77,21 @@ export default function AddRuleScreen() {
       .then(rules => setExistingPackages(rules.map(r => r.packageName)))
       .catch(() => {});
   }, []);
+
+  // Read the stake prices from Play while the user fills in the earlier steps,
+  // so the deposit screen shows what the store will actually charge.
+  useEffect(() => {
+    if (step !== 'deposit') return;
+    let cancelled = false;
+    getStakeTiers().then(tiers => {
+      if (cancelled) return;
+      setStakeTiers(tiers);
+      setSelectedTier(prev =>
+        prev && tiers.some(t => t.id === prev.id) ? prev : tiers[0] ?? null,
+      );
+    });
+    return () => { cancelled = true; };
+  }, [step]);
 
   function handleAppSelected(app: { name: string; packageName: string }) {
     setAppName(app.name);
@@ -154,22 +172,22 @@ export default function AddRuleScreen() {
   }
 
   async function handleDeposit() {
+    if (!selectedTier) {
+      Alert.alert('Choose an amount', 'Pick how much you want to stake first.');
+      return;
+    }
+    if (!pendingRule) {
+      throw new Error('No pending rule configuration found');
+    }
+
     setDepositing(true);
-    setStatusText('Creating checkout session...');
+    setStatusText('Reserving your challenge...');
     try {
-      const dollars = parseFloat(depositDollars);
-      if (isNaN(dollars) || dollars <= 0) {
-        Alert.alert('Invalid amount', 'Please enter an amount greater than $0');
-        setDepositing(false);
-        setStatusText('');
-        return;
-      }
-
-      if (!pendingRule) {
-        throw new Error('No pending rule configuration found');
-      }
-
-      const res = await orpc<any, { checkout_url: string; session_id: string }>('createRuleCheckout', {
+      // The rule is created first, disabled, and only activated once Google
+      // confirms the payment. Doing it in this order means a paid purchase is
+      // never orphaned: the rule holding the stake tier already exists if the
+      // confirmation call fails and has to be retried.
+      const { ruleId } = await orpcClient.beginStake({
         packageName: pendingRule.packageName,
         appName: pendingRule.appName,
         ruleType: pendingRule.ruleType,
@@ -177,22 +195,34 @@ export default function AddRuleScreen() {
         period: pendingRule.period || 'daily',
         scheduleStart: pendingRule.scheduleStart,
         scheduleEnd: pendingRule.scheduleEnd,
-        amount: dollars,
+        tierId: selectedTier.id,
+        currency: selectedTier.currency as CurrencyCode,
       });
 
-      setStatusText('Opening browser...');
-      const result = await WebBrowser.openBrowserAsync(res.checkout_url, {
-        showTitle: true,
-        enableBarCollapsing: true,
-      });
+      setStatusText('Opening Google Play...');
+      const purchase = await purchaseStake(selectedTier.id);
+      if (!purchase.ok) {
+        // Cancelled or failed — the rule stays disabled, nothing is charged.
+        setDepositing(false);
+        setStatusText('');
+        if (!/cancel/i.test(purchase.message)) {
+          Alert.alert('Purchase failed', purchase.message);
+        }
+        return;
+      }
+
+      setStatusText('Verifying payment...');
+      await orpcClient.confirmStakePurchase({ ruleId, purchaseToken: purchase.token });
 
       await syncRules().catch(() => {});
-      if (result.type === 'cancel') {
-        router.replace('/(protected)/(tabs)' as any);
-      }
+      Alert.alert(
+        'Locked in',
+        `${selectedTier.displayPrice} is staked on ${pendingRule.appName}. Complete the ${CHALLENGE_DAYS}-day challenge and you get all of it back.`,
+      );
+      router.replace('/(protected)/(tabs)' as any);
     } catch (e: any) {
-      console.error('[AddRule - Checkout Creation Failed]', e);
-      Alert.alert('Checkout failed', 'Failed to create payment checkout session. Please try again.');
+      console.error('[AddRule - Stake Purchase Failed]', e);
+      Alert.alert('Could not start the challenge', e?.message ?? 'Please try again.');
     } finally {
       setDepositing(false);
       setStatusText('');
@@ -204,9 +234,6 @@ export default function AddRuleScreen() {
     else if (step === 'type') setStep('app');
     else if (step === 'configure') setStep('type');
   }
-
-  const parsedDollars = parseFloat(depositDollars);
-  const isAmountInvalid = isNaN(parsedDollars) || parsedDollars <= 0;
 
   return (
     <View style={styles.flex}>
@@ -435,25 +462,45 @@ export default function AddRuleScreen() {
           <View style={styles.stepContainer}>
             <Text style={styles.stepTitle}>Lock in your commitment</Text>
             <Text style={styles.stepSubtitle}>
-              Choose an amount that will keep you accountable so you don't easily give in.
+              This is your own money, held by us. Complete the {CHALLENGE_DAYS}-day challenge and you get all of it back.
             </Text>
 
-            <Input
-              label="Amount ($ USD)"
-              value={depositDollars}
-              onChangeText={setDepositDollars}
-              keyboardType="number-pad"
-              placeholder="5"
-            />
-
-            {isAmountInvalid && (
-              <Text style={styles.warningText}>Amount must be greater than $0</Text>
+            {stakeTiers.length === 0 ? (
+              <Text style={styles.warningText}>
+                Stake amounts are unavailable right now. Check that the stake products are active in Play Console.
+              </Text>
+            ) : (
+              <>
+                <Text style={styles.stakeLabel}>HOW MUCH ARE YOU STAKING?</Text>
+                <View style={styles.tierRow}>
+                  {stakeTiers.map(tier => {
+                    const active = selectedTier?.id === tier.id;
+                    return (
+                      <TouchableOpacity
+                        key={tier.id}
+                        onPress={() => setSelectedTier(tier)}
+                        style={[styles.tierBtn, active && styles.tierBtnActive]}
+                      >
+                        <Text style={[styles.tierText, active && styles.tierTextActive]}>
+                          {tier.displayPrice}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+                {selectedTier && (
+                  <Text style={styles.stakeHint}>
+                    Give in early and you lose {FORFEIT_PERCENT.unlock}% of this. Walk away and you
+                    lose all of it.
+                  </Text>
+                )}
+              </>
             )}
 
             <Button
-              title={depositing ? (statusText || 'Redirecting to payment…') : 'Commit & Pay'}
+              title={depositing ? (statusText || 'Working…') : 'Stake & Start Challenge'}
               onPress={handleDeposit}
-              disabled={depositing || isAmountInvalid}
+              disabled={depositing || !selectedTier}
               style={{ marginTop: spacing.xl }}
             />
             <Button
@@ -477,7 +524,7 @@ export default function AddRuleScreen() {
               variant="secondary"
               onPress={() => {
                 setStep('app'); setPackageName(''); setAppName('');
-                setRuleType('daily_limit'); setLimitMinutes('60'); setPeriod('daily'); setDepositDollars('1');
+                setRuleType('daily_limit'); setLimitMinutes('60'); setPeriod('daily');
               }}
               style={{ marginTop: spacing.sm }}
             />
@@ -648,6 +695,45 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textMuted,
     marginBottom: spacing.sm,
+  },
+  stakeLabel: {
+    fontFamily: fonts.semiBold,
+    fontSize: 11,
+    letterSpacing: 1.2,
+    color: colors.textMuted,
+    marginBottom: spacing.sm,
+  },
+  tierRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  tierBtn: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  tierBtnActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryLight,
+    borderWidth: 1.5,
+  },
+  tierText: {
+    fontFamily: fonts.semiBold,
+    fontSize: 15,
+    color: colors.textSecondary,
+  },
+  tierTextActive: { color: colors.primary },
+  stakeHint: {
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    color: colors.textMuted,
+    marginTop: -spacing.sm,
+    marginBottom: spacing.sm,
+    lineHeight: 17,
   },
   warningText: {
     fontFamily: fonts.regular,

@@ -17,6 +17,7 @@
   "dependencies": {
     "@screen/api": "*",
     "@screen/db": "*",
+    "@screen/monetization": "*",
     "@heroui/react": "2.8.10",
     "@hookform/resolvers": "5.9.0",
     "@orpc/client": "^1.13.6",

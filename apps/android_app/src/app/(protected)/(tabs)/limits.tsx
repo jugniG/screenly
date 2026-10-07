@@ -6,7 +6,8 @@ import { authClient } from '@/lib/auth';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { colors, fonts, spacing } from '@/components/ui/theme';
-import { orpc } from '@/lib/orpc';
+import { orpc, orpcClient } from '@/lib/orpc';
+import { purchaseStake } from '@/lib/purchases';
 import { syncRules } from '@/lib/enforcer';
 import ScreenlyEnforcer from '@/modules/screenly-enforcer/src/ScreenlyEnforcerModule';
 
@@ -23,6 +24,11 @@ interface Rule {
   paymentStatus?: 'pending' | 'completed';
   paymentId?: string | null;
   lockedAmount?: number | null;
+  stakeCurrency?: 'INR' | 'USD' | null;
+  stakeTierId?: string | null;
+  challengeEndsAt?: string | null;
+  stakeStatus?: 'active' | 'settled' | 'forfeited';
+  forfeitedAmount?: number;
 }
 
 interface UsageInfo {
@@ -87,17 +93,21 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const resumePayment = async (ruleId: string) => {
-    if (!ruleId) return;
+  /**
+   * A rule is created before its Play purchase, so a purchase that never
+   * completes leaves a disabled rule behind. Re-buying the same tier and
+   * confirming it activates that rule — no new rule, no new stake.
+   */
+  const resumePayment = async (rule: Rule) => {
+    if (!rule.id || !rule.stakeTierId) return;
     try {
-      const res = await orpc<any, { checkout_url: string }>('resumeRuleCheckout', { id: ruleId });
-      await WebBrowser.openBrowserAsync(res.checkout_url, {
-        showTitle: true,
-        enableBarCollapsing: true,
-      });
-    } catch (err) {
-      console.error('Failed to resume checkout', err);
-      Alert.alert('Error', 'Failed to open payment screen. Please try again.');
+      const purchase = await purchaseStake(rule.stakeTierId);
+      if (!purchase.ok) return;
+      await orpcClient.confirmStakePurchase({ ruleId: rule.id, purchaseToken: purchase.token });
+      await load();
+    } catch (err: any) {
+      console.error('Failed to complete purchase', err);
+      Alert.alert('Error', err?.message ?? 'Could not complete the purchase.');
     }
   };
   const [hasPermission, setHasPermission] = useState(true);
@@ -293,7 +303,7 @@ export default function HomeScreen() {
                       {item.paymentId && (
                         <TouchableOpacity
                           style={styles.payNowBtn}
-                          onPress={() => resumePayment(item.id)}
+                          onPress={() => resumePayment(item)}
                         >
                           <Text style={styles.payNowBtnText}>Resume Checkout</Text>
                         </TouchableOpacity>

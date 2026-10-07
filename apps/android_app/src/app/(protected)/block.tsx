@@ -14,9 +14,19 @@ import {
 import { router, useLocalSearchParams } from 'expo-router';
 import Constants from 'expo-constants';
 import { colors, fonts, spacing } from '@/components/ui/theme';
-import { syncRules } from '@/lib/enforcer';
-import { orpc } from '@/lib/orpc';
+import { syncRules, unlockApp } from '@/lib/enforcer';
+import { orpcClient } from '@/lib/orpc';
+import { forfeitAmount, formatMoney, minutesUntilMidnight, type CurrencyCode } from '@screen/monetization';
 import ScreenlyEnforcer from '@/modules/screenly-enforcer/src/ScreenlyEnforcerModule';
+
+type BlockRule = {
+  id: string;
+  lockedAmount: number | null;
+  stakeCurrency: CurrencyCode | null;
+  challengeEndsAt: string | Date | null;
+  stakeStatus: 'active' | 'settled' | 'forfeited';
+  forfeitedAmount: number;
+};
 
 export default function BlockScreen() {
 
@@ -26,6 +36,7 @@ export default function BlockScreen() {
   const dismissed = useRef(false);
   const [loading, setLoading] = useState(false);
   const [iconUri, setIconUri] = useState<string | null>(null);
+  const [rule, setRule] = useState<BlockRule | null>(null);
 
   useEffect(() => {
     if (!packageName) return;
@@ -40,6 +51,20 @@ export default function BlockScreen() {
     };
     loadIcon();
   }, [packageName]);
+
+  // The block screen is opened by the accessibility service as a deep link, so
+  // the stake isn't passed along with it — fetch the rule to show what giving
+  // in actually costs.
+  useEffect(() => {
+    if (!ruleId) return;
+    orpcClient
+      .listRules({})
+      .then((rules) => {
+        const match = (rules as unknown as BlockRule[]).find((r) => r.id === ruleId);
+        if (match) setRule(match);
+      })
+      .catch(() => {});
+  }, [ruleId]);
 
   function goHome() {
     if (dismissed.current) return;
@@ -69,26 +94,53 @@ export default function BlockScreen() {
     return () => sub.remove();
   }, [packageName]);
 
+  const stakeMinor = rule?.lockedAmount ?? 0;
+  const currency = rule?.stakeCurrency ?? 'INR';
+  const unlockCost = forfeitAmount(stakeMinor, 'unlock');
+  const giveUpCost = forfeitAmount(stakeMinor, 'forceUnlock');
+  const unlockUsed = (rule?.forfeitedAmount ?? 0) > 0;
+  const daysLeft = rule?.challengeEndsAt
+    ? Math.max(0, Math.ceil((new Date(rule.challengeEndsAt).getTime() - Date.now()) / 86_400_000))
+    : null;
+
+  /** One temporary unlock per challenge: a slice of the stake is forfeited. */
+  async function handleUnlock() {
+    if (!packageName || !ruleId) return;
+    setLoading(true);
+    try {
+      await orpcClient.unlockChallenge({ id: ruleId });
+      await unlockApp(packageName);
+      goHome();
+    } catch (e: any) {
+      console.error('[BlockScreen - Unlock Failed]', e);
+      Alert.alert('Unlock failed', e?.message ?? 'Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  /** Walking away forfeits the whole stake. */
   async function handleGiveIn() {
-    if (!packageName) return;
+    if (!ruleId) return;
     Alert.alert(
-      'Give in?',
-      `You'll forfeit your commitment to ${appName}. Are you sure?`,
+      'Give up?',
+      stakeMinor > 0
+        ? `You lose the full ${formatMoney(giveUpCost, currency)} you staked on ${appName}. It stays with us.`
+        : `You'll remove the restriction on ${appName}. Are you sure?`,
       [
         { text: 'Stay strong', style: 'cancel' },
         {
-          text: 'I give in',
+          text: 'I give up',
           style: 'destructive',
           onPress: async () => {
             setLoading(true);
             try {
-              await orpc('deleteRule', { id: ruleId });
+              await orpcClient.giveUpChallenge({ id: ruleId });
               await syncRules();
-              Alert.alert('Give in', `${appName} has been removed.`);
-              router.replace('/(protected)/(tabs)' as any);
+              goHome();
             } catch (e: any) {
-              console.error('[BlockScreen - GiveIn Failed]', e);
-              Alert.alert('Unlock failed', 'Failed to remove restriction. Please try again.');
+              console.error('[BlockScreen - GiveUp Failed]', e);
+              Alert.alert('Could not give up', e?.message ?? 'Please try again.');
             } finally {
               setLoading(false);
             }
@@ -111,12 +163,33 @@ export default function BlockScreen() {
         <Text style={styles.appName}>{appName}</Text>
         <Text style={styles.blockedLabel}>This app is blocked</Text>
       </View>
+      {stakeMinor > 0 && (
+        <View style={styles.stakeCard}>
+          <Text style={styles.stakeLabel}>YOUR STAKE</Text>
+          <Text style={styles.stakeAmount}>{formatMoney(stakeMinor, currency)}</Text>
+          <Text style={styles.stakeHint}>
+            {daysLeft !== null && daysLeft > 0
+              ? `Back in full in ${daysLeft} day${daysLeft === 1 ? '' : 's'} — as long as you don't break the lock.`
+              : 'Complete the challenge and get the full amount back.'}
+          </Text>
+        </View>
+      )}
+
       <View style={styles.btnRow}>
         <TouchableOpacity onPress={goHome} style={styles.backBtn}>
           <Text style={styles.backText}>Back to home</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleGiveIn} style={styles.giveInBtn}>
-          <Text style={styles.giveInText}>I give in</Text>
+        {stakeMinor > 0 && !unlockUsed && (
+          <TouchableOpacity onPress={handleUnlock} disabled={loading} style={styles.unlockBtn}>
+            <Text style={styles.unlockText}>
+              Unlock till midnight{'\n'}
+              <Text style={styles.unlockCost}>−{formatMoney(unlockCost, currency)}</Text>
+            </Text>
+          </TouchableOpacity>
+        )}
+        <TouchableOpacity onPress={handleGiveIn} disabled={loading} style={styles.giveInBtn}>
+          <Text style={styles.giveInText}>I give up</Text>
+          {stakeMinor > 0 && <Text style={styles.giveInSub}>−{formatMoney(giveUpCost, currency)}</Text>}
         </TouchableOpacity>
       </View>
     </View>
@@ -167,6 +240,56 @@ const styles = StyleSheet.create({
     borderColor: colors.danger,
     backgroundColor: colors.dangerSoft,
   },
+  stakeCard: {
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 16,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.xl,
+    marginHorizontal: spacing.xl,
+    marginBottom: spacing.lg,
+  },
+  stakeLabel: {
+    fontFamily: fonts.semiBold,
+    fontSize: 11,
+    letterSpacing: 1.2,
+    color: colors.textMuted,
+  },
+  stakeAmount: {
+    fontFamily: fonts.bold,
+    fontSize: 32,
+    color: colors.text,
+    marginTop: spacing.xs,
+  },
+  stakeHint: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginTop: spacing.xs,
+    lineHeight: 19,
+  },
+  unlockBtn: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xs,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryLight,
+  },
+  unlockText: {
+    fontFamily: fonts.semiBold,
+    fontSize: 13,
+    color: colors.primary,
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  unlockCost: { fontFamily: fonts.bold, fontSize: 15, color: colors.primary },
   giveInText: {
     fontFamily: fonts.semiBold,
     fontSize: 18,

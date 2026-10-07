@@ -4,8 +4,8 @@ import type { ComponentProps, JSX } from "react";
 import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, AppState, Pressable, TouchableOpacity, View } from "react-native";
 import type { ColorValue } from "react-native";
-import { Avatar } from "heroui-native";
 import { Text } from "react-native";
+import { Avatar } from "heroui-native";
 import { getLocalDateString, getScreenTimeData, getTopApps, getTotalMinutes } from "@/lib/screenTime";
 import { orpcClient } from "@/lib/orpc";
 import { syncRules } from "@/lib/enforcer";
@@ -15,6 +15,9 @@ import ScreenlyEnforcer from "@/modules/screenly-enforcer/src/ScreenlyEnforcerMo
 import { colors } from "@/components/ui/theme";
 
 type IoniconName = ComponentProps<typeof Ionicons>["name"];
+
+/** Icon + label only — the navigation bar inset is reserved by the root view. */
+const TAB_BAR_CONTENT_HEIGHT = 49;
 
 function TabIcon({ name, color }: { name: IoniconName; color: ColorValue }): JSX.Element {
   return <Ionicons name={name} size={24} color={color} />;
@@ -146,7 +149,18 @@ export default function TabsLayout(): JSX.Element {
         screenOptions={{
           headerShown: false,
           tabBarStyle: {
-            backgroundColor: colors.surface,
+            // The root SafeAreaView reserves the bottom inset for the system
+            // navigation bar, so the bar is only as tall as its content. Left
+            // to the navigator it adds that inset itself, which is what put a
+            // void under the labels.
+            height: TAB_BAR_CONTENT_HEIGHT,
+            // ...and the navigator pads its own height by that same inset, which
+            // would squeeze the labels out of the box above.
+            paddingTop: 0,
+            paddingBottom: 0,
+            // Same tone as the page and the system navigation bar below it —
+            // surface (#FCFBF9) on background (#F4F1EB) reads as a white stripe.
+            backgroundColor: colors.background,
             borderTopColor: colors.border,
             borderTopWidth: 1,
           },
@@ -154,7 +168,7 @@ export default function TabsLayout(): JSX.Element {
           tabBarInactiveTintColor: colors.textSecondary,
         }}
       >
-        <Tabs.Screen
+        <Tabs.Screen 
           name="index"
           options={{
             title: "Screen Time",

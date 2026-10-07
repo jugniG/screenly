@@ -1,8 +1,7 @@
 import { listTodos, addTodo } from './todos'
-import { listRules, createRule, updateRule, deleteRule, createRuleCheckout, resumeRuleCheckout } from './rules'
+import { listRules, createRule, updateRule, deleteRule, unlockChallenge, giveUpChallenge, settleChallenge, beginStake, confirmStakePurchase } from './rules'
 import { getTodayUsage, syncUsage } from './usage'
-import { freeUnlock, createCheckout, confirmPayment, unlockHistory } from './unlock'
-import { createRemoveCheckout, confirmRemove } from './remove'
+import { unlockHistory } from './unlock'
 import { sendInvite, acceptInvite, declineInvite, removeFriend, listFriends, listInvites, syncSnapshot, getLeaderboard } from './leaderboard'
 
 export default {
@@ -12,16 +11,14 @@ export default {
   createRule,
   updateRule,
   deleteRule,
-  createRuleCheckout,
-  resumeRuleCheckout,
+  unlockChallenge,
+  giveUpChallenge,
+  settleChallenge,
+  beginStake,
+  confirmStakePurchase,
   getTodayUsage,
   syncUsage,
-  freeUnlock,
-  createCheckout,
-  confirmPayment,
   unlockHistory,
-  createRemoveCheckout,
-  confirmRemove,
   sendInvite,
   acceptInvite,
   declineInvite,
