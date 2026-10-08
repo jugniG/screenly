@@ -1,0 +1,1 @@
+ALTER TABLE "screenly"."app_rules" ADD COLUMN "challenge_duration" text;

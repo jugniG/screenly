@@ -5,7 +5,8 @@
   "main": "./src/router/index.ts",
   "exports": {
     ".": "./src/router/index.ts",
-    "./router-types": "./src/router-types.ts"
+    "./router-types": "./src/router-types.ts",
+    "./play-rtdn": "./src/playRtdn.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

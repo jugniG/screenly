@@ -50,6 +50,13 @@
       "when": 1790833882967,
       "tag": "0006_nifty_taskmaster",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791433097454,
+      "tag": "0007_small_mephistopheles",
+      "breakpoints": true
     }
   ]
 }

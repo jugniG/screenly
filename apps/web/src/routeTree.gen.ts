@@ -15,9 +15,8 @@ import { Route as DeleteAccountRouteImport } from './routes/delete-account'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ProtectedHomeRouteImport } from './routes/_protected/home'
+import { Route as ApiPlayWebhookRouteImport } from './routes/api/play-webhook'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
-import { Route as ApiDodoReturnRouteImport } from './routes/api.dodo.return'
-import { Route as ApiDodoWebhookRouteImport } from './routes/api.dodo.webhook'
 import { Route as ApiRpcSplatRouteImport } from './routes/api.rpc.$'
 
 const IndexRoute = IndexRouteImport.update({
@@ -49,19 +48,14 @@ const ProtectedHomeRoute = ProtectedHomeRouteImport.update({
   path: '/home',
   getParentRoute: () => ProtectedRouteRoute,
 } as any)
+const ApiPlayWebhookRoute = ApiPlayWebhookRouteImport.update({
+  id: '/api/play-webhook',
+  path: '/api/play-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiDodoReturnRoute = ApiDodoReturnRouteImport.update({
-  id: '/api/dodo/return',
-  path: '/api/dodo/return',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiDodoWebhookRoute = ApiDodoWebhookRouteImport.update({
-  id: '/api/dodo/webhook',
-  path: '/api/dodo/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiRpcSplatRoute = ApiRpcSplatRouteImport.update({
@@ -76,9 +70,8 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/home': typeof ProtectedHomeRoute
+  '/api/play-webhook': typeof ApiPlayWebhookRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/api/dodo/return': typeof ApiDodoReturnRoute
-  '/api/dodo/webhook': typeof ApiDodoWebhookRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
 }
 export interface FileRoutesByTo {
@@ -87,9 +80,8 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/home': typeof ProtectedHomeRoute
+  '/api/play-webhook': typeof ApiPlayWebhookRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/api/dodo/return': typeof ApiDodoReturnRoute
-  '/api/dodo/webhook': typeof ApiDodoWebhookRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
 }
 export interface FileRoutesById {
@@ -100,9 +92,8 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/_protected/home': typeof ProtectedHomeRoute
+  '/api/play-webhook': typeof ApiPlayWebhookRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/api/dodo/return': typeof ApiDodoReturnRoute
-  '/api/dodo/webhook': typeof ApiDodoWebhookRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
 }
 export interface FileRouteTypes {
@@ -113,9 +104,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/privacy'
     | '/home'
+    | '/api/play-webhook'
     | '/api/auth/$'
-    | '/api/dodo/return'
-    | '/api/dodo/webhook'
     | '/api/rpc/$'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -124,9 +114,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/privacy'
     | '/home'
+    | '/api/play-webhook'
     | '/api/auth/$'
-    | '/api/dodo/return'
-    | '/api/dodo/webhook'
     | '/api/rpc/$'
   id:
     | '__root__'
@@ -136,9 +125,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/privacy'
     | '/_protected/home'
+    | '/api/play-webhook'
     | '/api/auth/$'
-    | '/api/dodo/return'
-    | '/api/dodo/webhook'
     | '/api/rpc/$'
   fileRoutesById: FileRoutesById
 }
@@ -148,9 +136,8 @@ export interface RootRouteChildren {
   DeleteAccountRoute: typeof DeleteAccountRoute
   LoginRoute: typeof LoginRoute
   PrivacyRoute: typeof PrivacyRoute
+  ApiPlayWebhookRoute: typeof ApiPlayWebhookRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
-  ApiDodoReturnRoute: typeof ApiDodoReturnRoute
-  ApiDodoWebhookRoute: typeof ApiDodoWebhookRoute
   ApiRpcSplatRoute: typeof ApiRpcSplatRoute
 }
 
@@ -198,25 +185,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedHomeRouteImport
       parentRoute: typeof ProtectedRouteRoute
     }
+    '/api/play-webhook': {
+      id: '/api/play-webhook'
+      path: '/api/play-webhook'
+      fullPath: '/api/play-webhook'
+      preLoaderRoute: typeof ApiPlayWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
       fullPath: '/api/auth/$'
       preLoaderRoute: typeof ApiAuthSplatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/dodo/return': {
-      id: '/api/dodo/return'
-      path: '/api/dodo/return'
-      fullPath: '/api/dodo/return'
-      preLoaderRoute: typeof ApiDodoReturnRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/dodo/webhook': {
-      id: '/api/dodo/webhook'
-      path: '/api/dodo/webhook'
-      fullPath: '/api/dodo/webhook'
-      preLoaderRoute: typeof ApiDodoWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/rpc/$': {
@@ -247,20 +227,10 @@ const rootRouteChildren: RootRouteChildren = {
   DeleteAccountRoute: DeleteAccountRoute,
   LoginRoute: LoginRoute,
   PrivacyRoute: PrivacyRoute,
+  ApiPlayWebhookRoute: ApiPlayWebhookRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
-  ApiDodoReturnRoute: ApiDodoReturnRoute,
-  ApiDodoWebhookRoute: ApiDodoWebhookRoute,
   ApiRpcSplatRoute: ApiRpcSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

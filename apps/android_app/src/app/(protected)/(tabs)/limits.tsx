@@ -6,8 +6,7 @@ import { authClient } from '@/lib/auth';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { colors, fonts, spacing } from '@/components/ui/theme';
-import { orpc, orpcClient } from '@/lib/orpc';
-import { purchaseStake } from '@/lib/purchases';
+import { orpc } from '@/lib/orpc';
 import { syncRules } from '@/lib/enforcer';
 import ScreenlyEnforcer from '@/modules/screenly-enforcer/src/ScreenlyEnforcerModule';
 
@@ -22,7 +21,6 @@ interface Rule {
   scheduleEnd: string | null;
   enabled: boolean;
   paymentStatus?: 'pending' | 'completed';
-  paymentId?: string | null;
   lockedAmount?: number | null;
   stakeCurrency?: 'INR' | 'USD' | null;
   stakeTierId?: string | null;
@@ -94,22 +92,13 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   /**
-   * A rule is created before its Play purchase, so a purchase that never
-   * completes leaves a disabled rule behind. Re-buying the same tier and
-   * confirming it activates that rule — no new rule, no new stake.
+   * No resume flow. The rule row is written before the Play purchase, so a
+   * cancelled or abandoned purchase leaves a disabled `pending` rule behind.
+   * Retrying from here would re-run the purchase with nothing tying it to the
+   * original attempt, so the user can double-charge themselves. Instead the
+   * pending card shows its state and offers the normal delete — they can
+   * remove it and start again cleanly.
    */
-  const resumePayment = async (rule: Rule) => {
-    if (!rule.id || !rule.stakeTierId) return;
-    try {
-      const purchase = await purchaseStake(rule.stakeTierId);
-      if (!purchase.ok) return;
-      await orpcClient.confirmStakePurchase({ ruleId: rule.id, purchaseToken: purchase.token });
-      await load();
-    } catch (err: any) {
-      console.error('Failed to complete purchase', err);
-      Alert.alert('Error', err?.message ?? 'Could not complete the purchase.');
-    }
-  };
   const [hasPermission, setHasPermission] = useState(true);
 
   async function load() {
@@ -298,16 +287,17 @@ export default function HomeScreen() {
                   {isPendingPayment ? (
                     <View style={styles.pendingContainer}>
                       <Text style={styles.pendingText}>
-                        Waiting for payment confirmation. If you already checked out, pull down to refresh.
+                        Payment was not completed, so this challenge never started and nothing was
+                        charged. Remove it and add the app again to try a different amount.
                       </Text>
-                      {item.paymentId && (
-                        <TouchableOpacity
-                          style={styles.payNowBtn}
-                          onPress={() => resumePayment(item)}
-                        >
-                          <Text style={styles.payNowBtnText}>Resume Checkout</Text>
-                        </TouchableOpacity>
-                      )}
+                      <TouchableOpacity
+                        className="self-start mt-2 px-3 py-1 rounded-md border border-danger"
+                        onPress={() => deleteRule(item.id, item.appName)}
+                      >
+                        <Text className="text-[12px] font-semibold text-danger">
+                          Remove this app
+                        </Text>
+                      </TouchableOpacity>
                     </View>
                   ) : (
                     <>
@@ -439,18 +429,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textSecondary,
     lineHeight: 16,
-  },
-  payNowBtn: {
-    backgroundColor: '#e16540',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  payNowBtnText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 12,
-    color: '#fff',
   },
   permBanner: {
     flexDirection: 'row',

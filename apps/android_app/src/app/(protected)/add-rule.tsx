@@ -21,7 +21,13 @@ import { orpc, orpcClient } from '@/lib/orpc';
 import { BackButton } from '@/components/ui/BackButton';
 import { syncRules } from '@/lib/enforcer';
 import { getStakeTiers, purchaseStake, type StakeTier } from '@/lib/purchases';
-import { CHALLENGE_DAYS, FORFEIT_PERCENT, type CurrencyCode } from '@screen/monetization';
+import {
+  CHALLENGE_DURATIONS,
+  formatDuration,
+  DEFAULT_DURATION_ID,
+  type CurrencyCode,
+  type DurationId,
+} from '@screen/monetization';
 
 type RuleType = 'daily_limit' | 'schedule' | 'block_always';
 type Step = 'app' | 'type' | 'configure' | 'deposit' | 'done';
@@ -64,6 +70,7 @@ export default function AddRuleScreen() {
   } | null>(null);
   const [period, setPeriod]         = useState<'daily' | 'hourly'>('daily');
   const [depositing, setDepositing] = useState(false);
+  const [durationId, setDurationId]   = useState<DurationId>(DEFAULT_DURATION_ID);
   const [statusText, setStatusText] = useState('');
   // Play prices the stake tiers, so the amount is a price the store reports,
   // never something the user types.
@@ -130,7 +137,7 @@ export default function AddRuleScreen() {
   function hasConfigureErrors() {
     if (ruleType === 'daily_limit') {
       const m = parseInt(limitMinutes);
-      return isNaN(m) || m < 1;
+      return isNaN(m) || m < 0;
     }
     if (ruleType === 'schedule') {
       const sh = parseInt(startH);
@@ -196,6 +203,7 @@ export default function AddRuleScreen() {
         scheduleStart: pendingRule.scheduleStart,
         scheduleEnd: pendingRule.scheduleEnd,
         tierId: selectedTier.id,
+        durationId,
         currency: selectedTier.currency as CurrencyCode,
       });
 
@@ -217,7 +225,7 @@ export default function AddRuleScreen() {
       await syncRules().catch(() => {});
       Alert.alert(
         'Locked in',
-        `${selectedTier.displayPrice} is staked on ${pendingRule.appName}. Complete the ${CHALLENGE_DAYS}-day challenge and you get all of it back.`,
+        `${selectedTier.displayPrice} is staked on ${pendingRule.appName}. Stay locked for ${formatDuration(durationId)} and you get all of it back.`,
       );
       router.replace('/(protected)/(tabs)' as any);
     } catch (e: any) {
@@ -462,8 +470,42 @@ export default function AddRuleScreen() {
           <View style={styles.stepContainer}>
             <Text style={styles.stepTitle}>Lock in your commitment</Text>
             <Text style={styles.stepSubtitle}>
-              This is your own money, held by us. Complete the {CHALLENGE_DAYS}-day challenge and you get all of it back.
+              This is your own money, held by us. Stay locked for the whole duration and you get
+              all of it back.
             </Text>
+
+            <Text style={styles.stakeLabel}>HOW LONG DO YOU WANT TO STAY LOCKED?</Text>
+            <View className="gap-2 mb-5">
+              {(Object.keys(CHALLENGE_DURATIONS) as DurationId[]).map(id => {
+                const active = durationId === id;
+                return (
+                  <TouchableOpacity
+                    key={id}
+                    onPress={() => setDurationId(id)}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: active }}
+                    className={`flex-row items-center justify-between px-6 py-4 rounded-xl border bg-surface active:opacity-70 ${
+                      active ? 'border-primary bg-primary-light border-[1.5px]' : 'border-border'
+                    }`}
+                  >
+                    <Text
+                      className={`text-[17px] font-semibold ${
+                        active ? 'text-primary' : 'text-text-secondary'
+                      }`}
+                    >
+                      {formatDuration(id)}
+                    </Text>
+                    <View
+                      className={`h-5 w-5 rounded-full border-2 items-center justify-center ${
+                        active ? 'border-primary' : 'border-border'
+                      }`}
+                    >
+                      {active && <View className="h-2.5 w-2.5 rounded-full bg-primary" />}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
 
             {stakeTiers.length === 0 ? (
               <Text style={styles.warningText}>
@@ -472,26 +514,43 @@ export default function AddRuleScreen() {
             ) : (
               <>
                 <Text style={styles.stakeLabel}>HOW MUCH ARE YOU STAKING?</Text>
-                <View style={styles.tierRow}>
+                <View className="gap-2">
                   {stakeTiers.map(tier => {
                     const active = selectedTier?.id === tier.id;
                     return (
                       <TouchableOpacity
                         key={tier.id}
                         onPress={() => setSelectedTier(tier)}
-                        style={[styles.tierBtn, active && styles.tierBtnActive]}
+                        accessibilityRole="radio"
+                        accessibilityState={{ selected: active }}
+                        className={`flex-row items-center justify-between px-6 py-4 rounded-xl border bg-surface active:opacity-70 ${
+                          active ? 'border-primary bg-primary-light border-[1.5px]' : 'border-border'
+                        }`}
                       >
-                        <Text style={[styles.tierText, active && styles.tierTextActive]}>
+                        <Text
+                          className={`text-[17px] font-semibold ${
+                            active ? 'text-primary' : 'text-text-secondary'
+                          }`}
+                        >
                           {tier.displayPrice}
                         </Text>
+                        <View
+                          className={`h-5 w-5 rounded-full border-2 items-center justify-center ${
+                            active ? 'border-primary' : 'border-border'
+                          }`}
+                        >
+                          {active && <View className="h-2.5 w-2.5 rounded-full bg-primary" />}
+                        </View>
                       </TouchableOpacity>
                     );
                   })}
                 </View>
                 {selectedTier && (
-                  <Text style={styles.stakeHint}>
-                    Give in early and you lose {FORFEIT_PERCENT.unlock}% of this. Walk away and you
-                    lose all of it.
+                  <Text className="mt-0 text-[12px] text-text-muted">
+                    <Text className="font-semibold text-text-secondary">
+                      {selectedTier.displayPrice} locked for {formatDuration(durationId)}
+                    </Text>
+                    . Hold out and you get 100% of it back.
                   </Text>
                 )}
               </>
@@ -703,38 +762,7 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginBottom: spacing.sm,
   },
-  tierRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  tierBtn: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-  tierBtnActive: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primaryLight,
-    borderWidth: 1.5,
-  },
-  tierText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 15,
-    color: colors.textSecondary,
-  },
-  tierTextActive: { color: colors.primary },
-  stakeHint: {
-    fontFamily: fonts.regular,
-    fontSize: 12,
-    color: colors.textMuted,
-    marginTop: -spacing.sm,
-    marginBottom: spacing.sm,
-    lineHeight: 17,
-  },
+
   warningText: {
     fontFamily: fonts.regular,
     fontSize: 12,

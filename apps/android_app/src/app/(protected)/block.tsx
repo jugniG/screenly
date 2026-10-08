@@ -14,9 +14,9 @@ import {
 import { router, useLocalSearchParams } from 'expo-router';
 import Constants from 'expo-constants';
 import { colors, fonts, spacing } from '@/components/ui/theme';
-import { syncRules, unlockApp } from '@/lib/enforcer';
+import { syncRules } from '@/lib/enforcer';
 import { orpcClient } from '@/lib/orpc';
-import { forfeitAmount, formatMoney, minutesUntilMidnight, type CurrencyCode } from '@screen/monetization';
+import { forfeitAmount, formatMoney, type CurrencyCode } from '@screen/monetization';
 import ScreenlyEnforcer from '@/modules/screenly-enforcer/src/ScreenlyEnforcerModule';
 
 type BlockRule = {
@@ -96,51 +96,40 @@ export default function BlockScreen() {
 
   const stakeMinor = rule?.lockedAmount ?? 0;
   const currency = rule?.stakeCurrency ?? 'INR';
-  const unlockCost = forfeitAmount(stakeMinor, 'unlock');
-  const giveUpCost = forfeitAmount(stakeMinor, 'forceUnlock');
-  const unlockUsed = (rule?.forfeitedAmount ?? 0) > 0;
+  const forfeitCost = forfeitAmount(stakeMinor, 'forceUnlock');
   const daysLeft = rule?.challengeEndsAt
     ? Math.max(0, Math.ceil((new Date(rule.challengeEndsAt).getTime() - Date.now()) / 86_400_000))
     : null;
 
-  /** One temporary unlock per challenge: a slice of the stake is forfeited. */
-  async function handleUnlock() {
-    if (!packageName || !ruleId) return;
-    setLoading(true);
-    try {
-      await orpcClient.unlockChallenge({ id: ruleId });
-      await unlockApp(packageName);
-      goHome();
-    } catch (e: any) {
-      console.error('[BlockScreen - Unlock Failed]', e);
-      Alert.alert('Unlock failed', e?.message ?? 'Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  /** Walking away forfeits the whole stake. */
-  async function handleGiveIn() {
+  /**
+   * The one early exit. Unlocking before the deadline forfeits the whole stake,
+   * so it always confirms with the exact amount rather than a vague warning.
+   */
+  function handleUnlock() {
     if (!ruleId) return;
     Alert.alert(
-      'Give up?',
+      'Unlock early?',
       stakeMinor > 0
-        ? `You lose the full ${formatMoney(giveUpCost, currency)} you staked on ${appName}. It stays with us.`
-        : `You'll remove the restriction on ${appName}. Are you sure?`,
+        ? `You lose the full ${formatMoney(forfeitCost, currency)} you staked on ${appName}. Stay locked until the timer runs out and you get all of it back.`
+        : `This removes the restriction on ${appName}.`,
       [
         { text: 'Stay strong', style: 'cancel' },
         {
-          text: 'I give up',
+          text: 'Unlock anyway',
           style: 'destructive',
           onPress: async () => {
             setLoading(true);
             try {
-              await orpcClient.giveUpChallenge({ id: ruleId });
+              await orpcClient.unlockChallenge({ id: ruleId });
+              // No local unlock grant here. That wrote an expiry of midnight,
+              // which re-blocked the app hours after the user had already
+              // forfeited the whole stake. The rule is now disabled
+              // server-side, so syncRules is what opens it.
               await syncRules();
               goHome();
             } catch (e: any) {
-              console.error('[BlockScreen - GiveUp Failed]', e);
-              Alert.alert('Could not give up', e?.message ?? 'Please try again.');
+              console.error('[BlockScreen - Unlock Failed]', e);
+              Alert.alert('Could not unlock', e?.message ?? 'Please try again.');
             } finally {
               setLoading(false);
             }
@@ -179,17 +168,13 @@ export default function BlockScreen() {
         <TouchableOpacity onPress={goHome} style={styles.backBtn}>
           <Text style={styles.backText}>Back to home</Text>
         </TouchableOpacity>
-        {stakeMinor > 0 && !unlockUsed && (
-          <TouchableOpacity onPress={handleUnlock} disabled={loading} style={styles.unlockBtn}>
-            <Text style={styles.unlockText}>
-              Unlock till midnight{'\n'}
-              <Text style={styles.unlockCost}>−{formatMoney(unlockCost, currency)}</Text>
-            </Text>
-          </TouchableOpacity>
-        )}
-        <TouchableOpacity onPress={handleGiveIn} disabled={loading} style={styles.giveInBtn}>
-          <Text style={styles.giveInText}>I give up</Text>
-          {stakeMinor > 0 && <Text style={styles.giveInSub}>−{formatMoney(giveUpCost, currency)}</Text>}
+        <TouchableOpacity onPress={handleUnlock} disabled={loading} style={styles.unlockBtn}>
+          <Text style={styles.unlockText}>
+            Unlock early{'\n'}
+            {stakeMinor > 0 && (
+              <Text style={styles.unlockCost}>−{formatMoney(forfeitCost, currency)}</Text>
+            )}
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -229,16 +214,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.danger,
     marginTop: 4,
-  },
-  giveInBtn: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.sm,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.danger,
-    backgroundColor: colors.dangerSoft,
   },
   stakeCard: {
     alignItems: 'center',
@@ -290,17 +265,6 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   unlockCost: { fontFamily: fonts.bold, fontSize: 15, color: colors.primary },
-  giveInText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 18,
-    color: colors.danger,
-  },
-  giveInSub: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
   backBtn: {
     flex: 1,
     alignItems: 'center',

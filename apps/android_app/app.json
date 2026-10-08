@@ -29,9 +29,9 @@
         "android.permission.SYSTEM_ALERT_WINDOW",
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.RECEIVE_BOOT_COMPLETED",
-        "android.permission.BIND_ACCESSIBILITY_SERVICE"
-      ],
-      "edgeToEdgeEnabled": true
+        "android.permission.BIND_ACCESSIBILITY_SERVICE",
+        "com.android.vending.BILLING"
+      ]
     },
     "plugins": [
       "expo-router",

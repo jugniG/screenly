@@ -15,9 +15,6 @@
     "check": "prettier --check ."
   },
   "dependencies": {
-    "@screen/api": "*",
-    "@screen/db": "*",
-    "@screen/monetization": "*",
     "@heroui/react": "2.8.10",
     "@hookform/resolvers": "5.9.0",
     "@orpc/client": "^1.13.6",
@@ -26,6 +23,9 @@
     "@orpc/server": "^1.13.6",
     "@orpc/tanstack-query": "^1.13.6",
     "@orpc/zod": "^1.13.6",
+    "@screen/api": "*",
+    "@screen/db": "*",
+    "@screen/monetization": "*",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/react-devtools": "latest",
     "@tanstack/react-query": "latest",
@@ -33,7 +33,7 @@
     "@tanstack/react-router": "latest",
     "@tanstack/react-router-devtools": "latest",
     "@tanstack/react-router-ssr-query": "latest",
-    "@tanstack/react-start": "latest",
+    "@tanstack/react-start": "1.168.60",
     "better-auth": "^1.5.3",
     "lucide-react": "1.31.0",
     "nitro": "3.0.260610-beta",

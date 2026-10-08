@@ -1,9 +1,9 @@
 /**
  * Google Play Developer API — purchase verification and refunds.
  *
- * This is the Android in-app rail. Dodo stays for the web app and for refunds on
- * rules that were bought before the switch (those rows have a Dodo payment id
- * and no playPurchaseToken).
+ * This is the only payment rail. Stake amounts come from fixed tiers whose ids
+ * double as Play one-time product ids, so the amount is always resolved from
+ * the server's own STAKE_TIERS table and never from the client.
  *
  * Credentials are the service account already in .env. GOOGLE_PLAY_PRIVATE_KEY
  * is stored on one line with literal \n, so the newlines have to be restored
@@ -49,6 +49,10 @@ async function authClient(): Promise<any> {
       private_key: creds.private_key,
     },
     projectId: creds.project_id || undefined,
+    // Required. Without an explicit scope the JWT is requested with no audience
+    // and Google rejects the token with "invalid_scope", which breaks every
+    // purchase verification and refund.
+    scopes: ['https://www.googleapis.com/auth/androidpublisher'],
   })
   cached = { auth, cachedAt: Date.now() }
   return auth

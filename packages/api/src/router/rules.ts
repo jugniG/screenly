@@ -4,7 +4,7 @@ import * as schema from '@screen/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { authedProcedure } from '../base'
 import { ORPCError } from '@orpc/client'
-import { forfeitAmount, minutesUntilMidnight, challengeEndsAt, tierMinor } from '@screen/monetization'
+import { forfeitAmount, challengeEndsAt, tierMinor, DEFAULT_DURATION_ID } from '@screen/monetization'
 import { verifyStakePurchase, refundPlayPurchase, type RefundStatus } from '../play'
 
 export const listRules = authedProcedure
@@ -99,37 +99,19 @@ const loadOwnedRule = async (id: string, userId: string) => {
   return rule
 }
 
+/**
+ * The one early exit. Unlocking before the deadline forfeits the whole stake
+ * and refunds nothing — Google keeps its fee on the original purchase, so this
+ * is the only outcome that actually pays out. Completing the challenge is the
+ * other exit and returns everything via settleChallenge.
+ */
 export const unlockChallenge = authedProcedure
   .route({ method: 'POST', path: '/rules/{id}/unlock' })
   .input(z.object({ id: z.string() }))
   .handler(async ({ input, context }) => {
     const rule = await loadOwnedRule(input.id, context.user.id)
     if (rule.stakeStatus !== 'active') throw new ORPCError('This challenge is already over')
-    // One temporary unlock per challenge — otherwise "pay once, unlock all day"
-    // is cheaper than any fee and the lock stops meaning anything.
-    if (rule.forfeitedAmount > 0) throw new ORPCError('You already used your unlock on this challenge')
 
-    const stake = rule.lockedAmount ?? 0
-    const cost = forfeitAmount(stake, 'unlock')
-    await db
-      .update(schema.appRules)
-      .set({ forfeitedAmount: cost })
-      .where(eq(schema.appRules.id, rule.id))
-
-    return {
-      forfeitedAmount: cost,
-      stakeAmount: stake,
-      remainingAmount: stake - cost,
-      currency: rule.stakeCurrency ?? 'INR',
-      minutesUnlocked: minutesUntilMidnight(),
-    }
-  })
-
-export const giveUpChallenge = authedProcedure
-  .route({ method: 'POST', path: '/rules/{id}/give-up' })
-  .input(z.object({ id: z.string() }))
-  .handler(async ({ input, context }) => {
-    const rule = await loadOwnedRule(input.id, context.user.id)
     const stake = rule.lockedAmount ?? 0
     // The row stays so the stake has a record; enabled=false stops the enforcer
     // from blocking (syncRules filters on paymentStatus + enabled).
@@ -163,6 +145,7 @@ export const beginStake = authedProcedure
     scheduleStart: z.string().optional(),
     scheduleEnd: z.string().optional(),
     tierId: z.string(),
+    durationId: z.enum(['week', 'month', 'year']).default('week'),
     currency: z.enum(['INR', 'USD']).default('INR'),
   }))
   .handler(async ({ input, context }) => {
@@ -178,6 +161,15 @@ export const beginStake = authedProcedure
       ))
       .limit(1)
 
+    // A running challenge holds the Play order needed to refund it, and
+    // overwriting the row would drop that order and make the stake permanently
+    // unrecoverable. Only a live challenge blocks a new one — a settled or
+    // forfeited one has already paid out, so the user must be able to start
+    // another on the same app.
+    if (existing && existing.paymentStatus === 'completed' && existing.stakeStatus === 'active') {
+      throw new ORPCError('You already have a challenge running for this app')
+    }
+
     const values = {
       appName: input.appName,
       ruleType: input.ruleType,
@@ -190,6 +182,7 @@ export const beginStake = authedProcedure
       lockedAmount: stake,
       stakeCurrency: input.currency,
       stakeTierId: input.tierId,
+      challengeDuration: input.durationId,
       stakeStatus: 'active' as const,
       forfeitedAmount: 0,
       playPurchaseToken: null,
@@ -249,7 +242,8 @@ export const confirmStakePurchase = authedProcedure
         playOrderId: orderId,
         stakeStatus: 'active',
         stakeCurrency: currency,
-        challengeEndsAt: challengeEndsAt(new Date()),
+        challengeDuration: rule.challengeDuration ?? DEFAULT_DURATION_ID,
+        challengeEndsAt: challengeEndsAt(new Date(), rule.challengeDuration ?? DEFAULT_DURATION_ID),
       })
       .where(eq(schema.appRules.id, rule.id))
 
