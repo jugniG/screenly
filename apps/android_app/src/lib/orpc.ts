@@ -9,11 +9,36 @@ const BASE_URL: string =
   Constants.expoConfig?.extra?.apiUrl ??
   'http://10.0.2.2:3000';
 
+/**
+ * The Expo auth plugin stores cookies in SecureStore as a JSON map of
+ * `{ [cookieName]: { value, expires } }`, not as a Cookie header string. Sending
+ * that JSON straight through makes the server see no session at all, so it has
+ * to be flattened into `name=value; name=value` first — expired entries
+ * dropped.
+ */
+function toCookieHeader(stored: string | null): string | null {
+  if (!stored) return null;
+
+  let parsed: Record<string, { value?: string; expires?: string | null }>;
+  try {
+    parsed = JSON.parse(stored);
+  } catch {
+    // Older builds stored a raw header string; pass it through unchanged.
+    return stored || null;
+  }
+
+  const now = Date.now();
+  return Object.entries(parsed)
+    .filter(([, c]) => !c?.expires || new Date(c.expires).getTime() > now)
+    .map(([name, c]) => `${name}=${c?.value ?? ''}`)
+    .join('; ');
+}
+
 const link = new RPCLink({
   url: `${BASE_URL}/api/rpc`,
   headers: async () => {
     try {
-      const cookie = await SecureStore.getItemAsync('screenly_cookie');
+      const cookie = toCookieHeader(await SecureStore.getItemAsync('screenly_cookie'));
       return cookie ? { Cookie: cookie } : {};
     } catch {
       return {};
