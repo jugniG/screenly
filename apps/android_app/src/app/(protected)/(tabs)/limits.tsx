@@ -148,7 +148,10 @@ export default function HomeScreen() {
       const mapped = (todayUsage || []).map((u: any) => ({ packageName: u.packageName, totalMinutes: u.totalMinutes }));
       console.log('[Home] step8 mapped:', JSON.stringify(mapped.slice(0,3)));
       setUsage(mapped);
-      const perm = await ScreenlyEnforcer.hasUsageStatsPermission().catch(() => false);
+      let perm = false;
+      try {
+        perm = Boolean(ScreenlyEnforcer.hasUsageStatsPermission());
+      } catch {}
       setHasPermission(perm);
       console.log('[Home] done, perm=' + perm);
     } catch (e: any) {

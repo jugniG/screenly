@@ -208,11 +208,12 @@ export default function AddRuleScreen() {
       });
 
       setStatusText('Opening Google Play...');
-      const purchase = await purchaseStake(selectedTier.id);
+      const purchase = await purchaseStake(selectedTier.id, selectedTier.offerToken);
       if (!purchase.ok) {
         // Cancelled or failed — the rule stays disabled, nothing is charged.
         setDepositing(false);
         setStatusText('');
+        console.error('[AddRule - Stake Purchase Failed]', purchase.message);
         if (!/cancel/i.test(purchase.message)) {
           Alert.alert('Purchase failed', purchase.message);
         }

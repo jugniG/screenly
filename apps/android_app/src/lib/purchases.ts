@@ -20,6 +20,8 @@ export type StakeTier = {
   currency: string
   /** What Play charges for this tier, in minor units. */
   priceMinor: number
+  /** Google Play Billing 8.0+ offerToken for one-time purchase options */
+  offerToken?: string
 }
 
 function first<T>(value: T | T[] | null | undefined): T | null {
@@ -35,7 +37,8 @@ async function withConnection<T>(fn: () => Promise<T>): Promise<T | null> {
   let connected = false
   try {
     connected = await RNIap.initConnection()
-  } catch {
+  } catch (e) {
+    console.warn('[IAP] initConnection failed:', e)
     return null
   }
   if (!connected) return null
@@ -54,18 +57,25 @@ async function withConnection<T>(fn: () => Promise<T>): Promise<T | null> {
 export async function getStakeTiers(): Promise<StakeTier[]> {
   const skus = STAKE_TIERS.map((t) => t.id)
   const products = await withConnection(() => RNIap.fetchProducts({ skus }))
-  if (!products) return []
+  console.log('[IAP] fetchProducts skus:', skus, 'returned count:', products?.length)
+  if (!products || products.length === 0) return []
 
   return products
     .map((raw) => {
-      const product = first(raw as any)
+      const product = first(raw as any) as any
       if (!product) return null
+      const offerToken =
+        product.discountOffers?.[0]?.offerTokenAndroid ??
+        product.discountOffers?.[0]?.offerToken ??
+        product.offerToken ??
+        undefined
       return {
         id: product.id,
         displayPrice: product.displayPrice,
         currency: normalizeCurrency(product.currency),
         // INR and USD both use 2 decimal places, so minor units = x100.
         priceMinor: Math.round((product.price ?? 0) * 100),
+        offerToken,
       } as StakeTier
     })
     .filter((t): t is StakeTier => Boolean(t))
@@ -73,15 +83,44 @@ export async function getStakeTiers(): Promise<StakeTier[]> {
 }
 
 /**
+ * Turns a Play billing error code into something a person can act on.
+ *
+ * `item-unavailable` deserves a specific message: it almost always means this
+ * install is not a Play install (a sideloaded debug build cannot sell), so
+ * saying "not available" without that hint sends people hunting for a product
+ * that is already configured correctly.
+ */
+function purchaseErrorMessage(code?: string, fallback?: string): string {
+  switch (code) {
+    case 'item-unavailable':
+      return 'This amount cannot be purchased from this build. Install Screenly from Play Store to stake money.'
+    case 'user-cancelled':
+      return 'Purchase cancelled'
+    case 'network-error':
+      return 'No connection to Google Play. Check your network and try again.'
+    case 'service-unavailable':
+    case 'service-disconnected':
+      return 'Google Play billing is temporarily unavailable. Try again shortly.'
+    case 'billing-availability-issues':
+      return 'Google Play billing is not available on this device.'
+    case 'item-already-owned':
+      return 'You already own this stake.'
+    default:
+      return fallback ?? 'Purchase failed. Please try again.'
+  }
+}
+
+/**
  * Buys one stake tier. Resolves with the purchase token the server needs to
  * verify the payment with Google. A cancelled purchase resolves with ok:false
  * rather than throwing, so the caller can simply try again.
  */
-export async function purchaseStake(tierId: string): Promise<StakePurchase> {
+export async function purchaseStake(tierId: string, offerToken?: string): Promise<StakePurchase> {
   let connected = false
   try {
     connected = await RNIap.initConnection()
-  } catch {
+  } catch (e) {
+    console.error('[IAP] purchaseStake initConnection error:', e)
     return { ok: false, message: 'Google Play billing is unavailable' }
   }
   if (!connected) {
@@ -106,18 +145,24 @@ export async function purchaseStake(tierId: string): Promise<StakePurchase> {
       if (token) finish({ ok: true, token })
     })
     const errSub = RNIap.purchaseErrorListener((error) => {
-      finish({ ok: false, message: error.message })
+      console.error('[IAP] purchaseErrorListener:', JSON.stringify(error))
+      finish({ ok: false, message: purchaseErrorMessage(error.code, error.message) })
     })
 
-    // Typed explicitly: the union of Android request props trips the
-    // excess-property check.
-    const googleProps: RNIap.RequestPurchaseAndroidProps = { skus: [tierId] }
+    const googleProps: RNIap.RequestPurchaseAndroidProps = {
+      skus: [tierId],
+      ...(offerToken ? { offerToken } : {}),
+    }
+    console.log('[IAP] requestPurchase with googleProps:', JSON.stringify(googleProps))
 
     RNIap.requestPurchase({ request: { google: googleProps }, type: 'in-app' })
       .then((result) => {
         const purchase = first(result)
         if (purchase?.purchaseToken) finish({ ok: true, token: purchase.purchaseToken })
       })
-      .catch((e: any) => finish({ ok: false, message: e?.message ?? 'Purchase failed' }))
+      .catch((e: any) => {
+        console.error('[IAP] requestPurchase catch error:', e)
+        finish({ ok: false, message: purchaseErrorMessage(e?.code, e?.message) })
+      })
   })
 }
