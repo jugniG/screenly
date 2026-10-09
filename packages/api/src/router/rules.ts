@@ -75,12 +75,29 @@ export const deleteRule = authedProcedure
   .route({ method: 'DELETE', path: '/rules/{id}' })
   .input(z.object({ id: z.string() }))
   .handler(async ({ input, context }) => {
+    const rule = await loadOwnedRule(input.id, context.user.id)
+    const stake = rule.lockedAmount ?? 0
+
+    // A paid challenge that is still running holds the Play order needed to
+    // refund it. Hard-deleting the row drops that order and the stake record
+    // together, so the money is neither refunded nor accounted for. Remove it
+    // the way an early unlock does instead: forfeit, and keep the row.
+    if (rule.paymentStatus === 'completed' && rule.stakeStatus === 'active') {
+      await db
+        .update(schema.appRules)
+        .set({ enabled: false, stakeStatus: 'forfeited', forfeitedAmount: stake })
+        .where(eq(schema.appRules.id, rule.id))
+      return { success: true, deleted: false, forfeitedAmount: stake, stakeAmount: stake }
+    }
+
+    // Settled, forfeited, or never staked — no money is outstanding, so the row
+    // can go.
     const deleted = await db
       .delete(schema.appRules)
       .where(and(eq(schema.appRules.id, input.id), eq(schema.appRules.userId, context.user.id)))
       .returning()
     if (!deleted.length) throw new Error('Not found')
-    return { success: true }
+    return { success: true, deleted: true, forfeitedAmount: 0, stakeAmount: stake }
   })
 
 // --- Challenge stakes -------------------------------------------------------
@@ -264,7 +281,17 @@ export const settleChallenge = authedProcedure
         refundStatus: 'settled' as const,
       }
     }
-    if (rule.challengeEndsAt && new Date() < rule.challengeEndsAt) {
+    // A refund needs a paid stake that actually had a deadline. Rows created
+    // before payment completed (paymentStatus still 'pending') and pre-Play rows
+    // carry no challengeEndsAt; without this guard `challengeEndsAt && ...`
+    // short-circuits and lets an unfinished or unpaid challenge be settled.
+    if (rule.paymentStatus !== 'completed') {
+      throw new ORPCError('This challenge was never paid for')
+    }
+    if (!rule.challengeEndsAt) {
+      throw new ORPCError('This challenge has no end date set, so it cannot be settled')
+    }
+    if (new Date() < rule.challengeEndsAt) {
       throw new ORPCError('Challenge is still running')
     }
 

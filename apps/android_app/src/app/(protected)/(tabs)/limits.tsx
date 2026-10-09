@@ -178,8 +178,18 @@ export default function HomeScreen() {
         text: 'Remove', style: 'destructive',
         onPress: async () => {
           try {
-            await orpc('deleteRule', { id });
-            setRules(prev => prev.filter(r => r.id !== id));
+            const res = await orpc<{ id: string }, any>('deleteRule', { id });
+            // A paid, still-running challenge is forfeited rather than deleted, so
+            // the row survives (disabled) as a record of the stake. Reloading
+            // keeps the list honest — filtering it out locally would make it
+            // reappear on the next refresh.
+            if (res?.deleted === false) {
+              Alert.alert(
+                'Challenge forfeited',
+                'It was still running, so the stake has been forfeited. The rule stays in your list as a record.',
+              );
+            }
+            await load();
             syncRules();
           } catch (e) {
             console.error('[Home - deleteRule Failed]', e);
@@ -189,6 +199,12 @@ export default function HomeScreen() {
       },
     ]);
   }
+
+  const openDetail = (ruleId: string) =>
+  router.push({
+    pathname: '/(protected)/app-detail' as any,
+    params: { ruleId },
+  });
 
   const GR = getGreeting();
 
@@ -274,7 +290,10 @@ export default function HomeScreen() {
             const isPendingPayment = item.paymentStatus === 'pending';
 
             return (
-              <Card style={[styles.appCard, (!item.enabled && !isPendingPayment) && styles.appCardDisabled, { marginVertical: 3 }]}>
+              <Card
+                style={[styles.appCard, (!item.enabled && !isPendingPayment) && styles.appCardDisabled, { marginVertical: 3 }]}
+                onPress={() => openDetail(item.id)}
+              >
                   {/* Row 1: icon + name + delete + right info */}
                   <View style={styles.cardRow}>
                     {iconUri ? (
@@ -350,6 +369,21 @@ export default function HomeScreen() {
                       )}
                     </>
                   )}
+
+                  {/* Explicit affordance in the bottom-left. The whole card is
+                      tappable too, but nothing on it looks clickable, so the
+                      destination was invisible. */}
+                  <View className="flex-row justify-start mt-2">
+                    <TouchableOpacity
+                      className="flex-row items-center gap-0.5 -ml-2 py-1 px-2 rounded-md active:opacity-70"
+                      onPress={() => openDetail(item.id)}
+                    >
+                      <Text className="text-[12px] font-semibold text-primary">View</Text>
+                      <Text className="text-[15px] font-semibold leading-[17px] text-primary">
+                        ›
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
                 </Card>
             );
           }}
