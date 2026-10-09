@@ -69,7 +69,7 @@ export default function BlockScreen() {
   function goHome() {
     if (dismissed.current) return;
     dismissed.current = true;
-    router.replace('/(protected)/(tabs)' as any);
+    router.dismissTo('/(protected)/(tabs)/limits' as any);
   }
 
   // Block back button — trap user on this screen

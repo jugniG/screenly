@@ -42,7 +42,7 @@ export type DurationId = keyof typeof CHALLENGE_DURATIONS
 
 export const DURATION_IDS = Object.keys(CHALLENGE_DURATIONS) as DurationId[]
 
-export const DEFAULT_DURATION_ID: DurationId = 'week'
+export const DEFAULT_DURATION_ID: DurationId = 'month'
 
 /** Days for a duration id, or null if the id is not one we offer. */
 export function durationDays(id: string): number | null {
@@ -83,7 +83,25 @@ export const STAKE_TIERS = [
 
 export type StakeTierId = (typeof STAKE_TIERS)[number]['id']
 
+/**
+ * The no-money option. Kept out of STAKE_TIERS on purpose: tier ids are Play
+ * one-time product ids and the store has no free product, so this never becomes
+ * a purchase. Picking it creates a plain rule with nothing at stake.
+ */
+export const FREE_TIER_ID = 'free' as const
+
+/**
+ * Pre-selected amount and duration.
+ *
+ * The free tier is listed first for discoverability but must not be the default:
+ * auto-selecting it silently made every new challenge stake nothing.
+ */
 export const DEFAULT_TIER_ID: StakeTierId = 'stake_100'
+
+/** True when a tier id means "no money involved". */
+export function isFreeTier(tierId: string): boolean {
+  return tierId === FREE_TIER_ID
+}
 
 /** What this tier should cost in the given currency, or null if the tier is unknown. */
 export function tierMinor(tierId: string, currency: CurrencyCode): number | null {
@@ -115,9 +133,14 @@ export function challengeEndsAt(
   return new Date(from.getTime() + days * 24 * 60 * 60 * 1000)
 }
 
-/** Two-letter region code ("IN", "US") to currency. Unknown regions get INR — we launch India-first. */
+/**
+ * Two-letter region code ("IN", "US") to currency.
+ *
+ * Defaults to INR when the region is unknown: India is the launch market, and
+ * defaulting to USD showed a free tier as "$0" to Indian users.
+ */
 export function resolveCurrency(regionCode?: string | null): CurrencyCode {
-  return (regionCode ?? '').toUpperCase() === 'IN' ? 'INR' : 'USD'
+  return (regionCode ?? '').toUpperCase() === 'US' ? 'USD' : 'INR'
 }
 
 export function formatMoney(minor: number, currency: CurrencyCode = 'INR'): string {

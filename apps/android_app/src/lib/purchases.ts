@@ -1,5 +1,5 @@
 import * as RNIap from 'react-native-iap'
-import { STAKE_TIERS, type CurrencyCode } from '@screen/monetization'
+import { STAKE_TIERS, FREE_TIER_ID, formatMoney, resolveCurrency, type CurrencyCode } from '@screen/monetization'
 
 /**
  * Google Play purchases, Android only.
@@ -58,9 +58,20 @@ export async function getStakeTiers(): Promise<StakeTier[]> {
   const skus = STAKE_TIERS.map((t) => t.id)
   const products = await withConnection(() => RNIap.fetchProducts({ skus }))
   console.log('[IAP] fetchProducts skus:', skus, 'returned count:', products?.length)
-  if (!products || products.length === 0) return []
 
-  return products
+  // The no-money option is always offered and always first. It is not a Play
+  // product — picking it skips billing entirely — so it must be prepended here
+  // rather than added to STAKE_TIERS, whose ids are product ids.
+  const freeTier = (currency: CurrencyCode): StakeTier => ({
+    id: FREE_TIER_ID,
+    displayPrice: formatMoney(0, currency),
+    currency,
+    priceMinor: 0,
+  })
+
+  if (!products || products.length === 0) return [freeTier(resolveCurrency())]
+
+  const priced = products
     .map((raw) => {
       const product = first(raw as any) as any
       if (!product) return null
@@ -80,6 +91,13 @@ export async function getStakeTiers(): Promise<StakeTier[]> {
     })
     .filter((t): t is StakeTier => Boolean(t))
     .sort((a, b) => a.priceMinor - b.priceMinor)
+
+  // Price the free option in whatever currency Play charged the others in, so
+  // it reads as the same symbol as the prices beside it.
+  return [
+    freeTier((priced[0]?.currency as CurrencyCode) ?? resolveCurrency()),
+    ...priced,
+  ]
 }
 
 /**

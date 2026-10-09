@@ -12,7 +12,10 @@ export function BackButton({ onPress }: BackButtonProps) {
   return (
     <TouchableOpacity
       style={styles.btn}
-      onPress={onPress ?? (() => router.back())}
+      // dismissTo rather than router.back(): most navigation here uses replace,
+      // which leaves nothing on the stack to pop, so back() either exits or
+      // lands somewhere unrelated. This pops to the app list instead.
+      onPress={onPress ?? (() => router.dismissTo('/(protected)/(tabs)/limits' as any))}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       activeOpacity={0.7}
     >

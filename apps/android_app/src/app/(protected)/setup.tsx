@@ -76,7 +76,7 @@ export default function SetupScreen() {
         setChecking(false);
         if (ok) {
           if (stepIndex === STEPS.length - 1) {
-            router.replace('/(protected)/(tabs)' as any);
+            router.dismissTo('/(protected)/(tabs)/limits' as any);
           } else {
             await new Promise(r => setTimeout(r, 900));
             if (cancelled) return;

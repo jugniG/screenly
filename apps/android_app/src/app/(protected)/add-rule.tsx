@@ -28,6 +28,8 @@ import {
   CHALLENGE_DURATIONS,
   formatDuration,
   DEFAULT_DURATION_ID,
+  DEFAULT_TIER_ID,
+  isFreeTier,
   type CurrencyCode,
   type DurationId,
 } from '@screen/monetization';
@@ -149,9 +151,12 @@ export default function AddRuleScreen() {
     getStakeTiers().then(tiers => {
       if (cancelled) return;
       setStakeTiers(tiers);
-      setSelectedTier(prev =>
-        prev && tiers.some(t => t.id === prev.id) ? prev : tiers[0] ?? null,
-      );
+      // Prefer DEFAULT_TIER_ID, not tiers[0] — the free tier is listed first, and
+      // taking position zero auto-selected "no stake" for every new challenge.
+      setSelectedTier(prev => {
+        if (prev && tiers.some(t => t.id === prev.id)) return prev;
+        return tiers.find(t => t.id === DEFAULT_TIER_ID) ?? tiers.find(t => !isFreeTier(t.id)) ?? null;
+      });
     });
     return () => { cancelled = true; };
   }, [step]);
@@ -174,7 +179,7 @@ export default function AddRuleScreen() {
     const e: Record<string, string> = {};
     if (ruleType === 'daily_limit') {
       const m = parseInt(limitMinutes);
-      if (isNaN(m) || m < 1) e.limitMinutes = 'Enter a valid number of minutes';
+      if (isNaN(m) || m < 0) e.limitMinutes = 'Enter 0 or more minutes';
     }
     if (ruleType === 'schedule') {
       const sh = parseInt(startH);
@@ -208,6 +213,39 @@ export default function AddRuleScreen() {
     return false;
   }
 
+  /**
+   * Creates the rule with no stake at all.
+   *
+   * The stake is optional by design: someone who wants Instagram limited should
+   * not be forced into a payment to do it. This path never touches Play — it
+   * goes straight to createRule, so nothing is charged and no challenge clock
+   * is started.
+   */
+  async function handleSkipStake() {
+    if (!pendingRule) return;
+    setDepositing(true);
+    setStatusText('Adding app...');
+    try {
+      await orpc('createRule', {
+        packageName: pendingRule.packageName,
+        appName: pendingRule.appName,
+        ruleType: pendingRule.ruleType,
+        limitMinutes: pendingRule.limitMinutes ?? undefined,
+        period: pendingRule.period || 'daily',
+        scheduleStart: pendingRule.scheduleStart,
+        scheduleEnd: pendingRule.scheduleEnd,
+        enabled: true,
+      });
+      await syncRules().catch(() => {});
+      setStep('done');
+    } catch (e: any) {
+      Alert.alert('Could not add app', e?.message ?? 'Please try again.');
+    } finally {
+      setDepositing(false);
+      setStatusText('');
+    }
+  }
+
   async function submit() {
     if (!validateConfigure()) return;
     setLoading(true);
@@ -237,6 +275,11 @@ export default function AddRuleScreen() {
   async function handleDeposit() {
     if (!selectedTier) {
       Alert.alert('Choose an amount', 'Pick how much you want to stake first.');
+      return;
+    }
+    // ₹0 means no money and no challenge, so it never touches Play.
+    if (isFreeTier(selectedTier.id)) {
+      await handleSkipStake();
       return;
     }
     if (!pendingRule) {
@@ -284,7 +327,7 @@ export default function AddRuleScreen() {
         'Locked in',
         `${selectedTier.displayPrice} is staked on ${pendingRule.appName}. Stay locked for ${formatDuration(durationId)} and you get all of it back.`,
       );
-      router.replace('/(protected)/(tabs)' as any);
+      router.dismissTo('/(protected)/(tabs)/limits' as any);
     } catch (e: any) {
       console.error('[AddRule - Stake Purchase Failed]', e);
       Alert.alert('Could not start the challenge', e?.message ?? 'Please try again.');
@@ -295,9 +338,10 @@ export default function AddRuleScreen() {
   }
 
   function goBack() {
-    if (step === 'app') router.back();
+    if (step === 'app') router.dismissTo('/(protected)/(tabs)/limits' as any);
     else if (step === 'type') setStep('app');
     else if (step === 'configure') setStep('type');
+    else if (step === 'deposit') setStep('configure');
   }
 
   return (
@@ -305,23 +349,30 @@ export default function AddRuleScreen() {
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={styles.header}>
         <BackButton onPress={goBack} />
-        <Text style={styles.headerTitle}>Add App</Text>
+        <Text style={styles.headerTitle} numberOfLines={1}>
+          {appName || 'Add App'}
+        </Text>
         <View style={{ width: 50 }} />
       </View>
 
-      {/* Progress */}
+      {/* Progress — 'deposit' was missing from this list, so the stake screen
+          showed three grey dots with no active step. */}
       <View style={styles.progress}>
-        {(['app', 'type', 'configure'] as Step[]).map((s, i) => (
-          <View
-            key={s}
-            style={[
-              styles.progressDot,
-              step === s && styles.progressDotActive,
-              (step === 'configure' || step === 'done') && i <= 2 && styles.progressDotDone,
-              step === 'type' && i <= 1 && styles.progressDotDone,
-            ]}
-          />
-        ))}
+        {(['app', 'type', 'configure', 'deposit'] as Step[]).map((s, i) => {
+          const order = ['app', 'type', 'configure', 'deposit'];
+          const current = order.indexOf(step);
+          const pos = order.indexOf(s);
+          return (
+            <View
+              key={s}
+              style={[
+                styles.progressDot,
+                step === s && styles.progressDotActive,
+                pos < current && styles.progressDotDone,
+              ]}
+            />
+          );
+        })}
       </View>
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
@@ -433,6 +484,10 @@ export default function AddRuleScreen() {
                   placeholder="60"
                   error={errors.limitMinutes}
                 />
+                <Text className="mt-0 text-[12px] text-text-muted">
+                  0 blocks {appName} right away. Anything higher lets it run for that long, then
+                  blocks it.
+                </Text>
               </>
             )}
             {ruleType === 'schedule' && (
@@ -552,92 +607,85 @@ export default function AddRuleScreen() {
           </View>
         )}
 
-        {/* Step 4: Deposit */}
+        {/* Step 4: Deposit — ₹0 is the first tier, so the stake is a choice made here
+            rather than a gate on the previous screen. */}
         {step === 'deposit' && (
           <View style={styles.stepContainer}>
             <Text style={styles.stepTitle}>Lock in your commitment</Text>
-            <Text style={styles.stepSubtitle}>
-              This is your own money, held by us. Stay locked for the whole duration and you get
-              all of it back.
-            </Text>
 
-            <Text style={styles.stakeLabel}>HOW LONG DO YOU WANT TO STAY LOCKED?</Text>
-            <View className="gap-2 mb-5">
-              {(Object.keys(CHALLENGE_DURATIONS) as DurationId[]).map(id => {
-                const active = durationId === id;
-                return (
-                  <TouchableOpacity
-                    key={id}
-                    onPress={() => setDurationId(id)}
-                    accessibilityRole="radio"
-                    accessibilityState={{ selected: active }}
-                    className={`flex-row items-center justify-between px-6 py-4 rounded-xl border bg-surface active:opacity-70 ${
-                      active ? 'border-primary bg-primary-light border-[1.5px]' : 'border-border'
-                    }`}
-                  >
-                    <Text
-                      className={`text-[17px] font-semibold ${
-                        active ? 'text-primary' : 'text-text-secondary'
-                      }`}
-                    >
-                      {formatDuration(id)}
-                    </Text>
-                    <View
-                      className={`h-5 w-5 rounded-full border-2 items-center justify-center ${
-                        active ? 'border-primary' : 'border-border'
-                      }`}
-                    >
-                      {active && <View className="h-2.5 w-2.5 rounded-full bg-primary" />}
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            {stakeTiers.length === 0 ? (
+            {/* Amount first — it is the primary decision, and duration only matters once
+            a paid amount is chosen. */}
+            <Text style={styles.stakeLabel}>HOW MUCH ARE YOU STAKING?</Text>
+            {stakeTiers.filter((t) => !isFreeTier(t.id)).length === 0 ? (
               <Text style={styles.warningText}>
-                Stake amounts are unavailable right now. Check that the stake products are active in Play Console.
+                Staked challenges are unavailable right now — the stake products may not be
+                active yet. You can still add the limit with no money involved.
               </Text>
             ) : (
+              <View className="flex-row flex-wrap -mx-1">
+                {stakeTiers.map(tier => {
+                  const active = selectedTier?.id === tier.id;
+                  return (
+                    <TouchableOpacity
+                      key={tier.id}
+                      onPress={() => setSelectedTier(tier)}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected: active }}
+                      className={`w-[48%] mx-[1%] mb-2 items-center justify-center px-3 py-3.5 rounded-xl border active:opacity-70 ${
+                        active ? 'border-primary bg-primary-light border-[1.5px]' : 'border-border bg-surface'
+                      }`}
+                    >
+                      <Text
+                        className={`text-[17px] font-bold ${
+                          active ? 'text-primary' : 'text-text-secondary'
+                        }`}
+                      >
+                        {tier.displayPrice}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            )}
+
+            {!isFreeTier(selectedTier?.id ?? '') && (
               <>
-                <Text style={styles.stakeLabel}>HOW MUCH ARE YOU STAKING?</Text>
-                <View className="gap-2">
-                  {stakeTiers.map(tier => {
-                    const active = selectedTier?.id === tier.id;
+                <View className="h-4" />
+                <Text style={styles.stakeLabel}>HOW LONG DO YOU WANT TO STAY LOCKED?</Text>
+                <View className="flex-row flex-wrap -mx-1">
+                  {(Object.keys(CHALLENGE_DURATIONS) as DurationId[]).map((id, i) => {
+                    const active = durationId === id;
+                    // Week and month share a row; the year takes the full width
+                    // below them, since "1 year" is the outlier in both length
+                    // and commitment.
+                    const wide = i === 2;
                     return (
                       <TouchableOpacity
-                        key={tier.id}
-                        onPress={() => setSelectedTier(tier)}
+                        key={id}
+                        onPress={() => setDurationId(id)}
                         accessibilityRole="radio"
                         accessibilityState={{ selected: active }}
-                        className={`flex-row items-center justify-between px-6 py-4 rounded-xl border bg-surface active:opacity-70 ${
-                          active ? 'border-primary bg-primary-light border-[1.5px]' : 'border-border'
+                        className={`${wide ? 'w-full' : 'w-[48%]'} mx-[1%] mb-2 items-center justify-center px-3 py-4 rounded-xl border active:opacity-70 ${
+                          active ? 'border-primary bg-primary-light border-[1.5px]' : 'border-border bg-surface'
                         }`}
                       >
                         <Text
-                          className={`text-[17px] font-semibold ${
+                          className={`text-[16px] font-bold ${
                             active ? 'text-primary' : 'text-text-secondary'
                           }`}
                         >
-                          {tier.displayPrice}
+                          {formatDuration(id)}
                         </Text>
-                        <View
-                          className={`h-5 w-5 rounded-full border-2 items-center justify-center ${
-                            active ? 'border-primary' : 'border-border'
-                          }`}
-                        >
-                          {active && <View className="h-2.5 w-2.5 rounded-full bg-primary" />}
-                        </View>
                       </TouchableOpacity>
                     );
                   })}
                 </View>
                 {selectedTier && (
-                  <Text className="mt-0 text-[12px] text-text-muted">
-                    <Text className="font-semibold text-text-secondary">
+                  <Text className="mt-6 text-center text-[13px] text-text-muted">
+                    <Text className="font-bold text-text-secondary">
                       {selectedTier.displayPrice} locked for {formatDuration(durationId)}
                     </Text>
-                    . Hold out and you get 100% of it back.
+                    {'\n'}Hold out and you get 100% of it back.
                   </Text>
                 )}
               </>
@@ -645,23 +693,29 @@ export default function AddRuleScreen() {
 
             {session ? (
               <Button
-                title={depositing ? (statusText || 'Working…') : 'Stake & Start Challenge'}
+                title={
+                  depositing
+                    ? statusText || 'Working…'
+                    : isFreeTier(selectedTier?.id ?? '')
+                      ? `Add ${appName}`
+                      : 'Stake & Start Challenge'
+                }
                 onPress={handleDeposit}
                 disabled={depositing || !selectedTier}
                 style={{ marginTop: spacing.xl }}
               />
             ) : (
               <Button
-                title="Login to continue adding limits"
+                title="Sign in to continue"
                 onPress={handleLoginRedirect}
                 disabled={depositing}
                 style={{ marginTop: spacing.xl }}
               />
             )}
             <Button
-              title="Cancel"
+              title="Discard"
               variant="secondary"
-              onPress={() => router.replace('/(protected)/(tabs)' as any)}
+              onPress={() => router.dismissTo('/(protected)/(tabs)/limits' as any)}
               style={{ marginTop: spacing.sm }}
             />
           </View>
@@ -673,7 +727,7 @@ export default function AddRuleScreen() {
             <Text style={styles.doneEmoji}>✅</Text>
             <Text style={styles.doneTitle}>App added!</Text>
             <Text style={styles.doneSubtitle}>{appName} is now being tracked</Text>
-            <Button title="Go Home" onPress={() => router.replace('/(protected)/(tabs)' as any)} style={{ marginTop: spacing.xl }} />
+            <Button title="Go Home" onPress={() => router.dismissTo('/(protected)/(tabs)/limits' as any)} style={{ marginTop: spacing.xl }} />
             <Button
               title="Add Another"
               variant="secondary"
@@ -705,7 +759,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 8,
-    marginBottom: spacing.md,
+    marginTop: spacing.sm,
+    marginBottom: spacing.xs,
   },
   progressDot: {
     width: 8,
@@ -717,7 +772,7 @@ const styles = StyleSheet.create({
   progressDotDone:   { backgroundColor: colors.primary },
   content: { padding: spacing.lg, paddingBottom: spacing.xxl },
   stepContainer: {},
-  stepTitle: { fontFamily: fonts.bold, fontSize: 22, color: colors.text, marginBottom: 6 },
+  stepTitle: { fontFamily: fonts.bold, fontSize: 22, color: colors.text, marginBottom: spacing.md },
   stepSubtitle: { fontFamily: fonts.regular, fontSize: 14, color: colors.textSecondary, marginBottom: spacing.xl },
   pickerButton: {
     backgroundColor: colors.bg,

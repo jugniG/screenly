@@ -72,7 +72,7 @@ export default function AppDetailScreen() {
       if (!match) {
         // Gone from under us (deleted on another screen) — leave rather than show
         // an empty shell.
-        router.replace('/(protected)/(tabs)' as any);
+        router.dismissTo('/(protected)/(tabs)/limits' as any);
         return;
       }
       setRule(match);
@@ -119,7 +119,7 @@ export default function AppDetailScreen() {
             try {
               await orpcClient.unlockChallenge({ id: rule.id });
               await syncRules().catch(() => {});
-              router.replace('/(protected)/(tabs)' as any);
+              router.dismissTo('/(protected)/(tabs)/limits' as any);
             } catch (e: any) {
               Alert.alert('Could not unlock', e?.message ?? 'Please try again.');
             } finally {
@@ -144,7 +144,7 @@ export default function AppDetailScreen() {
           res.refundStatus === 'failed'
             ? 'Google Play rejected the refund. Your stake is safe — please try again.'
             : `${formatMoney(res.refundedAmount, currency)} is on its way back to your account.`,
-          [{ text: 'Done', onPress: () => router.replace('/(protected)/(tabs)' as any) }],
+          [{ text: 'Done', onPress: () => router.dismissTo('/(protected)/(tabs)/limits' as any) }],
         );
       } catch (e: any) {
         Alert.alert('Could not refund', e?.message ?? 'Please try again.');
@@ -177,7 +177,7 @@ export default function AppDetailScreen() {
             try {
               await orpcClient.deleteRule({ id: rule.id });
               await syncRules().catch(() => {});
-              router.replace('/(protected)/(tabs)' as any);
+              router.dismissTo('/(protected)/(tabs)/limits' as any);
             } catch (e: any) {
               Alert.alert('Could not remove', e?.message ?? 'Please try again.');
             } finally {
@@ -203,7 +203,7 @@ export default function AppDetailScreen() {
         <Text className="text-[13px] text-text-muted">Rule not found</Text>
         <Button
           title="Back"
-          onPress={() => router.replace('/(protected)/(tabs)' as any)}
+          onPress={() => router.dismissTo('/(protected)/(tabs)/limits' as any)}
         />
       </View>
     );
@@ -238,7 +238,7 @@ export default function AppDetailScreen() {
   return (
     <View className="flex-1 bg-background">
       <ScrollView className="px-6 pt-6 pb-12">
-        <BackButton onPress={() => router.back()} />
+        <BackButton onPress={() => router.dismissTo('/(protected)/(tabs)/limits' as any)} />
 
         <View className="items-center mb-5">
           {iconUri ? (

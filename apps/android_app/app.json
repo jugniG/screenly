@@ -2,7 +2,7 @@
   "expo": {
     "name": "Screenly",
     "slug": "screenly",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "screenly",
@@ -16,7 +16,7 @@
       "supportsTablet": true
     },
     "android": {
-      "versionCode": 8,
+      "versionCode": 9,
       "package": "com.screenly.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",

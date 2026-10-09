@@ -55,7 +55,7 @@ export default function AccountScreen() {
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
         {/* Header back */}
-        <Pressable onPress={() => router.back()} style={{ paddingVertical: 8, flexDirection: "row", alignItems: "center", gap: 6 }}>
+        <Pressable onPress={() => router.dismissTo('/(protected)/(tabs)/limits' as any)} style={{ paddingVertical: 8, flexDirection: "row", alignItems: "center", gap: 6 }}>
           <Text style={{ color: colors.primary, fontWeight: "600", fontSize: 15 }}>← Back</Text>
         </Pressable>
 
@@ -154,7 +154,7 @@ export default function AccountScreen() {
             // A draft belongs to the session that created it; carrying it into
             // the next sign-in would restore a rule for a different account.
             await AsyncStorage.removeItem('pending_add_rule').catch(() => {});
-            router.replace("/(protected)/(tabs)" as any);
+            router.dismissTo('/(protected)/(tabs)/limits' as any);
           }}
           style={{
             backgroundColor: colors.surface,
