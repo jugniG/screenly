@@ -10,7 +10,8 @@ import {
   TouchableOpacity,
   Image,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authClient } from '../../lib/auth';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -19,6 +20,7 @@ import { colors, fonts, spacing } from '../../components/ui/theme';
 import * as SecureStore from 'expo-secure-store';
 
 export default function SignUpScreen() {
+  const { returnTo } = useLocalSearchParams<{ returnTo?: string }>();
   const { data: session, refetch } = authClient.useSession() as any;
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -31,10 +33,13 @@ export default function SignUpScreen() {
   useEffect(() => {
     console.log('[GoogleAuth:SignUp] useSession updated:', session ? `User logged in: ${session?.user?.email} (${session?.user?.id})` : 'No active session');
     if (session) {
-      console.log('[GoogleAuth:SignUp] Active session detected -> Navigating to /(protected)/(tabs)');
-      router.replace('/(protected)/(tabs)' as any);
+      AsyncStorage.getItem('pending_add_rule').then(hasDraft => {
+        const dest = returnTo || (hasDraft ? '/add-rule' : '/(protected)/(tabs)');
+        console.log('[GoogleAuth:SignUp] Active session detected -> Navigating to', dest);
+        router.replace(dest as any);
+      });
     }
-  }, [session]);
+  }, [session, returnTo]);
 
   async function handleGoogle() {
     setError('');
@@ -105,7 +110,9 @@ export default function SignUpScreen() {
       } else {
         await (authClient as any).updateUser({ name: name.trim() });
         await refetch();
-        router.replace('/(protected)/(tabs)' as any);
+        const hasDraft = await AsyncStorage.getItem('pending_add_rule');
+        const dest = returnTo || (hasDraft ? '/add-rule' : '/(protected)/(tabs)');
+        router.replace(dest as any);
       }
     } catch (e: any) {
       Alert.alert('Error', e.message ?? 'Something went wrong');
@@ -205,7 +212,10 @@ export default function SignUpScreen() {
           )}
         </View>
 
-        <TouchableOpacity style={styles.footer} onPress={() => router.push('/(auth)/sign-in')}>
+        <TouchableOpacity
+          style={styles.footer}
+          onPress={() => router.push({ pathname: '/(auth)/sign-in', params: returnTo ? { returnTo } : {} } as any)}
+        >
           <Text style={styles.footerText}>Already have an account? </Text>
           <Text style={styles.footerLink}>Sign in</Text>
         </TouchableOpacity>

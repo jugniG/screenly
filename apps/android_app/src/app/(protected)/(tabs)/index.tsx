@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  AppState,
   FlatList,
   Image,
+  Linking,
   Modal,
+  Platform,
   Pressable,
   RefreshControl,
   Text,
@@ -14,7 +17,8 @@ import { Calendar } from "react-native-calendars";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@/components/ui/theme";
 import { ScreenTimeGraph } from "@/components/ui/ScreenTimeGraph";
-import { getScreenTimeData, getAppTheme, getLocalDateString, type AppUsage } from "@/lib/screenTime";
+import { getScreenTimeData, getLocalDateString, type AppUsage } from "@/lib/screenTime";
+import ScreenlyEnforcer from "@/modules/screenly-enforcer/src/ScreenlyEnforcerModule";
 
 function formatMinutes(min: number) {
   if (min < 60) return `${min}m`;
@@ -36,6 +40,7 @@ export default function ScreenTimeTab() {
   const [data, setData] = useState<AppUsage[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [hasUsagePerm, setHasUsagePerm] = useState(true);
 
   const today = getLocalDateString();
   const isToday = selectedDate === today;
@@ -46,7 +51,19 @@ export default function ScreenTimeTab() {
   const load = useCallback(async () => {
     const targetDate = selectedDate;
     setLoading(true);
+    let perm = true;
+    try {
+      perm = await ScreenlyEnforcer.hasUsageStatsPermission();
+    } catch {
+      perm = true;
+    }
     const result = await getScreenTimeData(targetDate);
+    // If usage stats exist, permission is unequivocally granted
+    if (result && result.length > 0) {
+      perm = true;
+    }
+    setHasUsagePerm(perm);
+
     // Ignore stale response if user has selected another date in the meantime
     if (activeDateRef.current === targetDate) {
       setData(result);
@@ -57,6 +74,36 @@ export default function ScreenTimeTab() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
+        load();
+      }
+    });
+    return () => sub.remove();
+  }, [load]);
+
+  const openUsageSettings = useCallback(async () => {
+    // Permission state is read from AppOps on the native side, never cached
+    // locally. Setting it optimistically here made the banner disappear while
+    // the enforcer still had no access; the AppState listener re-checks on
+    // return to the app.
+    setHasUsagePerm(false);
+    try {
+      await ScreenlyEnforcer.requestUsageStatsPermission();
+      return;
+    } catch {}
+    try {
+      if (Platform.OS === 'android') {
+        await (Linking as any).sendIntent('android.settings.USAGE_ACCESS_SETTINGS');
+        return;
+      }
+    } catch {}
+    try {
+      await Linking.openSettings();
+    } catch {}
+  }, []);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -172,6 +219,18 @@ export default function ScreenTimeTab() {
             <View className="py-12 items-center justify-center">
               <ActivityIndicator color={colors.primary} />
             </View>
+          ) : !hasUsagePerm ? (
+            <View className="py-12 items-center justify-center px-4">
+              <Text className="text-center text-sm text-muted-foreground leading-5">
+                Usage access is required to display your screen time stats.
+              </Text>
+              <TouchableOpacity
+                className="mt-4 bg-primary px-5 py-2.5 rounded-xl active:opacity-80"
+                onPress={openUsageSettings}
+              >
+                <Text className="text-white font-semibold">Enable Usage Access</Text>
+              </TouchableOpacity>
+            </View>
           ) : (
             <View className="py-12 items-center justify-center px-4">
               <Text className="text-center text-sm text-muted-foreground leading-5">
@@ -187,13 +246,13 @@ export default function ScreenTimeTab() {
           )
         }
           renderItem={({ item }) => {
-            const theme = getAppTheme(item.packageName);
             const percentage = totalMinutes > 0 ? ((item.minutes / totalMinutes) * 100).toFixed(1) : "0.0";
             const progressRatio = totalMinutes > 0 ? Math.min(1, Math.max(0.04, item.minutes / totalMinutes)) : 0;
 
             const iconUri = item.iconBase64
               ? (item.iconBase64.startsWith("data:") ? item.iconBase64 : `data:image/png;base64,${item.iconBase64}`)
               : null;
+            const initial = (item.appName?.trim()?.[0] || item.packageName?.split(".").pop()?.[0] || "A").toUpperCase();
 
             return (
               <View className="flex-row items-center py-2.5 px-1 gap-3.5 border-b border-border/40">
@@ -204,12 +263,9 @@ export default function ScreenTimeTab() {
                     className="w-10 h-10 rounded-xl"
                   />
                 ) : (
-                  <View
-                    style={{ backgroundColor: theme.bg }}
-                    className="w-10 h-10 rounded-xl items-center justify-center"
-                  >
-                    <Text style={{ color: theme.text }} className="text-base font-bold">
-                      {theme.icon}
+                  <View className="w-10 h-10 rounded-xl bg-primary-light border border-border items-center justify-center">
+                    <Text className="text-base font-bold text-primary">
+                      {initial}
                     </Text>
                   </View>
                 )}

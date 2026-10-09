@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Avatar } from "heroui-native";
 import { colors } from "@/components/ui/theme";
@@ -50,6 +51,7 @@ function initials(label: string) {
 }
 
 export default function LeaderboardTab() {
+  const router = useRouter();
   const { data: session } = authClient.useSession() as any;
   const myId: string | undefined = session?.user?.id;
 
@@ -66,14 +68,19 @@ export default function LeaderboardTab() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      setRows(await orpcClient.getLeaderboard({ period }));
-      setInvites(await orpcClient.listInvites({}));
+      const [boardRows, pendingInvites] = await Promise.all([
+        orpcClient.getLeaderboard({ period }).catch(() => []),
+        session ? orpcClient.listInvites({}).catch(() => []) : Promise.resolve([]),
+      ]);
+      setRows(boardRows as any);
+      setInvites(pendingInvites as any);
     } catch {
       setRows([]);
+      setInvites([]);
     } finally {
       setLoading(false);
     }
-  }, [period]);
+  }, [period, session]);
 
   useEffect(() => {
     load();
@@ -151,6 +158,21 @@ export default function LeaderboardTab() {
                 );
               })}
             </View>
+
+            {!session && (
+              <View className="bg-surface border border-border rounded-xl p-3.5 mt-3 flex-row items-center justify-between">
+                <View className="flex-1 pr-3">
+                  <Text className="text-sm font-semibold text-foreground">Compete with friends</Text>
+                  <Text className="text-xs text-muted-foreground mt-0.5">Sign in to join the leaderboard and track rankings.</Text>
+                </View>
+                <TouchableOpacity
+                  className="bg-primary px-3.5 py-2 rounded-xl active:opacity-80"
+                  onPress={() => router.push('/(auth)/sign-in' as any)}
+                >
+                  <Text className="text-white text-xs font-semibold">Sign In</Text>
+                </TouchableOpacity>
+              </View>
+            )}
 
             {/* Invite — collapsed until asked for */}
             <Pressable

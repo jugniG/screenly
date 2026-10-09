@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Image, Modal, Pressable, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { useRouter } from "expo-router";
+import { Redirect, useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Avatar } from "heroui-native";
 import { Card } from "@/components/ui/Card";
 import { colors } from "@/components/ui/theme";
@@ -18,12 +19,16 @@ type Rule = {
 
 export default function AccountScreen() {
   const router = useRouter();
-  const { data: session } = authClient.useSession() as any;
+  const { data: session, isPending } = authClient.useSession() as any;
   const [rules, setRules] = useState<Rule[]>([]);
   const [icons, setIcons] = useState<Record<string, string>>({});
   const [editing, setEditing] = useState(false);
   const [nameInput, setNameInput] = useState("");
   const [saving, setSaving] = useState(false);
+
+  if (!isPending && !session) {
+    return <Redirect href="/(auth)/sign-in" />;
+  }
 
   const loadRules = useCallback(async () => {
     try {
@@ -146,7 +151,10 @@ export default function AccountScreen() {
         <TouchableOpacity
           onPress={async () => {
             await authClient.signOut();
-            router.replace("/(auth)/sign-in" as any);
+            // A draft belongs to the session that created it; carrying it into
+            // the next sign-in would restore a rule for a different account.
+            await AsyncStorage.removeItem('pending_add_rule').catch(() => {});
+            router.replace("/(protected)/(tabs)" as any);
           }}
           style={{
             backgroundColor: colors.surface,

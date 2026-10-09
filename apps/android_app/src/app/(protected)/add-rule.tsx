@@ -12,12 +12,15 @@ import {
   Platform,
 } from 'react-native';
 import { router } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
 import AppPicker from '@/components/ui/AppPicker';
 import { colors, fonts, spacing, radius } from '@/components/ui/theme';
 import { orpc, orpcClient } from '@/lib/orpc';
+import { authClient } from '@/lib/auth';
 import { BackButton } from '@/components/ui/BackButton';
 import { syncRules } from '@/lib/enforcer';
 import { getStakeTiers, purchaseStake, type StakeTier } from '@/lib/purchases';
@@ -78,12 +81,65 @@ export default function AddRuleScreen() {
   const [selectedTier, setSelectedTier] = useState<StakeTier | null>(null);
   const [errors, setErrors]         = useState<Record<string, string>>({});
   const [existingPackages, setExistingPackages] = useState<string[]>([]);
+  const { data: session } = authClient.useSession() as any;
 
   useEffect(() => {
+    if (!session) return;
     orpc<Record<string, never>, { packageName: string }[]>('listRules')
       .then(rules => setExistingPackages(rules.map(r => r.packageName)))
       .catch(() => {});
+  }, [session]);
+
+  useEffect(() => {
+    AsyncStorage.getItem('pending_add_rule').then(raw => {
+      if (!raw) return;
+      AsyncStorage.removeItem('pending_add_rule');
+      try {
+        const draft = JSON.parse(raw);
+        if (!draft.packageName) return;
+        setPackageName(draft.packageName);
+        setAppName(draft.appName || '');
+        if (draft.ruleType) setRuleType(draft.ruleType);
+        // `!= null` rather than a truthy check: a limit of 0 is valid and means
+        // "block immediately", and `if (draft.limitMinutes)` silently drops it.
+        if (draft.limitMinutes != null) setLimitMinutes(String(draft.limitMinutes));
+        if (draft.period) setPeriod(draft.period);
+        if (draft.startH) setStartH(draft.startH);
+        if (draft.startM) setStartM(draft.startM);
+        if (draft.startP) setStartP(draft.startP);
+        if (draft.endH) setEndH(draft.endH);
+        if (draft.endM) setEndM(draft.endM);
+        if (draft.endP) setEndP(draft.endP);
+        if (draft.durationId) setDurationId(draft.durationId);
+        // Never restore past 'configure'. The deposit and done steps both need an
+        // account, so restoring them would land a signed-out user on a screen
+        // whose only action is a purchase.
+        setStep(draft.step === 'app' ? 'app' : 'configure');
+      } catch {}
+    });
   }, []);
+
+  async function handleLoginRedirect() {
+    await AsyncStorage.setItem('pending_add_rule', JSON.stringify({
+      packageName,
+      appName,
+      ruleType,
+      limitMinutes,
+      period,
+      startH,
+      startM,
+      startP,
+      endH,
+      endM,
+      endP,
+      durationId,
+      step,
+    }));
+    router.push({
+      pathname: '/(auth)/sign-in' as any,
+      params: { returnTo: '/add-rule' },
+    });
+  }
 
   // Read the stake prices from Play while the user fills in the earlier steps,
   // so the deposit screen shows what the store will actually charge.
@@ -304,6 +360,18 @@ export default function AddRuleScreen() {
                 existingPackages={existingPackages}
               />
             )}
+
+            {!session && (
+              <View className="flex-row items-center gap-3 p-3.5 rounded-xl bg-surface-alt border border-border mt-4">
+                <Ionicons name="shield-outline" size={18} color={colors.primary} />
+                <View className="flex-1">
+                  <Text className="text-xs font-semibold text-foreground">Sign in to activate limits</Text>
+                  <Text className="text-[11px] text-muted-foreground mt-0.5">
+                    Pick an app and configure rules. You will be prompted to log in to save.
+                  </Text>
+                </View>
+              </View>
+            )}
           </View>
         )}
 
@@ -457,12 +525,30 @@ export default function AddRuleScreen() {
                 {appName} will always be blocked.
               </Text>
             )}
-            <Button
-              title={loading ? 'Saving…' : 'Save'}
-              onPress={submit}
-              disabled={loading || hasConfigureErrors()}
-              style={{ marginTop: spacing.xl }}
-            />
+            {session ? (
+              <Button
+                title={loading ? 'Saving…' : 'Add App'}
+                onPress={submit}
+                disabled={loading || hasConfigureErrors()}
+                style={{ marginTop: spacing.xl }}
+              />
+            ) : (
+              <>
+                <View className="mt-6 p-3.5 rounded-xl bg-surface-alt border border-border">
+                  <Text className="text-xs font-semibold text-foreground">Sign in to set limits</Text>
+                  <Text className="text-[11px] text-muted-foreground mt-0.5">
+                    Limits are stored in your account and enforced on this device. Without an
+                    account nothing you configure here can be saved or applied.
+                  </Text>
+                </View>
+                <Button
+                  title="Sign in to continue"
+                  onPress={handleLoginRedirect}
+                  disabled={loading || hasConfigureErrors()}
+                  style={{ marginTop: spacing.xl }}
+                />
+              </>
+            )}
           </View>
         )}
 
@@ -557,12 +643,21 @@ export default function AddRuleScreen() {
               </>
             )}
 
-            <Button
-              title={depositing ? (statusText || 'Working…') : 'Stake & Start Challenge'}
-              onPress={handleDeposit}
-              disabled={depositing || !selectedTier}
-              style={{ marginTop: spacing.xl }}
-            />
+            {session ? (
+              <Button
+                title={depositing ? (statusText || 'Working…') : 'Stake & Start Challenge'}
+                onPress={handleDeposit}
+                disabled={depositing || !selectedTier}
+                style={{ marginTop: spacing.xl }}
+              />
+            ) : (
+              <Button
+                title="Login to continue adding limits"
+                onPress={handleLoginRedirect}
+                disabled={depositing}
+                style={{ marginTop: spacing.xl }}
+              />
+            )}
             <Button
               title="Cancel"
               variant="secondary"

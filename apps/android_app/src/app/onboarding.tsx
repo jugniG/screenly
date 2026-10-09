@@ -10,6 +10,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { router } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, fonts, radius } from '../components/ui/theme';
 
 const { width } = Dimensions.get('window');
@@ -35,8 +36,9 @@ export default function OnboardingScreen() {
   const current = SLIDES[currentIndex];
   const isLast = currentIndex === SLIDES.length - 1;
 
-  function finish() {
-    router.replace('/(auth)/sign-up');
+  async function finish() {
+    await AsyncStorage.setItem('has_seen_onboarding', 'true');
+    router.replace('/(protected)/(tabs)');
   }
 
   function next() {
@@ -50,6 +52,10 @@ export default function OnboardingScreen() {
   return (
     <View style={styles.root}>
       <StatusBar barStyle="light-content" />
+
+      <TouchableOpacity style={styles.skip} onPress={finish}>
+        <Text style={styles.skipText}>Skip</Text>
+      </TouchableOpacity>
 
       <Animated.FlatList
         ref={flatListRef}

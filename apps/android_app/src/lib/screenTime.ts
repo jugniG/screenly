@@ -35,36 +35,6 @@ function formatAppName(pkg: string, nativeName?: string): string {
   return last.charAt(0).toUpperCase() + last.slice(1)
 }
 
-export function getAppTheme(pkg: string): { bg: string; text: string; icon: string } {
-  if (pkg.includes('youtube')) return { bg: '#FEE2E2', text: '#DC2626', icon: '▶' }
-  if (pkg.includes('chrome')) return { bg: '#E0F2FE', text: '#0284C7', icon: '🌐' }
-  if (pkg.includes('screenly')) return { bg: '#FCEEE5', text: '#F95721', icon: '⏳' }
-  if (pkg.includes('whatsapp')) return { bg: '#DCFCE7', text: '#16A34A', icon: '💬' }
-  if (pkg.includes('dialer') || pkg.includes('phone')) return { bg: '#DCFCE7', text: '#15803D', icon: '📞' }
-  if (pkg.includes('vending') || pkg.includes('play')) return { bg: '#E0E7FF', text: '#4F46E5', icon: '🛍' }
-  if (pkg.includes('clock')) return { bg: '#FEF3C7', text: '#D97706', icon: '⏰' }
-  if (pkg.includes('instagram')) return { bg: '#FCE7F3', text: '#DB2777', icon: '📷' }
-  if (
-    pkg === 'com.twitter.android' ||
-    pkg === 'com.twitter.android.lite' ||
-    pkg === 'com.x.android' ||
-    pkg.includes('.twitter.')
-  ) {
-    return { bg: '#E2E8F0', text: '#0F172A', icon: '𝕏' }
-  }
-
-  // Default deterministic pastel
-  let hash = 0
-  for (let i = 0; i < pkg.length; i++) hash = pkg.charCodeAt(i) + ((hash << 5) - hash)
-  const hues = [
-    { bg: '#EAE5DC', text: '#4B5563' },
-    { bg: '#EDE9FE', text: '#7C3AED' },
-    { bg: '#CFFAFE', text: '#0891B2' },
-    { bg: '#FFE4E6', text: '#E11D48' },
-  ]
-  const picked = hues[Math.abs(hash) % hues.length]
-  return { ...picked, icon: (pkg.split('.').pop()?.charAt(0) || 'A').toUpperCase() }
-}
 
 export function getLocalDateString(d: Date = new Date()): string {
   const year = d.getFullYear()

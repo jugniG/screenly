@@ -8,9 +8,3 @@ export async function syncRules() {
     await ScreenlyEnforcer.updateRules(JSON.stringify(activeRules));
   } catch {}
 }
-
-export async function unlockApp(packageName: string) {
-  try {
-    await ScreenlyEnforcer.unlockApp(packageName);
-  } catch {}
-}

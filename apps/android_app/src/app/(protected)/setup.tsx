@@ -6,11 +6,9 @@ import {
   AppState,
   TouchableOpacity,
 } from 'react-native';
-import { Redirect, router } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import ScreenlyEnforcer from '@/modules/screenly-enforcer/src/ScreenlyEnforcerModule';
-import { authClient } from '@/lib/auth';
 import { colors, fonts, spacing } from '@/components/ui/theme';
 
 type Step = 'usage_stats' | 'accessibility';
@@ -58,7 +56,6 @@ const STEPS: StepConfig[] = [
 ];
 
 export default function SetupScreen() {
-  const { data: session, isPending, isFetching } = authClient.useSession() as any;
   const [stepIndex, setStepIndex] = useState(0);
   const [granted, setGranted] = useState<boolean | null>(null);
   const [checking, setChecking] = useState(false);
@@ -70,7 +67,7 @@ export default function SetupScreen() {
     let cancelled = false;
     async function run() {
       const currentStep = STEPS[stepIndex];
-      if (!currentStep || isPending || isFetching || !session) return;
+      if (!currentStep) return;
       setChecking(true);
       try {
         const ok = await currentStep.check();
@@ -79,7 +76,6 @@ export default function SetupScreen() {
         setChecking(false);
         if (ok) {
           if (stepIndex === STEPS.length - 1) {
-            await AsyncStorage.setItem('setup_done', '1');
             router.replace('/(protected)/(tabs)' as any);
           } else {
             await new Promise(r => setTimeout(r, 900));
@@ -97,25 +93,16 @@ export default function SetupScreen() {
     }
     run();
     return () => { cancelled = true; };
-  }, [stepIndex, retryCount, session, isPending, isFetching]);
+  }, [stepIndex, retryCount]);
 
   useEffect(() => {
-    if (isPending || isFetching || !session) return;
     const sub = AppState.addEventListener('change', (state) => {
       if (state === 'active') {
         setRetryCount(c => c + 1);
       }
     });
     return () => sub.remove();
-  }, [session, isPending, isFetching]);
-
-  if (isPending || isFetching) {
-    return <View style={styles.screen} />;
-  }
-
-  if (!session) {
-    return <Redirect href="/onboarding" />;
-  }
+  }, []);
 
   return (
     <View style={styles.screen}>

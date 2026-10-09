@@ -9,9 +9,9 @@ import { Avatar } from "heroui-native";
 import { getLocalDateString, getScreenTimeData, getTopApps, getTotalMinutes } from "@/lib/screenTime";
 import { orpcClient } from "@/lib/orpc";
 import { syncRules } from "@/lib/enforcer";
+import { hasRequiredPermissions } from "@/lib/permissions";
 
 import { authClient } from "@/lib/auth";
-import ScreenlyEnforcer from "@/modules/screenly-enforcer/src/ScreenlyEnforcerModule";
 import { colors } from "@/components/ui/theme";
 
 type IoniconName = ComponentProps<typeof Ionicons>["name"];
@@ -26,8 +26,8 @@ function TabIcon({ name, color }: { name: IoniconName; color: ColorValue }): JSX
 function SharedHeader(): JSX.Element {
   const router = useRouter();
   const { data: session } = authClient.useSession() as any;
-  const user = session?.user ?? { name: null, email: "user@example.com", image: null };
-  const displayName = user.name ?? user.email;
+  const user = session?.user;
+  const displayName = user ? (user.name ?? user.email) : null;
 
   return (
     <View
@@ -42,20 +42,38 @@ function SharedHeader(): JSX.Element {
         backgroundColor: colors.surface,
       }}
     >
-      <Pressable onPress={() => router.push("/account" as any)} style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-        <Avatar size="sm" alt={displayName}>
-          <Avatar.Image source={{ uri: user.image ?? undefined }} />
-          <Avatar.Fallback style={{ backgroundColor: colors.surfaceAlt }}>
-            <Text style={{ color: colors.primary, fontWeight: "700", fontSize: 14 }}>{displayName.slice(0, 1).toUpperCase()}</Text>
-          </Avatar.Fallback>
-        </Avatar>
-        <View>
-          <Text style={{ color: colors.textSecondary, fontSize: 11, fontWeight: "500" }}>Hi,</Text>
-          <Text style={{ color: colors.text, fontWeight: "700", fontSize: 15 }}>{displayName}</Text>
-        </View>
-      </Pressable>
+      {user ? (
+        <Pressable onPress={() => router.push("/account" as any)} style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+          <Avatar size="sm" alt={displayName || "User"}>
+            <Avatar.Image source={{ uri: user.image ?? undefined }} />
+            <Avatar.Fallback style={{ backgroundColor: colors.surfaceAlt }}>
+              <Text style={{ color: colors.primary, fontWeight: "700", fontSize: 14 }}>{displayName ? displayName.slice(0, 1).toUpperCase() : "U"}</Text>
+            </Avatar.Fallback>
+          </Avatar>
+          <View>
+            <Text style={{ color: colors.textSecondary, fontSize: 11, fontWeight: "500" }}>Hi,</Text>
+            <Text style={{ color: colors.text, fontWeight: "700", fontSize: 15 }}>{displayName}</Text>
+          </View>
+        </Pressable>
+      ) : (
+        <Pressable onPress={() => router.push("/(auth)/sign-in" as any)} style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+          <Avatar size="sm" alt="Guest">
+            <Avatar.Fallback style={{ backgroundColor: colors.surfaceAlt }}>
+              <Ionicons name="person-outline" size={16} color={colors.primary} />
+            </Avatar.Fallback>
+          </Avatar>
+          <View>
+            <Text style={{ color: colors.textSecondary, fontSize: 11, fontWeight: "500" }}>Welcome</Text>
+            <Text style={{ color: colors.primary, fontWeight: "700", fontSize: 14 }}>Sign In</Text>
+          </View>
+        </Pressable>
+      )}
       <TouchableOpacity
-        onPress={() => router.push("/add-rule" as any)}
+        onPress={() =>
+          // Signed out there is nothing to save a rule to, so send them
+          // straight to sign-in rather than into a form they cannot submit.
+          router.push(session ? ("/add-rule" as any) : ("/(auth)/sign-in" as any))
+        }
         style={{
           flexDirection: "row",
           alignItems: "center",
@@ -79,38 +97,40 @@ function SharedHeader(): JSX.Element {
 }
 
 export default function TabsLayout(): JSX.Element {
-  const { data: session, isPending } = authClient.useSession() as any;
-  // Async perm check - show loading until resolved, never flash onboarding/setup
-  const [permsOk, setPermsOk] = useState<boolean | null>(null);
+  const { data: session } = authClient.useSession() as any;
+  const router = useRouter();
   const hasSyncedRef = useRef(false);
-
-  const checkPerms = async () => {
-    try {
-      const [hasUsage, hasA11y] = await Promise.all([
-        ScreenlyEnforcer.hasUsageStatsPermission(),
-        ScreenlyEnforcer.isAccessibilityServiceEnabled(),
-      ]);
-      setPermsOk(hasUsage && hasA11y);
-    } catch {
-      setPermsOk(false);
-    }
-  };
+  const permCheckInFlight = useRef(false);
 
   useEffect(() => {
-    checkPerms();
     const sub = AppState.addEventListener("change", (state) => {
-      if (state === "active") {
-        checkPerms();
-        syncRules().catch(() => { });
-      }
+      if (state !== "active" || !session) return;
+      syncRules().catch(() => {});
+
+      // Both permissions can be revoked outside the app — from Settings, or by
+      // Android on update — and the enforcer then blocks nothing while every
+      // screen still looks healthy. Re-check on each resume and send the user
+      // back through setup if either is gone.
+      if (permCheckInFlight.current) return;
+      permCheckInFlight.current = true;
+      hasRequiredPermissions()
+        .then((ok) => {
+          if (ok) return;
+          if (router.canGoBack()) return; // already navigating elsewhere
+          router.replace("/setup" as any);
+        })
+        .catch(() => {})
+        .finally(() => {
+          permCheckInFlight.current = false;
+        });
     });
     return () => sub.remove();
-  }, []);
+  }, [session]);
 
   // Leaderboard snapshot + rules sync - once per app open (not on tab switch)
   useEffect(() => {
     if (hasSyncedRef.current) return;
-    if (permsOk !== true) return;
+    if (!session) return;
     hasSyncedRef.current = true;
     (async () => {
       try {
@@ -124,23 +144,7 @@ export default function TabsLayout(): JSX.Element {
         await orpcClient.syncSnapshot({ date: today, totalMinutes, topApps });
       } catch { }
     })();
-  }, [permsOk]);
-
-  if (isPending || permsOk === null) {
-    return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background }}>
-        <ActivityIndicator color={colors.primary} />
-      </View>
-    );
-  }
-
-  if (!session) {
-    return <Redirect href="/onboarding" />;
-  }
-
-  if (permsOk === false) {
-    return <Redirect href="/setup" />;
-  }
+  }, [session]);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>

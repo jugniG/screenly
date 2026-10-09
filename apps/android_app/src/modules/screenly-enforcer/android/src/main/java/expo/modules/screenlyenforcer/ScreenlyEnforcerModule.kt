@@ -74,11 +74,24 @@ class ScreenlyEnforcerModule : Module() {
       }
       val context = appContext.reactContext ?: return@Function false
       val appOps = context.getSystemService(android.content.Context.APP_OPS_SERVICE) as android.app.AppOpsManager
-      val mode = appOps.checkOpNoThrow(
-        android.app.AppOpsManager.OPSTR_GET_USAGE_STATS,
-        android.os.Process.myUid(),
-        context.packageName
-      )
+      val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        appOps.unsafeCheckOpNoThrow(
+          android.app.AppOpsManager.OPSTR_GET_USAGE_STATS,
+          android.os.Process.myUid(),
+          context.packageName
+        )
+      } else {
+        @Suppress("DEPRECATION")
+        appOps.checkOpNoThrow(
+          android.app.AppOpsManager.OPSTR_GET_USAGE_STATS,
+          android.os.Process.myUid(),
+          context.packageName
+        )
+      }
+      // Only the AppOps mode counts. Treating "queryUsageStats returned rows" as
+      // permission granted can report true while the enforcer is still blocked,
+      // which lets the setup screen advance past a permission that was never
+      // actually granted.
       return@Function mode == android.app.AppOpsManager.MODE_ALLOWED
     }
 

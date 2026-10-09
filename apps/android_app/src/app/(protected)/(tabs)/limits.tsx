@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { colors, fonts, spacing } from '@/components/ui/theme';
 import { orpc } from '@/lib/orpc';
 import { syncRules } from '@/lib/enforcer';
+import { permissionState } from '@/lib/permissions';
 import ScreenlyEnforcer from '@/modules/screenly-enforcer/src/ScreenlyEnforcerModule';
 
 interface Rule {
@@ -100,68 +101,60 @@ export default function HomeScreen() {
    * remove it and start again cleanly.
    */
   const [hasPermission, setHasPermission] = useState(true);
+  const [perm, setPerm] = useState({ usageStats: true, accessibility: true });
 
   async function load() {
     try {
-      console.log('[Home] step1');
       const [rulesList, todayUsage] = await Promise.all([
-        orpc<Record<string, never>, Rule[]>('listRules'),
+        session
+          ? orpc<Record<string, never>, Rule[]>('listRules').catch(() => [])
+          : Promise.resolve([]),
         (async () => {
-          console.log('[Home] calling getTodayUsage');
-          try { const r = await ScreenlyEnforcer.getTodayUsage(); console.log('[Home] got:', JSON.stringify(r?.slice(0,2))); return r; }
-          catch(e: any) { console.log('[Home] getTodayUsage error:', e?.message); return []; }
+          try { return await ScreenlyEnforcer.getTodayUsage(); }
+          catch { return []; }
         })(),
       ]);
-      console.log('[Home] step2 len=' + (todayUsage?.length ?? 'undef'));
-      console.log('[Home] step4 count=' + rulesList.length);
       setRules(rulesList);
-      syncRules();
+      if (session) {
+        syncRules().catch(() => {});
+      }
 
-        if (rulesList.length > 0) {
-          console.log('[Home] step5');
-          const pkgNames = JSON.stringify(rulesList.map((r: Rule) => r.packageName));
-          // DIAG: check module functions
-          console.log('[Home] isAppUnlocked:', !!ScreenlyEnforcer.isAppUnlocked, typeof ScreenlyEnforcer.isAppUnlocked);
-          console.log('[Home] getAppIcons:', !!ScreenlyEnforcer.getAppIcons, typeof ScreenlyEnforcer.getAppIcons);
-          console.log('[Home] unlockApp:', !!ScreenlyEnforcer.unlockApp, typeof ScreenlyEnforcer.unlockApp);
-          console.log('[Home] updateRules:', !!ScreenlyEnforcer.updateRules, typeof ScreenlyEnforcer.updateRules);
+      if (rulesList.length > 0) {
+        const pkgNames = JSON.stringify(rulesList.map((r: Rule) => r.packageName));
+        try {
+          const iconsStr: string = await ScreenlyEnforcer.getAppIcons(pkgNames) as any;
+          try { setIcons(JSON.parse(iconsStr)); } catch {}
+        } catch {}
+
+        const unlockResults: (string | null)[] = [];
+        for (const r of rulesList) {
           try {
-            const iconsStr: string = await ScreenlyEnforcer.getAppIcons(pkgNames) as any;
-            try { setIcons(JSON.parse(iconsStr)); } catch(e: any) { console.log('[Home] icons parse error:', e?.message); }
-          } catch (e: any) {
-            console.log('[Home] getAppIcons sync error:', e?.message);
+            const unlocked = await ScreenlyEnforcer.isAppUnlocked(r.packageName);
+            unlockResults.push(unlocked ? r.packageName : null);
+          } catch {
+            unlockResults.push(null);
           }
-          console.log('[Home] step6');
-          const unlockResults: (string | null)[] = [];
-          for (const r of rulesList) {
-            try {
-              const unlocked = await ScreenlyEnforcer.isAppUnlocked(r.packageName);
-              unlockResults.push(unlocked ? r.packageName : null);
-            } catch (e: any) {
-              console.log('[Home] unlock sync error:', r.packageName, e?.message);
-              unlockResults.push(null);
-            }
-          }
-          setUnlockedApps(new Set(unlockResults.filter(Boolean) as string[]));
         }
-      console.log('[Home] step7');
+        setUnlockedApps(new Set(unlockResults.filter(Boolean) as string[]));
+      }
+
       const mapped = (todayUsage || []).map((u: any) => ({ packageName: u.packageName, totalMinutes: u.totalMinutes }));
-      console.log('[Home] step8 mapped:', JSON.stringify(mapped.slice(0,3)));
       setUsage(mapped);
-      let perm = false;
-      try {
-        perm = Boolean(ScreenlyEnforcer.hasUsageStatsPermission());
-      } catch {}
-      setHasPermission(perm);
-      console.log('[Home] done, perm=' + perm);
+
+      // Must be awaited: hasUsageStatsPermission() returns a Promise, and
+      // Boolean(<Promise>) is always true, which hid the permission banner
+      // permanently. Both permissions matter — without accessibility the
+      // enforcer cannot block anything, so it is checked too.
+      const state = await permissionState();
+      setPerm(state);
+      setHasPermission(state.usageStats && state.accessibility);
     } catch (e: any) {
-      console.log('[Home] ERROR:', e);
+      console.error('[Home] load failed:', e);
     }
-    finally { setLoading(false); setRefreshing(false); console.log('[Home] finally loading=false'); }
+    finally { setLoading(false); setRefreshing(false); }
   }
 
-  useEffect(() => { load();console.log('aa');
-   }, []);
+  useEffect(() => { load(); }, [session]);
 
   function getUsageFor(pkg: string) {
     return usage.find(u => u.packageName === pkg);
@@ -215,23 +208,50 @@ export default function HomeScreen() {
       {!hasPermission && (
         <TouchableOpacity
           style={styles.permBanner}
-          onPress={() => ScreenlyEnforcer.requestUsageStatsPermission()}
+          onPress={() => router.push('/setup' as any)}
           activeOpacity={0.8}
         >
           <Text style={styles.permBannerIcon}>⚠️</Text>
           <View style={styles.permBannerTextWrap}>
-            <Text style={styles.permBannerTitle}>Usage access needed</Text>
-            <Text style={styles.permBannerSub}>Tap to open Settings</Text>
+            <Text style={styles.permBannerTitle}>
+              {!perm.usageStats && !perm.accessibility
+                ? 'Permissions needed'
+                : !perm.usageStats
+                  ? 'Usage access needed'
+                  : 'Accessibility service off'}
+            </Text>
+            <Text style={styles.permBannerSub}>
+              Screenly needs both to measure usage and block apps. Tap to fix.
+            </Text>
           </View>
         </TouchableOpacity>
       )}
 
       {rules.length === 0 ? (
         <View style={styles.empty}>
-          <Text style={styles.emptyEmoji}>📱</Text>
-          <Text style={styles.emptyTitle}>No apps yet</Text>
-          <Text style={styles.emptySubtitle}>Add apps you want to track and set restrictions</Text>
-          <Button title="Add First App" onPress={() => router.push('/add-rule')} style={{ marginTop: spacing.lg }} />
+          <Text style={styles.emptyEmoji}>{session ? '📱' : '🛡️'}</Text>
+          <Text style={styles.emptyTitle}>{session ? 'No apps yet' : 'Track & Limit Distractions'}</Text>
+          <Text style={styles.emptySubtitle}>
+            {session
+              ? 'Add apps you want to track and set restrictions'
+              : 'Sign in to set daily limits and schedules. Limits are saved to your account and enforced on this device.'}
+          </Text>
+          {/* One action, not two: "Add App" leads to a screen that cannot save
+              without a session, so offering both sent signed-out users into a
+              dead end. */}
+          {session ? (
+            <Button
+              title="Add App"
+              onPress={() => router.push('/add-rule')}
+              style={{ marginTop: spacing.lg }}
+            />
+          ) : (
+            <Button
+              title="Sign In"
+              onPress={() => router.push('/(auth)/sign-in' as any)}
+              style={{ marginTop: spacing.lg }}
+            />
+          )}
         </View>
       ) : (
         <FlatList
