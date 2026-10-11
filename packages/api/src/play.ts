@@ -105,11 +105,36 @@ type PlayPurchaseV2 = {
   regionCode?: string
 }
 
+/**
+ * Money, per the Play Developer API's shared type. Micros is the only precise
+ * field — units can be absent and nanos carry the remainder, so amount is read
+ * from micros alone rather than reconstructed from three fields.
+ */
+type PlayMoney = {
+  currencyCode?: string
+  units?: string | number
+  nanos?: number
+  micros?: number | string
+}
+
+/**
+ * The Order resource. Note the total is `total`, not `totalAmount` — that name
+ * does not exist on this resource, and reading it yields 0 and a confusing
+ * "no amount" error.
+ */
 type PlayOrder = {
   orderId?: string
+  purchaseToken?: string
+  /** PENDING | PROCESSED | CANCELED | PENDING_REFUND | PARTIALLY_REFUNDED | REFUNDED */
   state?: string
-  totalAmount?: { micros?: number | string; currencyCode?: string }
-  lineItems?: { productId?: string; quantity?: number; itemPrice?: { micros?: number | string; currencyCode?: string } }[]
+  /** The final amount paid by the customer, including taxes. */
+  total?: PlayMoney
+  lineItems?: Array<{
+    productId?: string
+    quantity?: number
+    listingPrice?: PlayMoney
+    total?: PlayMoney
+  }>
 }
 
 /** 1 major currency unit = 1,000,000 micros, so 1 minor unit (paisa/cent) = 10,000. */
@@ -162,23 +187,35 @@ export async function verifyStakePurchase(
 
 /**
  * Fetches the money actually charged for an order. Called after verify, because
- * v2 has no total — only the order resource does.
+ * the token lookup returns no total.
+ *
+ * `orders` is a top-level resource — the path has no `/purchases` prefix. With
+ * one, Google answers with a generic HTML 404 page rather than a JSON error,
+ * which made a wrong route look identical to a missing order.
  */
-export async function fetchOrderAmount(orderId: string): Promise<{ paidMinor: number; currency: string }> {
-  const order = await call<PlayOrder>(`/purchases/orders/${encodeURIComponent(orderId)}`, {})
-  const micros = Number(order.totalAmount?.micros ?? 0)
-  const currency = order.totalAmount?.currencyCode ?? ''
-  if (micros <= 0) throw new Error('Google Play did not report an amount for this order')
-  return { paidMinor: Math.round(micros / MICROS_PER_MINOR), currency }
+export async function fetchOrderAmount(orderId: string): Promise<{ paidMinor: number; currency: string; state: string }> {
+  const order = await call<PlayOrder>(`/orders/${encodeURIComponent(orderId)}`, {})
+  if (order.state !== 'PROCESSED') {
+    throw new Error(`Order is ${order.state ?? 'in an unknown state'}, not processed`)
+  }
+
+  const micros = Number(order.total?.micros ?? 0)
+  const currency = order.total?.currencyCode ?? ''
+  if (micros <= 0) {
+    throw new Error('Google Play did not report an amount for this order')
+  }
+  return { paidMinor: Math.round(micros / MICROS_PER_MINOR), currency, state: order.state }
 }
 
 export type RefundStatus = 'succeeded' | 'failed'
 
 /** Refunds a settled challenge. The stake is the user's own money coming back,
- * so this is called only when a challenge completes — never on a forfeit. */
+ * so this is called only when a challenge completes — never on a forfeit.
+ *
+ * Same top-level `/orders` resource as fetchOrderAmount — not `/purchases/orders`. */
 export async function refundPlayPurchase(orderId: string): Promise<RefundStatus> {
   try {
-    await call<{}>(`/purchases/orders/${encodeURIComponent(orderId)}/refund`, {}, { method: 'POST' })
+    await call<{}>(`/orders/${encodeURIComponent(orderId)}/refund`, {}, { method: 'POST' })
     return 'succeeded'
   } catch (e) {
     console.error('[play] refund failed', orderId, (e as Error).message)
