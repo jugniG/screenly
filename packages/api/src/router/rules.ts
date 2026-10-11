@@ -5,7 +5,7 @@ import { eq, and } from 'drizzle-orm'
 import { authedProcedure } from '../base'
 import { ORPCError } from '@orpc/client'
 import { forfeitAmount, challengeEndsAt, tierMinor, DEFAULT_DURATION_ID } from '@screen/monetization'
-import { verifyStakePurchase, refundPlayPurchase, type RefundStatus } from '../play'
+import { verifyStakePurchase, fetchOrderAmount, refundPlayPurchase, type RefundStatus } from '../play'
 
 export const listRules = authedProcedure
   .route({ method: 'GET', path: '/rules' })
@@ -233,12 +233,20 @@ export const confirmStakePurchase = authedProcedure
     if (rule.paymentStatus === 'completed') return { success: true, alreadyPaid: true }
     if (!rule.stakeTierId) throw new ORPCError('This challenge has no stake product')
 
-    // Ask Google what was actually charged, then price the challenge from our
-    // own table for that currency. The client is never the source of the amount.
-    const { orderId, paidMinor, currency } = await verifyStakePurchase(
-      input.purchaseToken,
-      rule.stakeTierId,
-    )
+    // Ask Google what was actually bought, then charge only for that exact product
+    // at our own price for its currency. The client is never the source of the
+    // amount, and a token for a different product cannot start this challenge.
+    const verified = await verifyStakePurchase(input.purchaseToken)
+    if (verified.productId && verified.productId !== rule.stakeTierId) {
+      throw new ORPCError(
+        `Stake mismatch: Google sold "${verified.productId}", this challenge is for "${rule.stakeTierId}"`,
+      )
+    }
+    if (!verified.orderId) {
+      throw new ORPCError('Google Play did not return an order for this purchase')
+    }
+
+    const { paidMinor, currency } = await fetchOrderAmount(verified.orderId)
     if (currency !== 'INR' && currency !== 'USD') {
       throw new ORPCError(`Unsupported stake currency: ${currency}`)
     }
@@ -248,6 +256,7 @@ export const confirmStakePurchase = authedProcedure
         `Stake mismatch: Google charged ${paidMinor} ${currency}, this challenge costs ${expected ?? '?'}`,
       )
     }
+    const orderId = verified.orderId
 
     await db
       .update(schema.appRules)

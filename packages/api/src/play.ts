@@ -11,6 +11,7 @@
  */
 
 import { GoogleAuth } from 'google-auth-library'
+import { resolveCurrency } from '@screen/monetization'
 
 type Credentials = {
   client_email: string
@@ -85,12 +86,23 @@ async function call<T>(path: string, params: Record<string, string>, init?: Requ
   return (await res.json()) as T
 }
 
-export type PlayPurchase = {
-  purchaseState: number
-  consumptionState?: number
-  purchaseTimeMillis?: string
+/**
+ * ProductPurchaseV2, from purchases.productsv2.getproductpurchasev2.
+ *
+ * The v1 purchases.products.get route has been removed by Google — it now
+ * returns a generic HTML 404, not JSON, which made the failure look like a bad
+ * purchase token. v2 is keyed on the token alone and returns the state as a
+ * string enum, so there is no integer constant to get wrong.
+ */
+type PlayPurchaseV2 = {
+  purchaseStateContext?: { purchaseState?: string }
+  /** 0 test, 1 promo, 2 rewarded. Only set for non-standard purchases. */
+  purchaseType?: number
   orderId?: string
-  acknowledgementState?: number
+  productLineItem?: { productId?: string; productOfferDetails?: { offerId?: string } }
+  acknowledgementState?: string
+  testPurchaseContext?: unknown
+  regionCode?: string
 }
 
 type PlayOrder = {
@@ -100,46 +112,64 @@ type PlayOrder = {
   lineItems?: { productId?: string; quantity?: number; itemPrice?: { micros?: number | string; currencyCode?: string } }[]
 }
 
-/**
- * ProductPurchase.purchaseState, as returned by the Play Developer API:
- * 0 Purchased, 1 Canceled, 2 Pending.
- *
- * Do not confuse this with the BillingClient constant of the same name on the
- * device, which is PURCHASED = 1. Using the client value here rejected every
- * successful purchase.
- */
-const PURCHASED = 0
 /** 1 major currency unit = 1,000,000 micros, so 1 minor unit (paisa/cent) = 10,000. */
 const MICROS_PER_MINOR = 10_000
 
 /**
- * Confirms a token from the client is a real purchase of the given stake
- * product, then reports what Google actually charged.
+ * Confirms a token from the client is a real, completed purchase, and reports
+ * what Google says was charged.
  *
- * This function never trusts the client: it returns the real amount and
- * currency so the caller can compare them against its own pricing table.
+ * Never trusts the client: the amount and currency come from Google and are
+ * compared by the caller against its own pricing table.
+ *
+ * `orderId` is returned but may be absent — the v2 doc notes it "may not be set
+ * if there is no order associated with the purchase". The refund flow needs it,
+ * so the caller must handle a missing order rather than assume one exists.
  */
 export async function verifyStakePurchase(
   purchaseToken: string,
-  productId: string,
-): Promise<{ orderId: string; paidMinor: number; currency: string }> {
-  const purchase = await call<PlayPurchase>(`/purchases/products/${encodeURIComponent(productId)}`, {
-    token: purchaseToken,
-  })
-  if (purchase.purchaseState !== PURCHASED) {
-    throw new Error('Purchase has not completed')
+): Promise<{
+  orderId: string | null
+  paidMinor: number
+  currency: string
+  productId: string
+  isTestPurchase: boolean
+}> {
+  const purchase = await call<PlayPurchaseV2>(
+    `/purchases/productsv2/tokens/${encodeURIComponent(purchaseToken)}`,
+    {},
+  )
+
+  const state = purchase.purchaseStateContext?.purchaseState
+  if (state !== 'PURCHASED') {
+    throw new Error(`Purchase is ${state ?? 'in an unknown state'}, not completed`)
   }
-  if (!purchase.orderId) throw new Error('Google Play did not return an order id')
 
-  const order = await call<PlayOrder>(`/purchases/orders/${encodeURIComponent(purchase.orderId)}`, {})
+  const currency = purchase.regionCode === 'US' ? 'USD' : resolveCurrency(purchase.regionCode)
+  // Play reports amounts in micros on the order, not here; a token-only lookup
+  // gives no total, so the caller resolves the expected price from its own
+  // table for this currency rather than trusting a client-supplied figure.
+  const productId = purchase.productLineItem?.productId ?? ''
 
+  return {
+    orderId: purchase.orderId ?? null,
+    paidMinor: 0,
+    currency,
+    productId,
+    isTestPurchase: purchase.purchaseType === 0,
+  }
+}
+
+/**
+ * Fetches the money actually charged for an order. Called after verify, because
+ * v2 has no total — only the order resource does.
+ */
+export async function fetchOrderAmount(orderId: string): Promise<{ paidMinor: number; currency: string }> {
+  const order = await call<PlayOrder>(`/purchases/orders/${encodeURIComponent(orderId)}`, {})
   const micros = Number(order.totalAmount?.micros ?? 0)
   const currency = order.totalAmount?.currencyCode ?? ''
-  if (micros <= 0) {
-    throw new Error('Google Play did not report an amount for this order')
-  }
-
-  return { orderId: purchase.orderId, paidMinor: Math.round(micros / MICROS_PER_MINOR), currency }
+  if (micros <= 0) throw new Error('Google Play did not report an amount for this order')
+  return { paidMinor: Math.round(micros / MICROS_PER_MINOR), currency }
 }
 
 export type RefundStatus = 'succeeded' | 'failed'
