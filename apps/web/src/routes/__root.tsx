@@ -76,7 +76,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     <html lang="en" className="light">
       <head>
         <HeadContent /></head>
-      <body className=" text-brand-white min-h-screen antialiased selection:bg-brand-orange selection:text-white">
+      <body className="min-h-screen antialiased">
           {children}
           <Scripts />
       </body>
