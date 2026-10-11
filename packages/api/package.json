@@ -16,6 +16,7 @@
     "@screen/db": "*",
     "@screen/monetization": "*",
     "google-auth-library": "11.1.0",
+    "googleapis": "185.0.0",
     "zod": "*"
   },
   "devDependencies": {
