@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { Logo } from '@/components/Logo'
 
 export const Route = createFileRoute('/delete-account')({
   component: DeleteAccountPage,
@@ -7,6 +8,7 @@ export const Route = createFileRoute('/delete-account')({
 function DeleteAccountPage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:py-20 text-brand-white">
+      <Logo iconSize="sm" className="mb-8" />
       <h1 className="font-montserrat font-bold text-3xl sm:text-4xl lg:text-5xl text-brand-white mb-2">
         Account &amp; Data Deletion Request
       </h1>

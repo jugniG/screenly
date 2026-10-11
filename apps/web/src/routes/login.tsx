@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Button, Card, CardBody, CardHeader, Divider, Input } from '@heroui/react'
 import { authClient } from '#/lib/auth-client'
+import { Logo } from '@/components/Logo'
 
 const loginSchema = z.object({
   name: z.string().optional(),
@@ -94,9 +95,7 @@ function Login() {
       <div className="relative flex min-h-[80vh] items-center justify-center px-4 py-12">
         <Card className="w-full max-w-[420px] border border-border bg-card p-2 shadow-soft" shadow="none">
           <CardHeader className="flex-col items-center gap-2 pt-6 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-ink shadow-2xl border border-foreground/10">
-              <img src="/favicon.ico" alt="Screenly" className="h-8 w-8 object-contain" />
-            </div>
+            <Logo iconSize="lg" />
             <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
               Welcome to Screenly
             </h1>

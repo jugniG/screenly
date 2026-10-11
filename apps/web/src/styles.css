@@ -162,6 +162,19 @@
   --color-ink: var(--ink);
 }
 
+/*
+ * Anchor jumps — the hero's "Learn the Science" button and the nav links — land
+ * instantly otherwise, which reads as a jolt on a page this tall. Scoped to
+ * no-preference so it stays mutually exclusive with the reduced-motion block
+ * below: anyone who asked for less movement gets the jump back, not a fight
+ * between two competing declarations.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
 @utility warm-glow {
   background-image: var(--gradient-warm);
 }
@@ -199,6 +212,27 @@
 
 @utility inner-highlight {
   box-shadow: var(--shadow-inner-highlight);
+}
+
+/*
+ * A ring that expands outward and fades, rather than the element fading itself.
+ * Animating opacity on a small filled dot just reads as the dot changing
+ * colour; this throws the colour into the space around it.
+ */
+@utility dot-glow {
+  animation: dot-glow 2.4s ease-out infinite;
+}
+
+@keyframes dot-glow {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--primary) 60%, transparent),
+      0 0 10px 1px color-mix(in oklab, var(--primary) 70%, transparent);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 9px color-mix(in oklab, var(--primary) 0%, transparent),
+      0 0 12px 1px color-mix(in oklab, var(--primary) 55%, transparent);
+  }
 }
 
 @layer components {
@@ -457,5 +491,21 @@
   }
   body {
     font-family: var(--font-sans);
+  }
+}
+
+/*
+ * The phone mockup floats on an infinite loop and the card treatments animate on
+ * hover. Someone who has asked their OS to reduce motion should get the layout
+ * without the movement, not a page that keeps drifting regardless.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

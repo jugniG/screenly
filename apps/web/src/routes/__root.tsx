@@ -25,19 +25,19 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         content: 'width=device-width, initial-scale=1',
       },
       {
-        title: 'Screenly - Reduce Your Screentime',
+        title: 'Screenly — Your day, but longer',
       },
       {
         name: 'description',
-        content: 'Lock distracting apps with money on the line. Break the rule, lose your bet. Open-source Android app blocker.',
+        content: 'Lock distracting apps with money on the line. Hold out and you get every bit of it back.',
       },
       {
         property: 'og:title',
-        content: 'Screenly — Reduce Your Screentime',
+        content: 'Screenly — Your day, but longer',
       },
       {
         property: 'og:description',
-        content: 'Lock distracting apps with money on the line. Break the rule, lose your bet. Open-source Android app blocker.',
+        content: 'Lock distracting apps with money on the line. Hold out and you get every bit of it back.',
       },
       {
         property: 'og:image',
@@ -63,7 +63,11 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "manifest", href: "/manifest.json" },
+      { rel: "icon", type: "image/png", sizes: "32x32", href: "/favicon-32x32.png" },
+      { rel: "icon", type: "image/png", sizes: "16x16", href: "/favicon-16x16.png" },
+      { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png" },
+      { rel: "icon", type: "image/x-icon", href: "/favicon.ico" },
     ],
   }),
   shellComponent: RootDocument,
