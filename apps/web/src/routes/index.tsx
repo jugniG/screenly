@@ -1,12 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import {
-  ArrowRight,
-  ArrowUpRight,
-  ShieldCheck,
-  CircleDollarSign,
-  TriangleAlert,
-  Hourglass,
-} from "lucide-react";
+import { ArrowRight, ArrowUpRight, Hourglass } from "lucide-react";
 import { PhoneMockup } from "@/components/PhoneMockup";
 import { Logo } from "@/components/Logo";
 import { FaGithub } from "react-icons/fa";
@@ -31,13 +24,6 @@ export const Route = createFileRoute("/")({
   }),
   component: Index,
 });
-
-const pillars = [
-  { icon: ShieldCheck, title: "Lock apps", sub: "that distract you" },
-  { icon: CircleDollarSign, title: "Stake to lock", sub: "your screentime" },
-  { icon: TriangleAlert, title: "Real consequences", sub: "lose money if you slip" },
-  { icon: FaGithub, title: "Open source", sub: "audit every line of code" },
-];
 
 const stats = [
   { value: "4h 12m", label: "Average daily phone use" },
@@ -103,11 +89,7 @@ function Index() {
           <div className="warm-glow pointer-events-none absolute inset-0" />
           <div className="relative mx-auto grid max-w-6xl gap-16 px-5 pb-24 pt-16 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:pt-24">
             <div>
-              <span className="pill-glow inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground">
-                <span className="size-1.5 rounded-full bg-primary shadow-[0_0_8px_color-mix(in_oklab,var(--primary)_70%,transparent)]" />
-                Loss aversion, turned into a focus tool
-              </span>
-              <h1 className="mt-6 font-display text-6xl font-extrabold leading-[0.95] sm:text-7xl">
+              <h1 className="font-display text-6xl font-extrabold leading-[0.95] sm:text-7xl">
                 Make your day
                 <br />
                 <span className="text-primary">longer,</span>
@@ -134,18 +116,6 @@ function Index() {
                   Learn the Science <ArrowRight className="size-4" />
                 </a>
               </div>
-
-              <dl className="mt-14 grid max-w-lg grid-cols-2 gap-x-8 gap-y-6">
-                {pillars.map(({ icon: Icon, title, sub }) => (
-                  <div key={title} className="flex items-start gap-3">
-                    <Icon className="mt-0.5 size-5 shrink-0 text-primary" />
-                    <div>
-                      <dt className="text-sm font-semibold">{title}</dt>
-                      <dd className="text-sm text-muted-foreground">{sub}</dd>
-                    </div>
-                  </div>
-                ))}
-              </dl>
             </div>
 
             <div className="relative">
