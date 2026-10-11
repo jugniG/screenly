@@ -95,7 +95,7 @@ function Login() {
       <div className="relative flex min-h-[80vh] items-center justify-center px-4 py-12">
         <Card className="w-full max-w-[420px] border border-border bg-card p-2 shadow-soft" shadow="none">
           <CardHeader className="flex-col items-center gap-2 pt-6 text-center">
-            <Logo iconSize="lg" />
+            <Logo iconSize="lg"  showWordmark={false}/>
             <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
               Welcome to Screenly
             </h1>
