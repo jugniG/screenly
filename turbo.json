@@ -1,6 +1,21 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
   "ui": "stream",
+  "globalEnv": [
+    "DATABASE_URL",
+    "DATABASE_AUTH_TOKEN",
+    "BETTER_AUTH_SECRET",
+    "BETTER_AUTH_URL",
+    "BETTER_AUTH_TRUSTED_ORIGINS",
+    "GOOGLE_CLIENT_ID",
+    "GOOGLE_CLIENT_SECRET",
+    "RESEND_API_KEY",
+    "GOOGLE_PLAY_CLIENT_EMAIL",
+    "GOOGLE_PLAY_PRIVATE_KEY",
+    "GOOGLE_PLAY_PRIVATE_KEY_ID",
+    "GOOGLE_PLAY_PROJECT_ID",
+    "PLAY_ANDROID_PACKAGE"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
