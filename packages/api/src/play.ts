@@ -10,9 +10,7 @@
  * before the Google auth library will accept it.
  */
 
-import { createRequire } from 'node:module'
-
-const require = createRequire(import.meta.url)
+import { GoogleAuth } from 'google-auth-library'
 
 type Credentials = {
   client_email: string
@@ -41,7 +39,6 @@ function credentials(): Credentials {
 
 async function authClient(): Promise<any> {
   if (cached && Date.now() - cached.cachedAt < CACHE_MS) return cached.auth
-  const { GoogleAuth } = require('google-auth-library')
   const creds = credentials()
   const auth = new GoogleAuth({
     credentials: {

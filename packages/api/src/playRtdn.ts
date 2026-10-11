@@ -13,12 +13,11 @@
  * this is detection, not prevention.
  */
 
-import { createRequire } from 'node:module'
+import { OAuth2Client } from 'google-auth-library'
 import { db } from '@screen/db'
 import * as schema from '@screen/db/schema'
 import { eq } from 'drizzle-orm'
 
-const require = createRequire(import.meta.url)
 
 /** RTDN notifications that mean the user is no longer paying. */
 const REFUND_NOTIFICATIONS = new Set([
@@ -137,7 +136,6 @@ export async function verifyPubsubToken(
   if (!idToken) return false
 
   try {
-    const { OAuth2Client } = require('google-auth-library')
     const client = new OAuth2Client()
     const ticket = await client.verifyIdToken({ idToken, audience })
     return Boolean(ticket)
