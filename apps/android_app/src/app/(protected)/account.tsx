@@ -14,7 +14,7 @@ type Rule = {
   packageName: string;
   appName: string;
   ruleType: string;
-  enabled: boolean;
+  status: 'pending_payment' | 'active' | 'settled' | 'forfeited' | 'deleted';
 };
 
 export default function AccountScreen() {
@@ -32,7 +32,7 @@ export default function AccountScreen() {
 
   const loadRules = useCallback(async () => {
     try {
-      const list = (await orpcClient.listRules({})) as Rule[];
+      const list = (await orpcClient.listRules({})) as unknown as Rule[];
       setRules(list);
       if (list.length > 0) {
         const pkgs = JSON.stringify(list.map((r) => r.packageName));
@@ -85,7 +85,7 @@ export default function AccountScreen() {
         {/* Rules */}
         <Card style={{ padding: 16, gap: 12 }}>
           <Text style={{ fontWeight: "700", fontSize: 16, color: colors.text }}>
-            App Restrictions ({rules.filter((r) => r.enabled).length})
+            App Restrictions ({rules.filter((r) => r.status === 'active').length})
           </Text>
           {rules.length === 0 ? (
             <Text style={{ color: colors.textSecondary, textAlign: "center", paddingVertical: 16 }}>No apps restricted</Text>

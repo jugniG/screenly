@@ -1,11 +1,18 @@
 import { z } from 'zod'
 import { db } from '@screen/db'
 import * as schema from '@screen/db/schema'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, inArray } from 'drizzle-orm'
 import { authedProcedure } from '../base'
 import { ORPCError } from '@orpc/client'
 import { forfeitAmount, challengeEndsAt, tierMinor, DEFAULT_DURATION_ID } from '@screen/monetization'
 import { verifyStakePurchase, fetchOrderAmount, refundPlayPurchase, type RefundStatus } from '../play'
+
+/**
+ * The two states a user can still see. Everything else is a tombstone kept only
+ * so a Play refund notification arriving months later can still match the
+ * purchase token against the row that produced it.
+ */
+const VISIBLE_STATUSES = ['pending_payment', 'active'] as const
 
 export const listRules = authedProcedure
   .route({ method: 'GET', path: '/rules' })
@@ -13,7 +20,10 @@ export const listRules = authedProcedure
     return db
       .select()
       .from(schema.appRules)
-      .where(eq(schema.appRules.userId, context.user.id))
+      .where(and(
+        eq(schema.appRules.userId, context.user.id),
+        inArray(schema.appRules.status, [...VISIBLE_STATUSES]),
+      ))
 
   })
 
@@ -27,7 +37,6 @@ export const createRule = authedProcedure
     period: z.enum(['daily', 'hourly']).optional(),
     scheduleStart: z.string().optional(),
     scheduleEnd: z.string().optional(),
-    enabled: z.boolean().optional(),
   }))
   .handler(async ({ input, context }) => {
     const [rule] = await db
@@ -41,7 +50,8 @@ export const createRule = authedProcedure
         period: input.period ?? 'daily',
         scheduleStart: input.scheduleStart ?? null,
         scheduleEnd: input.scheduleEnd ?? null,
-        enabled: input.enabled ?? true,
+        // The free tier never touches Play, so it is live the moment it exists.
+        status: 'active',
       })
       .returning()
     return rule
@@ -58,7 +68,6 @@ export const updateRule = authedProcedure
     period: z.enum(['daily', 'hourly']).optional(),
     scheduleStart: z.string().optional(),
     scheduleEnd: z.string().optional(),
-    enabled: z.boolean().optional(),
   }))
   .handler(async ({ input, context }) => {
     const { id, ...updates } = input
@@ -78,26 +87,28 @@ export const deleteRule = authedProcedure
     const rule = await loadOwnedRule(input.id, context.user.id)
     const stake = rule.lockedAmount ?? 0
 
-    // A paid challenge that is still running holds the Play order needed to
-    // refund it. Hard-deleting the row drops that order and the stake record
-    // together, so the money is neither refunded nor accounted for. Remove it
-    // the way an early unlock does instead: forfeit, and keep the row.
-    if (rule.paymentStatus === 'completed' && rule.stakeStatus === 'active') {
-      await db
-        .update(schema.appRules)
-        .set({ enabled: false, stakeStatus: 'forfeited', forfeitedAmount: stake })
-        .where(eq(schema.appRules.id, rule.id))
-      return { success: true, deleted: false, forfeitedAmount: stake, stakeAmount: stake }
-    }
+    // Rows are never destroyed — an RTDN can arrive months after a refund, and a
+    // hard-deleted row takes the Play order with it, leaving the stake
+    // unrecoverable. So removal is a status change: `forfeited` when money was
+    // live (an early unlock, or a challenge removed before its refund was
+    // claimed), `deleted` when none was.
+    const forfeits = rule.status === 'active' && stake > 0
+    const nextStatus = forfeits ? ('forfeited' as const) : ('deleted' as const)
+    await db
+      .update(schema.appRules)
+      .set(forfeits ? { status: nextStatus, forfeitedAmount: stake } : { status: nextStatus })
+      .where(eq(schema.appRules.id, rule.id))
 
-    // Settled, forfeited, or never staked — no money is outstanding, so the row
-    // can go.
-    const deleted = await db
-      .delete(schema.appRules)
-      .where(and(eq(schema.appRules.id, input.id), eq(schema.appRules.userId, context.user.id)))
-      .returning()
-    if (!deleted.length) throw new Error('Not found')
-    return { success: true, deleted: true, forfeitedAmount: 0, stakeAmount: stake }
+    return {
+      success: true,
+      // The client needs to know whether this call took the user's money. A rule
+      // that was still running forfeits on removal; nothing else does. Error
+      // handling cannot convey this — a forfeit is a successful request.
+      forfeited: forfeits,
+      forfeitedAmount: forfeits ? stake : rule.forfeitedAmount,
+      stakeAmount: stake,
+      status: nextStatus,
+    }
   })
 
 // --- Challenge stakes -------------------------------------------------------
@@ -127,14 +138,14 @@ export const unlockChallenge = authedProcedure
   .input(z.object({ id: z.string() }))
   .handler(async ({ input, context }) => {
     const rule = await loadOwnedRule(input.id, context.user.id)
-    if (rule.stakeStatus !== 'active') throw new ORPCError('This challenge is already over')
+    if (rule.status !== 'active') throw new ORPCError('This challenge is already over')
 
     const stake = rule.lockedAmount ?? 0
-    // The row stays so the stake has a record; enabled=false stops the enforcer
-    // from blocking (syncRules filters on paymentStatus + enabled).
+    // The row stays so the stake has a record; `forfeited` is what stops the
+    // enforcer from blocking (syncRules sends only `active` rules).
     await db
       .update(schema.appRules)
-      .set({ enabled: false, stakeStatus: 'forfeited', forfeitedAmount: stake })
+      .set({ status: 'forfeited', forfeitedAmount: stake })
       .where(eq(schema.appRules.id, rule.id))
 
     return {
@@ -169,21 +180,22 @@ export const beginStake = authedProcedure
     const stake = tierMinor(input.tierId, input.currency)
     if (stake === null) throw new ORPCError('Unknown stake amount')
 
+    // Rows are soft-deleted now, so the same app can appear many times over a
+    // user's history. Only the live one matters here: a `pending_payment` row is
+    // reused so retrying an abandoned payment does not litter the table, and an
+    // `active` one means the app is already locked and a new stake would strand
+    // the existing Play order.
     const [existing] = await db
       .select()
       .from(schema.appRules)
       .where(and(
         eq(schema.appRules.packageName, input.packageName),
         eq(schema.appRules.userId, context.user.id),
+        inArray(schema.appRules.status, [...VISIBLE_STATUSES]),
       ))
       .limit(1)
 
-    // A running challenge holds the Play order needed to refund it, and
-    // overwriting the row would drop that order and make the stake permanently
-    // unrecoverable. Only a live challenge blocks a new one — a settled or
-    // forfeited one has already paid out, so the user must be able to start
-    // another on the same app.
-    if (existing && existing.paymentStatus === 'completed' && existing.stakeStatus === 'active') {
+    if (existing && existing.status === 'active') {
       throw new ORPCError('You already have a challenge running for this app')
     }
 
@@ -194,13 +206,12 @@ export const beginStake = authedProcedure
       period: input.period ?? 'daily',
       scheduleStart: input.scheduleStart ?? null,
       scheduleEnd: input.scheduleEnd ?? null,
-      enabled: false,
-      paymentStatus: 'pending' as const,
+      status: 'pending_payment' as const,
       lockedAmount: stake,
       stakeCurrency: input.currency,
       stakeTierId: input.tierId,
       challengeDuration: input.durationId,
-      stakeStatus: 'active' as const,
+      challengeEndsAt: null,
       forfeitedAmount: 0,
       playPurchaseToken: null,
       playOrderId: null,
@@ -230,7 +241,13 @@ export const confirmStakePurchase = authedProcedure
   .input(z.object({ ruleId: z.string(), purchaseToken: z.string() }))
   .handler(async ({ input, context }) => {
     const rule = await loadOwnedRule(input.ruleId, context.user.id)
-    if (rule.paymentStatus === 'completed') return { success: true, alreadyPaid: true }
+    // Only `pending_payment` can be confirmed. A tombstone (settled, forfeited or
+    // deleted) must never be revived: a forfeited row still has a PROCESSED Play
+    // order, so re-confirming would restart its clock and hand back a stake the
+    // user already forfeited.
+    if (rule.status !== 'pending_payment') {
+      return { success: true, alreadyPaid: rule.status === 'active' }
+    }
     if (!rule.stakeTierId) throw new ORPCError('This challenge has no stake product')
 
     // Ask Google what was actually bought, then charge only for that exact product
@@ -261,12 +278,10 @@ export const confirmStakePurchase = authedProcedure
     await db
       .update(schema.appRules)
       .set({
-        paymentStatus: 'completed',
-        enabled: true,
+        status: 'active',
         paymentRail: 'play',
         playPurchaseToken: input.purchaseToken,
         playOrderId: orderId,
-        stakeStatus: 'active',
         stakeCurrency: currency,
         challengeDuration: rule.challengeDuration ?? DEFAULT_DURATION_ID,
         challengeEndsAt: challengeEndsAt(new Date(), rule.challengeDuration ?? DEFAULT_DURATION_ID),
@@ -281,7 +296,7 @@ export const settleChallenge = authedProcedure
   .input(z.object({ id: z.string() }))
   .handler(async ({ input, context }) => {
     const rule = await loadOwnedRule(input.id, context.user.id)
-    if (rule.stakeStatus !== 'active') {
+    if (rule.status !== 'active') {
       return {
         forfeitedAmount: rule.forfeitedAmount,
         stakeAmount: rule.lockedAmount ?? 0,
@@ -290,11 +305,11 @@ export const settleChallenge = authedProcedure
         refundStatus: 'settled' as const,
       }
     }
-    // A refund needs a paid stake that actually had a deadline. Rows created
-    // before payment completed (paymentStatus still 'pending') and pre-Play rows
-    // carry no challengeEndsAt; without this guard `challengeEndsAt && ...`
-    // short-circuits and lets an unfinished or unpaid challenge be settled.
-    if (rule.paymentStatus !== 'completed') {
+    // A refund needs a stake that actually had a deadline and a Play order to
+    // send it back through. Rows still awaiting payment, and pre-Play rows, have
+    // neither; without this guard `challengeEndsAt && ...` short-circuits and
+    // lets an unfinished or unpaid challenge be settled.
+    if (!rule.playOrderId) {
       throw new ORPCError('This challenge was never paid for')
     }
     if (!rule.challengeEndsAt) {
@@ -313,7 +328,6 @@ export const settleChallenge = authedProcedure
     // active so the next attempt can retry instead of silently eating the money.
     let refundStatus: RefundStatus = 'succeeded'
     if (refundAmount > 0) {
-      if (!rule.playOrderId) throw new ORPCError('No Google Play order recorded for this challenge')
       refundStatus = await refundPlayPurchase(rule.playOrderId)
       if (refundStatus === 'failed') {
         throw new ORPCError('Refund failed — your stake is safe, please retry')
@@ -322,7 +336,7 @@ export const settleChallenge = authedProcedure
 
     await db
       .update(schema.appRules)
-      .set({ stakeStatus: 'settled' })
+      .set({ status: 'settled' })
       .where(eq(schema.appRules.id, rule.id))
 
     return {

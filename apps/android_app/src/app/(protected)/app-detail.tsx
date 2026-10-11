@@ -30,13 +30,11 @@ type Rule = {
   period: 'daily' | 'hourly' | null;
   scheduleStart: string | null;
   scheduleEnd: string | null;
-  enabled: boolean;
-  paymentStatus?: 'pending' | 'completed';
   lockedAmount?: number | null;
   stakeCurrency?: 'INR' | 'USD' | null;
   challengeDuration?: DurationId | null;
   challengeEndsAt?: string | null;
-  stakeStatus?: 'active' | 'settled' | 'forfeited';
+  status: 'pending_payment' | 'active' | 'settled' | 'forfeited' | 'deleted';
   forfeitedAmount?: number;
 };
 
@@ -158,14 +156,18 @@ export default function AppDetailScreen() {
     if (!rule) return;
     const stake = rule.lockedAmount ?? 0;
     const currency = (rule.stakeCurrency ?? 'INR') as CurrencyCode;
-    // Matches the server rule in deleteRule: a paid challenge that is still
-    // running is forfeited, not deleted.
-    const forfeits = rule.paymentStatus === 'completed' && rule.stakeStatus === 'active' && stake > 0;
+    // Mirrors the server rule in deleteRule: removing anything with money still
+    // live on it forfeits the stake. A challenge whose clock already ran out is
+    // not exempt — claiming the refund is a separate, deliberate tap.
+    const forfeits = rule.status === 'active' && stake > 0;
+    const stillRunning = msLeft !== null && msLeft > 0;
 
     Alert.alert(
       `Remove ${rule.appName}?`,
       forfeits
-        ? `This challenge is still running, so removing it forfeits the full ${formatMoney(stake, currency)}. To keep your money, wait for the challenge to end and claim the refund first.`
+        ? stillRunning
+          ? `This challenge is still running, so removing it forfeits the full ${formatMoney(stake, currency)}. To keep your money, wait for the challenge to end and claim the refund first.`
+          : `The challenge has ended but the refund was never claimed, so removing forfeits the ${formatMoney(stake, currency)}. Cancel and tap Claim refund instead.`
         : 'This stops tracking the app and removes its limit.',
       [
         { text: 'Cancel', style: 'cancel' },
@@ -214,15 +216,15 @@ export default function AppDetailScreen() {
   const duration = rule.challengeDuration ?? 'week';
   const endsAt = rule.challengeEndsAt ? new Date(rule.challengeEndsAt) : null;
   const msLeft = endsAt ? endsAt.getTime() - Date.now() : null;
-  const isPendingPayment = rule.paymentStatus === 'pending';
+  const isPendingPayment = rule.status === 'pending_payment';
 
   // A refund is only claimable when the challenge actually has an end date and
   // that date has passed. `challengeEndsAt` is null for rules that were never
-  // paid for (payment still pending) and for pre-Play rows; treating those as
-  // "elapsed" showed a Claim refund button for money that was never taken.
-  const isRunning = rule.stakeStatus === 'active' && msLeft !== null && msLeft > 0;
-  const isOver = rule.stakeStatus === 'active' && msLeft !== null && msLeft <= 0;
-  const canClaim = stake > 0 && !isPendingPayment && isOver;
+  // paid for and for pre-Play rows; treating those as "elapsed" showed a Claim
+  // refund button for money that was never taken.
+  const isRunning = rule.status === 'active' && msLeft !== null && msLeft > 0;
+  const isOver = rule.status === 'active' && msLeft !== null && msLeft <= 0;
+  const canClaim = stake > 0 && isOver;
   const daysLeft = msLeft === null ? null : Math.max(0, Math.ceil(msLeft / DAY_MS));
 
   const endsLabel = endsAt
@@ -271,10 +273,8 @@ export default function AppDetailScreen() {
           )}
           <Text className="text-[12px] text-text-secondary mt-1">
             {isPendingPayment
-              ? 'Payment not completed — this limit is not active.'
-              : rule.enabled
-                ? 'Active'
-                : 'Not active'}
+              ? "Payment didn't go through, so this limit isn't running."
+              : 'Active — Screenly is blocking this app.'}
           </Text>
         </Card>
 
@@ -286,10 +286,10 @@ export default function AppDetailScreen() {
             </Text>
             <Text className="text-[12px] text-text-secondary mt-1">
               {isPendingPayment
-                ? 'Payment was never completed, so nothing was charged and there is nothing to claim.'
-                : rule.stakeStatus === 'forfeited'
-                  ? 'Forfeited.'
-                  : rule.stakeStatus === 'settled'
+                ? "Payment was never completed, so nothing was charged. Remove this and add the app again to try a new payment."
+                : rule.status === 'forfeited'
+                  ? 'Forfeited — unlocking early takes the whole stake.'
+                  : rule.status === 'settled'
                     ? 'Claimed back in full.'
                     : endsLabel
                       ? `Locked until ${endsLabel} — ${
@@ -310,7 +310,7 @@ export default function AppDetailScreen() {
           />
         )}
 
-        {!isPendingPayment && rule.stakeStatus === 'active' && (
+        {rule.status === 'active' && (
           <TouchableOpacity
             className="mt-3"
             activeOpacity={0.7}
@@ -323,7 +323,7 @@ export default function AppDetailScreen() {
           </TouchableOpacity>
         )}
 
-        {stake > 0 && isRunning && !isPendingPayment && (
+        {stake > 0 && isRunning && (
           <Text className="text-[12px] text-danger mt-2">
             Unlocking now forfeits the whole {formatMoney(stake, currency)}. Wait until the
             challenge ends to get it all back.

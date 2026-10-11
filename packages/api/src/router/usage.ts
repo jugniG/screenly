@@ -21,7 +21,7 @@ export const getTodayUsage = authedProcedure
       .where(eq(schema.appRules.userId, context.user.id))
 
     const blockedPackages = new Set(
-      allRules.filter(r => r.enabled).map(r => r.packageName)
+      allRules.filter(r => r.status === 'active').map(r => r.packageName)
     )
 
     return rows.map(r => ({

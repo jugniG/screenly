@@ -24,7 +24,6 @@ type BlockRule = {
   lockedAmount: number | null;
   stakeCurrency: CurrencyCode | null;
   challengeEndsAt: string | Date | null;
-  stakeStatus: 'active' | 'settled' | 'forfeited';
   forfeitedAmount: number;
 };
 

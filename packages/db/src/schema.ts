@@ -1,4 +1,4 @@
-import { text, integer, boolean, timestamp, jsonb, index, uniqueIndex } from 'drizzle-orm/pg-core';
+import { text, integer, timestamp, jsonb, index, uniqueIndex } from 'drizzle-orm/pg-core';
 import { screenly } from './pg-schema';
 
 export const appRules = screenly.table('app_rules', {
@@ -11,27 +11,19 @@ export const appRules = screenly.table('app_rules', {
   period:        text('period', { enum: ['daily', 'hourly'] }).notNull().default('daily'),
   scheduleStart: text('schedule_start'),
   scheduleEnd:   text('schedule_end'),
-  enabled:       boolean('enabled').notNull().default(true),
   createdAt:     timestamp('created_at').$defaultFn(() => new Date()).notNull(),
-  paymentStatus: text('payment_status', { enum: ['pending', 'completed'] }).notNull().default('completed'),
+  status:     text('status', {
+    enum: ['pending_payment', 'active', 'settled', 'forfeited', 'deleted'],
+  }).notNull().default('active'),
   paymentId:     text('payment_id'),
   lockedAmount:  integer('locked_amount'),
-  /** Currency the stake was taken in — never re-derived, so old stakes keep their price. */
   stakeCurrency: text('stake_currency', { enum: ['INR', 'USD'] }),
-  /** Which stake product was bought — the server prices the challenge from this. */
   stakeTierId:  text('stake_tier_id'),
-  /** How long the user chose to stay locked. Resolved to days server-side. */
   challengeDuration: text('challenge_duration', { enum: ['week', 'month', 'year'] }),
-  /** When the challenge ends. Past this the stake is settled in full. */
   challengeEndsAt: timestamp('challenge_ends_at'),
-  stakeStatus:   text('stake_status', { enum: ['active', 'settled', 'forfeited'] }).notNull().default('active'),
-  /** Running total of the stake already forfeited. Full amount on an early unlock. */
   forfeitedAmount: integer('forfeited_amount').notNull().default(0),
-  /** Which processor took the money — decides where a refund has to go. */
   paymentRail:    text('payment_rail', { enum: ['dodo', 'play'] }).notNull().default('dodo'),
-  /** Google Play purchase token, needed to verify and to refund a Play purchase. */
   playPurchaseToken: text('play_purchase_token'),
-  /** Google Play order id, what the Play refund API takes. */
   playOrderId:    text('play_order_id'),
 });
 

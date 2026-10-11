@@ -67,7 +67,7 @@ export function parseRtdnMessage(raw: unknown): RtdnMessage | null {
 export type RtdnOutcome =
   | { action: 'ignored'; reason: string }
   | { action: 'no-rule'; purchaseToken: string }
-  | { action: 'recorded'; purchaseToken: string; stakeStatus: string; enabled: boolean }
+  | { action: 'recorded'; purchaseToken: string; status: string }
 
 /**
  * Applies one notification to our rules table.
@@ -99,27 +99,27 @@ export async function applyRtdnMessage(message: RtdnMessage): Promise<RtdnOutcom
   // A purchase notification only confirms what confirmStakePurchase already
   // verified against Google directly, so there is nothing to change.
   if (isPurchase) {
-    return { action: 'recorded', purchaseToken: token, stakeStatus: rule.stakeStatus, enabled: rule.enabled }
+    return { action: 'recorded', purchaseToken: token, status: rule.status }
   }
 
-  // Already settled or already forfeited — a refund can be reported more than
-  // once, and re-applying it would be harmless but noisy.
-  if (rule.stakeStatus !== 'active') {
-    return { action: 'recorded', purchaseToken: token, stakeStatus: rule.stakeStatus, enabled: rule.enabled }
+  // Already settled, forfeited or deleted. Play re-sends this for our own
+  // refunds as well as chargebacks, so re-applying it would be noise.
+  if (rule.status !== 'active') {
+    return { action: 'recorded', purchaseToken: token, status: rule.status }
   }
 
   const stake = rule.lockedAmount ?? 0
   await db
     .update(schema.appRules)
     .set({
-      // enabled=false is what stops the enforcer blocking the app.
-      enabled: false,
-      stakeStatus: 'forfeited',
+      // A Google-side refund cancels the challenge: the user gets neither the
+      // refund we owed them nor the right to unlock, so the row is a tombstone.
+      status: 'forfeited',
       forfeitedAmount: stake,
     })
     .where(eq(schema.appRules.id, rule.id))
 
-  return { action: 'recorded', purchaseToken: token, stakeStatus: 'forfeited', enabled: false }
+  return { action: 'recorded', purchaseToken: token, status: 'forfeited' }
 }
 
 /**

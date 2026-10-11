@@ -10,6 +10,7 @@ import { orpc } from '@/lib/orpc';
 import { syncRules } from '@/lib/enforcer';
 import { permissionState } from '@/lib/permissions';
 import ScreenlyEnforcer from '@/modules/screenly-enforcer/src/ScreenlyEnforcerModule';
+import { formatMoney, type CurrencyCode } from '@screen/monetization';
 
 interface Rule {
   id: string;
@@ -20,13 +21,11 @@ interface Rule {
   period: 'daily' | 'hourly' | null;
   scheduleStart: string | null;
   scheduleEnd: string | null;
-  enabled: boolean;
-  paymentStatus?: 'pending' | 'completed';
   lockedAmount?: number | null;
   stakeCurrency?: 'INR' | 'USD' | null;
   stakeTierId?: string | null;
   challengeEndsAt?: string | null;
-  stakeStatus?: 'active' | 'settled' | 'forfeited';
+  status: 'pending_payment' | 'active' | 'settled' | 'forfeited' | 'deleted';
   forfeitedAmount?: number;
 }
 
@@ -171,24 +170,27 @@ export default function HomeScreen() {
     }
   }
 
-  async function deleteRule(id: string, appName: string) {
-    Alert.alert(`Remove ${appName}?`, 'This will stop tracking this app.', [
+  async function deleteRule(
+    id: string,
+    appName: string,
+    forfeits: boolean,
+    stakeAmount: number,
+    currency: CurrencyCode,
+  ) {
+    Alert.alert(
+      `Remove ${appName}?`,
+      forfeits
+        ? `This challenge is still running, so removing it forfeits the ${formatMoney(stakeAmount, currency)} you staked. To keep your money, open the app and wait for the challenge to end.`
+        : 'This will stop tracking this app.',
+      [
       { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Remove', style: 'destructive',
+        text: forfeits ? 'Remove and forfeit' : 'Remove', style: 'destructive',
         onPress: async () => {
           try {
-            const res = await orpc<{ id: string }, any>('deleteRule', { id });
-            // A paid, still-running challenge is forfeited rather than deleted, so
-            // the row survives (disabled) as a record of the stake. Reloading
-            // keeps the list honest — filtering it out locally would make it
-            // reappear on the next refresh.
-            if (res?.deleted === false) {
-              Alert.alert(
-                'Challenge forfeited',
-                'It was still running, so the stake has been forfeited. The rule stays in your list as a record.',
-              );
-            }
+            // The warning above is computed from this list's copy of the rule, so
+            // the server still reports whether money was actually taken.
+            await orpc<{ id: string }, any>('deleteRule', { id });
             await load();
             syncRules();
           } catch (e) {
@@ -287,11 +289,11 @@ export default function HomeScreen() {
             const isLimit = item.ruleType === 'daily_limit';
             const isUnlocked = unlockedApps.has(item.packageName);
 
-            const isPendingPayment = item.paymentStatus === 'pending';
+            const isPendingPayment = item.status === 'pending_payment';
 
             return (
               <Card
-                style={[styles.appCard, (!item.enabled && !isPendingPayment) && styles.appCardDisabled, { marginVertical: 3 }]}
+                style={[styles.appCard, { marginVertical: 3 }]}
                 onPress={() => openDetail(item.id)}
               >
                   {/* Row 1: icon + name + delete + right info */}
@@ -334,7 +336,13 @@ export default function HomeScreen() {
                       </Text>
                       <TouchableOpacity
                         className="self-start mt-2 px-3 py-1 rounded-md border border-danger"
-                        onPress={() => deleteRule(item.id, item.appName)}
+                        onPress={() => deleteRule(
+                          item.id,
+                          item.appName,
+                          item.status === 'active' && (item.lockedAmount ?? 0) > 0,
+                          item.lockedAmount ?? 0,
+                          (item.stakeCurrency ?? 'INR') as CurrencyCode,
+                        )}
                       >
                         <Text className="text-[12px] font-semibold text-danger">
                           Remove this app
@@ -424,7 +432,6 @@ const styles = StyleSheet.create({
   addBtnText: { fontFamily: fonts.semiBold, fontSize: 13, color: '#fff' },
   list: { padding: spacing.lg, paddingTop: spacing.sm, gap: spacing.sm, paddingBottom: spacing.xxl },
   appCard: { gap: spacing.sm },
-  appCardDisabled: { opacity: 0.5 },
   cardRow: { flexDirection: 'row', alignItems: 'center' },
   appIcon: { width: 44, height: 44, borderRadius: 12, marginRight: spacing.sm },
   appIconPlaceholder: {
