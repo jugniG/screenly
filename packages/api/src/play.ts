@@ -100,7 +100,15 @@ type PlayOrder = {
   lineItems?: { productId?: string; quantity?: number; itemPrice?: { micros?: number | string; currencyCode?: string } }[]
 }
 
-const PURCHASED = 1
+/**
+ * ProductPurchase.purchaseState, as returned by the Play Developer API:
+ * 0 Purchased, 1 Canceled, 2 Pending.
+ *
+ * Do not confuse this with the BillingClient constant of the same name on the
+ * device, which is PURCHASED = 1. Using the client value here rejected every
+ * successful purchase.
+ */
+const PURCHASED = 0
 /** 1 major currency unit = 1,000,000 micros, so 1 minor unit (paisa/cent) = 10,000. */
 const MICROS_PER_MINOR = 10_000
 
