@@ -16,7 +16,7 @@ import { colors } from "@/components/ui/theme";
 
 type IoniconName = ComponentProps<typeof Ionicons>["name"];
 
-/** Icon + label only — the navigation bar inset is reserved by the root view. */
+/** Icon + label only - the navigation bar inset is reserved by the root view. */
 const TAB_BAR_CONTENT_HEIGHT = 49;
 
 function TabIcon({ name, color }: { name: IoniconName; color: ColorValue }): JSX.Element {
@@ -107,8 +107,8 @@ export default function TabsLayout(): JSX.Element {
       if (state !== "active" || !session) return;
       syncRules().catch(() => {});
 
-      // Both permissions can be revoked outside the app — from Settings, or by
-      // Android on update — and the enforcer then blocks nothing while every
+      // Both permissions can be revoked outside the app - from Settings, or by
+      // Android on update - and the enforcer then blocks nothing while every
       // screen still looks healthy. Re-check on each resume and send the user
       // back through setup if either is gone.
       if (permCheckInFlight.current) return;
@@ -162,7 +162,7 @@ export default function TabsLayout(): JSX.Element {
             // would squeeze the labels out of the box above.
             paddingTop: 0,
             paddingBottom: 0,
-            // Same tone as the page and the system navigation bar below it —
+            // Same tone as the page and the system navigation bar below it -
             // surface (#FCFBF9) on background (#F4F1EB) reads as a white stripe.
             backgroundColor: colors.background,
             borderTopColor: colors.border,

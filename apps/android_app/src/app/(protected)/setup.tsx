@@ -35,7 +35,7 @@ const STEPS: StepConfig[] = [
       'Find and tap "Screenly" in the list',
       'Toggle the switch to ON',
     ],
-    tip: 'Tip: tap the search bar in the list and type "s" — Screenly shows up right away.',
+    tip: 'Tip: tap the search bar in the list and type "s" - Screenly shows up right away.',
     check: () => ScreenlyEnforcer.hasUsageStatsPermission(),
     request: () => ScreenlyEnforcer.requestUsageStatsPermission(),
   },
@@ -129,7 +129,7 @@ export default function SetupScreen() {
           <Ionicons name="checkmark-circle" size={22} color="#22C55E" />
           <View style={styles.prevGrantedTextWrap}>
             <Text style={styles.prevGrantedTitle}>
-              {STEPS[stepIndex - 1].title} — Done!
+              {STEPS[stepIndex - 1].title} - Done!
             </Text>
             <Text>
               That one worked. Now just this last permission.

@@ -12,8 +12,8 @@ import {
 
 /**
  * Marketing mockup of the real app. Every screen and tab here corresponds to a
- * shipped route — Screen Time, Limits and Leaderboard are the three tabs in
- * apps/android_app/src/app/(protected)/(tabs)/_layout.tsx — so the page never
+ * shipped route - Screen Time, Limits and Leaderboard are the three tabs in
+ * apps/android_app/src/app/(protected)/(tabs)/_layout.tsx - so the page never
  * shows something the product doesn't have.
  *
  * Navigation is dots-only. An earlier version advanced itself every 5s, which
@@ -109,7 +109,7 @@ function ScreenTime() {
         <div className="flex h-24 items-end justify-between gap-1.5">
           {bars.map((h, i) => (
             /* The bar's percentage needs a definite-height parent, and the day
-               label must not be counted in that height — otherwise the tallest
+               label must not be counted in that height - otherwise the tallest
                bar (80% of 96px) plus the label overflows the chart. flex-1
                hands the bar a region sized by what is left after the label, and
                items-end stands the bar on the baseline. */
@@ -248,7 +248,7 @@ const DWELL_MS = 3000;
 
 /**
  * Auto-advance halts for anyone who asked their OS to reduce motion, and for
- * anyone currently hovering or focused on the mockup — an unstoppable carousel
+ * anyone currently hovering or focused on the mockup - an unstoppable carousel
  * is unreadable, since the screen changes before you finish looking at it.
  */
 function usePrefersReducedMotion() {
@@ -299,7 +299,7 @@ function Phone({ children, activeTab }: { children: React.ReactNode; activeTab: 
 }
 
 export function PhoneMockup() {
-  // Opens on Limits — it is the screen the whole product is about.
+  // Opens on Limits - it is the screen the whole product is about.
   const [active, setActive] = useState(1);
   const [held, setHeld] = useState(false);
   const reduceMotion = usePrefersReducedMotion();

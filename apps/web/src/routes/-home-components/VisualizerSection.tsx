@@ -18,7 +18,7 @@ const cards = [
     title: "Losing $10 hurts more than gaining $10 feels good",
     description: (
       <>
-        This is called <strong className="text-brand-white">loss aversion</strong> — your brain is wired to avoid losing money 2x more than it wants to earn it. Screenly uses this against your impulses. When there's real money on the line, your brain finally pays attention.
+        This is called <strong className="text-brand-white">loss aversion</strong> - your brain is wired to avoid losing money 2x more than it wants to earn it. Screenly uses this against your impulses. When there's real money on the line, your brain finally pays attention.
       </>
     ),
   },
@@ -27,7 +27,7 @@ const cards = [
     title: "The \"I give in\" button has a price tag",
     description: (
       <>
-        When Screenly blocks an app, you can still unlock it — but it costs you your entire deposit. That money you staked? Gone instantly. Suddenly, "just 5 minutes of scrolling" doesn't feel worth it anymore.
+        When Screenly blocks an app, you can still unlock it - but it costs you your entire deposit. That money you staked? Gone instantly. Suddenly, "just 5 minutes of scrolling" doesn't feel worth it anymore.
       </>
     ),
   },

@@ -1,7 +1,7 @@
 /**
  * Google Play Real-time Developer Notifications (RTDN).
  *
- * Google does not POST refund events straight to us — it publishes them to a
+ * Google does not POST refund events straight to us - it publishes them to a
  * Pub/Sub topic, and a push subscription on that topic delivers them to this
  * app's webhook. This module owns the part that matters: turning a Google
  * notification into a change in our own state.
@@ -9,7 +9,7 @@
  * Why we care: a user can self-refund on Play within 48 hours of buying. That
  * bypasses our tap-to-claim flow entirely, so without these events a refunded
  * stake stays "active" in our database and the user keeps both the money and
- * the block. By the time a notification arrives the money is already gone —
+ * the block. By the time a notification arrives the money is already gone -
  * this is detection, not prevention.
  */
 
@@ -74,7 +74,7 @@ export type RtdnOutcome =
  *
  * Matching is on purchaseToken because that is what RTDN carries. The stake is
  * then settled as forfeited and the rule disabled, which is what releases the
- * block — a user who self-refunded must not stay locked for a challenge they
+ * block - a user who self-refunded must not stay locked for a challenge they
  * are no longer paying for.
  */
 export async function applyRtdnMessage(message: RtdnMessage): Promise<RtdnOutcome> {

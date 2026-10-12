@@ -2,7 +2,7 @@ export default function FeaturesSection() {
   const features = [
     {
       title: '1. Lock any app you want to quit',
-      description: 'Pick Instagram, Twitter, YouTube — whatever eats your time. Set a daily limit, block it during work hours, or lock it forever. You choose.',
+      description: 'Pick Instagram, Twitter, YouTube - whatever eats your time. Set a daily limit, block it during work hours, or lock it forever. You choose.',
       icon: (
         <svg className="w-8 h-8 text-brand-orange filter drop-shadow-[0_0_8px_rgba(249,115,22,0.4)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
@@ -24,7 +24,7 @@ export default function FeaturesSection() {
     },
     // {
     //   title: '3. Emergency unlock costs $5 for 10 min',
-    //   description: 'Need to check something urgently? You can unlock an app for 10 minutes by forfeiting $5 to the treasury. It\'s there for emergencies — but expensive enough that you won\'t abuse it.',
+    //   description: 'Need to check something urgently? You can unlock an app for 10 minutes by forfeiting $5 to the treasury. It\'s there for emergencies - but expensive enough that you won\'t abuse it.',
     //   icon: (
     //     <svg className="w-8 h-8 text-brand-orange filter drop-shadow-[0_0_8px_rgba(249,115,22,0.4)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     //       <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5l-3-3" />

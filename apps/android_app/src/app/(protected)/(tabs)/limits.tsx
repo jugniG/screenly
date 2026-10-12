@@ -96,7 +96,7 @@ export default function HomeScreen() {
    * cancelled or abandoned purchase leaves a disabled `pending` rule behind.
    * Retrying from here would re-run the purchase with nothing tying it to the
    * original attempt, so the user can double-charge themselves. Instead the
-   * pending card shows its state and offers the normal delete — they can
+   * pending card shows its state and offers the normal delete - they can
    * remove it and start again cleanly.
    */
   const [hasPermission, setHasPermission] = useState(true);
@@ -142,7 +142,7 @@ export default function HomeScreen() {
 
       // Must be awaited: hasUsageStatsPermission() returns a Promise, and
       // Boolean(<Promise>) is always true, which hid the permission banner
-      // permanently. Both permissions matter — without accessibility the
+      // permanently. Both permissions matter - without accessibility the
       // enforcer cannot block anything, so it is checked too.
       const state = await permissionState();
       setPerm(state);

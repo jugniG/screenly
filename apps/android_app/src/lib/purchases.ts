@@ -5,7 +5,7 @@ import { STAKE_TIERS, FREE_TIER_ID, formatMoney, resolveCurrency, type CurrencyC
  * Google Play purchases, Android only.
  *
  * The stake is a real purchase of a real Play product. Play prices are fixed per
- * product, so the amount is chosen from STAKE_TIERS rather than typed in — each
+ * product, so the amount is chosen from STAKE_TIERS rather than typed in - each
  * tier id is also the Play product id.
  */
 
@@ -60,7 +60,7 @@ export async function getStakeTiers(): Promise<StakeTier[]> {
   console.log('[IAP] fetchProducts skus:', skus, 'returned count:', products?.length)
 
   // The no-money option is always offered and always first. It is not a Play
-  // product — picking it skips billing entirely — so it must be prepended here
+  // product - picking it skips billing entirely - so it must be prepended here
   // rather than added to STAKE_TIERS, whose ids are product ids.
   const freeTier = (currency: CurrencyCode): StakeTier => ({
     id: FREE_TIER_ID,

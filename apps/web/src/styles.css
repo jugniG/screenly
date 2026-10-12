@@ -4,7 +4,7 @@
 @source '../../../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
 @source '../../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
 /*
- * There is no dark theme — <html> is always class="light" and nothing toggles
+ * There is no dark theme - <html> is always class="light" and nothing toggles
  * it. This override stays only to neutralise the `dark:` utilities in vendored
  * shadcn components (alert.tsx, chart.tsx). Removing it would drop Tailwind back
  * to the default `@media (prefers-color-scheme: dark)`, which would start
@@ -149,7 +149,7 @@
   /*
    * Selection is defined once here rather than per-element with a `selection:`
    * utility. Pairing `selection:text-*` with an undefined `selection:bg-*` leaves
-   * white text on a white background — the highlight vanishes. Deriving both
+   * white text on a white background - the highlight vanishes. Deriving both
    * halves from the same tokens keeps contrast correct in light and dark.
    */
   ::selection {
@@ -163,7 +163,7 @@
 }
 
 /*
- * Anchor jumps — the hero's "Learn the Science" button and the nav links — land
+ * Anchor jumps - the hero's "Learn the Science" button and the nav links - land
  * instantly otherwise, which reads as a jolt on a page this tall. Scoped to
  * no-preference so it stays mutually exclusive with the reduced-motion block
  * below: anyone who asked for less movement gets the jump back, not a fight

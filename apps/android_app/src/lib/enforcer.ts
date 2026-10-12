@@ -8,7 +8,7 @@ export async function syncRules() {
     await ScreenlyEnforcer.updateRules(JSON.stringify(activeRules));
   } catch (e) {
     // A silent failure here leaves the device blocking on stale rules, which is
-    // worse than logging — the enforcer would never learn about an unlock.
+    // worse than logging - the enforcer would never learn about an unlock.
     console.error('[enforcer] failed to sync rules', (e as Error).message);
   }
 }

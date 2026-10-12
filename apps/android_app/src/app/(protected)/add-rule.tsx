@@ -151,7 +151,7 @@ export default function AddRuleScreen() {
     getStakeTiers().then(tiers => {
       if (cancelled) return;
       setStakeTiers(tiers);
-      // Prefer DEFAULT_TIER_ID, not tiers[0] — the free tier is listed first, and
+      // Prefer DEFAULT_TIER_ID, not tiers[0] - the free tier is listed first, and
       // taking position zero auto-selected "no stake" for every new challenge.
       setSelectedTier(prev => {
         if (prev && tiers.some(t => t.id === prev.id)) return prev;
@@ -217,7 +217,7 @@ export default function AddRuleScreen() {
    * Creates the rule with no stake at all.
    *
    * The stake is optional by design: someone who wants Instagram limited should
-   * not be forced into a payment to do it. This path never touches Play — it
+   * not be forced into a payment to do it. This path never touches Play - it
    * goes straight to createRule, so nothing is charged and no challenge clock
    * is started.
    */
@@ -309,7 +309,7 @@ export default function AddRuleScreen() {
       setStatusText('Opening Google Play...');
       const purchase = await purchaseStake(selectedTier.id, selectedTier.offerToken);
       if (!purchase.ok) {
-        // Cancelled or failed — the rule stays disabled, nothing is charged.
+        // Cancelled or failed - the rule stays disabled, nothing is charged.
         setDepositing(false);
         setStatusText('');
         console.error('[AddRule - Stake Purchase Failed]', purchase.message);
@@ -355,7 +355,7 @@ export default function AddRuleScreen() {
         <View style={{ width: 50 }} />
       </View>
 
-      {/* Progress — 'deposit' was missing from this list, so the stake screen
+      {/* Progress - 'deposit' was missing from this list, so the stake screen
           showed three grey dots with no active step. */}
       <View style={styles.progress}>
         {(['app', 'type', 'configure', 'deposit'] as Step[]).map((s, i) => {
@@ -607,18 +607,18 @@ export default function AddRuleScreen() {
           </View>
         )}
 
-        {/* Step 4: Deposit — ₹0 is the first tier, so the stake is a choice made here
+        {/* Step 4: Deposit - ₹0 is the first tier, so the stake is a choice made here
             rather than a gate on the previous screen. */}
         {step === 'deposit' && (
           <View style={styles.stepContainer}>
             <Text style={styles.stepTitle}>Lock in your commitment</Text>
 
-            {/* Amount first — it is the primary decision, and duration only matters once
+            {/* Amount first - it is the primary decision, and duration only matters once
             a paid amount is chosen. */}
             <Text style={styles.stakeLabel}>HOW MUCH ARE YOU STAKING?</Text>
             {stakeTiers.filter((t) => !isFreeTier(t.id)).length === 0 ? (
               <Text style={styles.warningText}>
-                Staked challenges are unavailable right now — the stake products may not be
+                Staked challenges are unavailable right now - the stake products may not be
                 active yet. You can still add the limit with no money involved.
               </Text>
             ) : (

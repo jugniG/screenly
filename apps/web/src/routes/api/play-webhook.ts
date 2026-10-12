@@ -3,7 +3,7 @@
  *
  * Pub/Sub's push subscription posts here. It carries no user session, so the
  * request is authenticated by the OIDC token Pub/Sub signs with the service
- * account configured on the subscription — not by a cookie.
+ * account configured on the subscription - not by a cookie.
  *
  * The audience below must match the Audience field set on the push
  * subscription. If it drifts, Google mints the token for a different audience
@@ -49,7 +49,7 @@ export const Route = createFileRoute('/api/play-webhook')({
           console.log('[play-rtdn]', message.notificationType, outcome)
           return Response.json({ ok: true, ...outcome })
         } catch (e) {
-          // 500 so Pub/Sub retries — losing a refund event means a user who
+          // 500 so Pub/Sub retries - losing a refund event means a user who
           // already got their money back stays locked in our system.
           console.error('[play-rtdn] failed to apply', (e as Error).message)
           return new Response('internal error', { status: 500 })

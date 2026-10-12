@@ -174,7 +174,7 @@ export default function LeaderboardTab() {
               </View>
             )}
 
-            {/* Invite — collapsed until asked for */}
+            {/* Invite - collapsed until asked for */}
             <Pressable
               onPress={() => setInviteOpen((open) => !open)}
               className="flex-row items-center gap-3 bg-surface border border-border rounded-xl p-3 mt-3 active:opacity-70"

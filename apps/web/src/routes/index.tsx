@@ -7,13 +7,13 @@ import { FaGithub } from "react-icons/fa";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Screenly — Your day, but longer" },
+      { title: "Screenly - Your day, but longer" },
       {
         name: "description",
         content:
           "After your first week with Screenly, you'll find hours in your day you didn't know you had. Lock the apps that distract you with money on the line.",
       },
-      { property: "og:title", content: "Screenly — Your day, but longer" },
+      { property: "og:title", content: "Screenly - Your day, but longer" },
       {
         property: "og:description",
         content: "Lock distracting apps, stake your money, and find hours in your day you didn't know you had.",
@@ -53,7 +53,7 @@ const steps = [
 // resolve against the *largest* viewport, so on mobile a fixed-height section
 // is taller than the screen once browser chrome retracts, leaving a dead gap.
 // dvh tracks the real viewport, and min-h (not h) lets a band grow when its
-// content is taller than the screen — which it is on small phones, where the
+// content is taller than the screen - which it is on small phones, where the
 // hero stacks the text above the mockup.
 const band = "relative flex min-h-dvh items-center scroll-mt-16";
 const shell = "relative mx-auto w-full max-w-6xl px-5";
@@ -98,11 +98,17 @@ function Index() {
                 <br />
                 <span className="text-primary">but longer 😌</span>
               </h1>
-              <p className="mt-6 max-w-md text-lg leading-relaxed text-foreground/80">
-                After your first week with{' '}
-                <strong className="font-semibold text-foreground">Screenly</strong>, you&rsquo;ll
-                find hours in your day you didn&rsquo;t know you had.
-              </p>
+              <ul className="mt-6 max-w-md list-disc space-y-2.5 pl-5 text-lg leading-relaxed text-foreground/80 marker:text-primary">
+                <li>
+                  After your first week with{' '}
+                  <strong className="font-semibold text-foreground">Screenly</strong>,
+                  you&rsquo;ll find hours in your day you didn&rsquo;t know you had.
+                </li>
+                <li>
+                  Set limits on distracting apps. Put money behind your commitment. Stay under
+                  your limits and keep it.
+                </li>
+              </ul>
 
               <div className="mt-9 flex flex-wrap items-center gap-5">
                 <a

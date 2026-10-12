@@ -18,7 +18,7 @@ type Variant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
 interface ButtonProps {
   /** Display text */
   title?: string;
-  /** Alias for title — backwards compat */
+  /** Alias for title - backwards compat */
   label?: string;
   onPress: () => void;
   variant?: Variant;

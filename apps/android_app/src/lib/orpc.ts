@@ -13,7 +13,7 @@ const BASE_URL: string =
  * The Expo auth plugin stores cookies in SecureStore as a JSON map of
  * `{ [cookieName]: { value, expires } }`, not as a Cookie header string. Sending
  * that JSON straight through makes the server see no session at all, so it has
- * to be flattened into `name=value; name=value` first — expired entries
+ * to be flattened into `name=value; name=value` first - expired entries
  * dropped.
  */
 function toCookieHeader(stored: string | null): string | null {
@@ -48,7 +48,7 @@ const link = new RPCLink({
 
 export const orpcClient = createORPCClient<AppRouter>(link)
 
-/** @deprecated Use `orpcClient.procedureName(input)` directly — it's fully typed via `AppRouter` */
+/** @deprecated Use `orpcClient.procedureName(input)` directly - it's fully typed via `AppRouter` */
 export async function orpc<TInput = Record<string, unknown>, TOutput = unknown>(
   procedure: string,
   input?: TInput,

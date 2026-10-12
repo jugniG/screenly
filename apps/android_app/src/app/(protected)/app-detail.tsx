@@ -48,7 +48,7 @@ function formatMinutes(m: number) {
 }
 
 function format12h(t: string | null) {
-  if (!t) return '—';
+  if (!t) return '-';
   return new Date(`1970-01-01T${t}`).toLocaleTimeString([], {
     hour: 'numeric',
     minute: '2-digit',
@@ -68,7 +68,7 @@ export default function AppDetailScreen() {
       const rules = (await orpcClient.listRules({})) as unknown as Rule[];
       const match = rules.find((r) => r.id === ruleId);
       if (!match) {
-        // Gone from under us (deleted on another screen) — leave rather than show
+        // Gone from under us (deleted on another screen) - leave rather than show
         // an empty shell.
         router.dismissTo('/(protected)/(tabs)/limits' as any);
         return;
@@ -105,7 +105,7 @@ export default function AppDetailScreen() {
       stake > 0
         ? stillRunning
           ? `You lose the full ${formatMoney(stake, currency)} staked on ${rule.appName}. Unlock it now, or wait for the challenge to finish and claim it all back.`
-          : `The challenge is already over. Claim the refund instead — forfeiting now throws away ${formatMoney(stake, currency)}.`
+          : `The challenge is already over. Claim the refund instead - forfeiting now throws away ${formatMoney(stake, currency)}.`
         : `This removes the restriction on ${rule.appName}.`,
       [
         { text: 'Stay strong', style: 'cancel' },
@@ -140,7 +140,7 @@ export default function AppDetailScreen() {
         Alert.alert(
           res.refundStatus === 'failed' ? 'Refund failed' : 'Refunded',
           res.refundStatus === 'failed'
-            ? 'Google Play rejected the refund. Your stake is safe — please try again.'
+            ? 'Google Play rejected the refund. Your stake is safe - please try again.'
             : `${formatMoney(res.refundedAmount, currency)} is on its way back to your account.`,
           [{ text: 'Done', onPress: () => router.dismissTo('/(protected)/(tabs)/limits' as any) }],
         );
@@ -158,7 +158,7 @@ export default function AppDetailScreen() {
     const currency = (rule.stakeCurrency ?? 'INR') as CurrencyCode;
     // Mirrors the server rule in deleteRule: removing anything with money still
     // live on it forfeits the stake. A challenge whose clock already ran out is
-    // not exempt — claiming the refund is a separate, deliberate tap.
+    // not exempt - claiming the refund is a separate, deliberate tap.
     const forfeits = rule.status === 'active' && stake > 0;
     const stillRunning = msLeft !== null && msLeft > 0;
 
@@ -274,7 +274,7 @@ export default function AppDetailScreen() {
           <Text className="text-[12px] text-text-secondary mt-1">
             {isPendingPayment
               ? "Payment didn't go through, so this limit isn't running."
-              : 'Active — Screenly is blocking this app.'}
+              : 'Active - Screenly is blocking this app.'}
           </Text>
         </Card>
 
@@ -288,16 +288,16 @@ export default function AppDetailScreen() {
               {isPendingPayment
                 ? "Payment was never completed, so nothing was charged. Remove this and add the app again to try a new payment."
                 : rule.status === 'forfeited'
-                  ? 'Forfeited — unlocking early takes the whole stake.'
+                  ? 'Forfeited - unlocking early takes the whole stake.'
                   : rule.status === 'settled'
                     ? 'Claimed back in full.'
                     : endsLabel
-                      ? `Locked until ${endsLabel} — ${
+                      ? `Locked until ${endsLabel} - ${
                           daysLeft !== null
                             ? `${daysLeft} day${daysLeft === 1 ? '' : 's'} left.`
                             : ''
                         }`
-                      : `Locked for ${formatDuration(duration)} — end date not set.`}
+                      : `Locked for ${formatDuration(duration)} - end date not set.`}
             </Text>
           </Card>
         )}

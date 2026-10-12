@@ -10,7 +10,7 @@ class UnlockStore(context: Context) {
   private val prefs: SharedPreferences =
     context.getSharedPreferences("screenly_unlocks", Context.MODE_PRIVATE)
 
-  /** Unlock until 23:59:59 today — resets at midnight. */
+  /** Unlock until 23:59:59 today - resets at midnight. */
   fun unlockUntilMidnight(packageName: String) {
     val cal = Calendar.getInstance().apply {
       set(Calendar.HOUR_OF_DAY, 23)

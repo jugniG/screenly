@@ -5,8 +5,8 @@ import { eq, desc } from 'drizzle-orm'
 import { authedProcedure } from '../base'
 
 /**
- * Unlock history only. Unlocking no longer involves a payment — a temporary
- * unlock is a slice of the stake, settled by unlockChallenge — so the old
+ * Unlock history only. Unlocking no longer involves a payment - a temporary
+ * unlock is a slice of the stake, settled by unlockChallenge - so the old
  * paid-unlock checkout routes are gone with Dodo.
  */
 

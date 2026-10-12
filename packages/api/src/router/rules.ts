@@ -87,7 +87,7 @@ export const deleteRule = authedProcedure
     const rule = await loadOwnedRule(input.id, context.user.id)
     const stake = rule.lockedAmount ?? 0
 
-    // Rows are never destroyed — an RTDN can arrive months after a refund, and a
+    // Rows are never destroyed - an RTDN can arrive months after a refund, and a
     // hard-deleted row takes the Play order with it, leaving the stake
     // unrecoverable. So removal is a status change: `forfeited` when money was
     // live (an early unlock, or a challenge removed before its refund was
@@ -103,7 +103,7 @@ export const deleteRule = authedProcedure
       success: true,
       // The client needs to know whether this call took the user's money. A rule
       // that was still running forfeits on removal; nothing else does. Error
-      // handling cannot convey this — a forfeit is a successful request.
+      // handling cannot convey this - a forfeit is a successful request.
       forfeited: forfeits,
       forfeitedAmount: forfeits ? stake : rule.forfeitedAmount,
       stakeAmount: stake,
@@ -129,7 +129,7 @@ const loadOwnedRule = async (id: string, userId: string) => {
 
 /**
  * The one early exit. Unlocking before the deadline forfeits the whole stake
- * and refunds nothing — Google keeps its fee on the original purchase, so this
+ * and refunds nothing - Google keeps its fee on the original purchase, so this
  * is the only outcome that actually pays out. Completing the challenge is the
  * other exit and returns everything via settleChallenge.
  */
@@ -330,7 +330,7 @@ export const settleChallenge = authedProcedure
     if (refundAmount > 0) {
       refundStatus = await refundPlayPurchase(rule.playOrderId)
       if (refundStatus === 'failed') {
-        throw new ORPCError('Refund failed — your stake is safe, please retry')
+        throw new ORPCError('Refund failed - your stake is safe, please retry')
       }
     }
 

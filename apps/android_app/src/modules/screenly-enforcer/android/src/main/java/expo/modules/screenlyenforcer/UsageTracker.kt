@@ -42,9 +42,9 @@ class UsageTracker(context: Context) {
       .apply()
   }
 
-  /** Called when Screenly itself comes to foreground — stops the running timer. */
+  /** Called when Screenly itself comes to foreground - stops the running timer. */
   fun pauseTracking(nowMs: Long) {
-    Log.i("UsageTracker", "[TRACK] pause — clearing foreground tracking")
+    Log.i("UsageTracker", "[TRACK] pause - clearing foreground tracking")
     prefs.edit().remove("fg_pkg").remove("fg_start").apply()
   }
 
@@ -60,7 +60,7 @@ class UsageTracker(context: Context) {
    */
   private fun queryOsUsageMs(): Map<String, Long>? {
     val manager = usm ?: run {
-      Log.w("UsageTracker", "[USAGE] usm is null — UsageStatsManager unavailable")
+      Log.w("UsageTracker", "[USAGE] usm is null - UsageStatsManager unavailable")
       return null
     }
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
@@ -84,11 +84,11 @@ class UsageTracker(context: Context) {
       }
 
       if (stats.isNullOrEmpty()) {
-        Log.w("UsageTracker", "[USAGE] empty result — permission missing or no usage today")
+        Log.w("UsageTracker", "[USAGE] empty result - permission missing or no usage today")
         return emptyMap()
       }
 
-      // Multiple entries per package (spanning bucket boundaries) — fold them together.
+      // Multiple entries per package (spanning bucket boundaries) - fold them together.
       val result = mutableMapOf<String, Long>()
       for (stat in stats) {
         if (stat.totalTimeInForeground > 0) {
@@ -114,7 +114,7 @@ class UsageTracker(context: Context) {
    */
   fun queryUsageStats(interval: Int, startTime: Long, endTime: Long): List<AppUsage> {
     val manager = usm ?: run {
-      Log.w("UsageTracker", "[USAGE] usm is null — UsageStatsManager unavailable")
+      Log.w("UsageTracker", "[USAGE] usm is null - UsageStatsManager unavailable")
       return emptyList()
     }
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
@@ -205,7 +205,7 @@ class UsageTracker(context: Context) {
       (System.currentTimeMillis() - fgStart).coerceAtLeast(0L) else 0L
 
     val totalMs = osMs + liveMs
-    Log.i("UsageTracker", "[ENFORCE] $packageName — osMs=${osMs/60000}min live=${liveMs/60000}min total=${totalMs/60000}min")
+    Log.i("UsageTracker", "[ENFORCE] $packageName - osMs=${osMs/60000}min live=${liveMs/60000}min total=${totalMs/60000}min")
     return (totalMs / 60000).toInt().coerceAtLeast(0)
   }
 
@@ -237,7 +237,7 @@ class UsageTracker(context: Context) {
     val liveMs = if (packageName == fgPkg && fgStart > hourStart)
       (now - fgStart).coerceAtLeast(0L) else 0L
     val total = totalMs + liveMs
-    Log.i("UsageTracker", "[ENFORCE] $packageName — hourOsMs=${totalMs/60000}min live=${liveMs/60000}min total=${total/60000}min")
+    Log.i("UsageTracker", "[ENFORCE] $packageName - hourOsMs=${totalMs/60000}min live=${liveMs/60000}min total=${total/60000}min")
     return (total / 60000).toInt().coerceAtLeast(0)
   }
 

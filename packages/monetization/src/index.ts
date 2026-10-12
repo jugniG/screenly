@@ -3,7 +3,7 @@
  * app so the number the user is quoted can never drift from the number the
  * server charges or forfeits.
  *
- * All amounts are integer minor units (paise / cents) — never floats.
+ * All amounts are integer minor units (paise / cents) - never floats.
  */
 
 export type CurrencyCode = 'INR' | 'USD'
@@ -16,7 +16,7 @@ export const CURRENCIES = {
 /**
  * How much of the stake is kept when a challenge ends early.
  *
- * There is only one early exit. "Unlock now" forfeits the whole stake — a
+ * There is only one early exit. "Unlock now" forfeits the whole stake - a
  * partial unlock was removed because it earned a fifth of what the full
  * forfeit earns on the same user, so it only discounted the better outcome.
  */
@@ -28,7 +28,7 @@ export const FORFEIT_PERCENT = {
 export type Outcome = keyof typeof FORFEIT_PERCENT
 
 /**
- * How long the user stays locked. Duration is ours, not Google's — the stake
+ * How long the user stays locked. Duration is ours, not Google's - the stake
  * amount is the product, and the clock is set from this table once Play
  * confirms payment.
  */
@@ -66,8 +66,8 @@ export function formatDuration(id: string): string {
 }
 
 /**
- * Stake amounts. Google Play prices are fixed per product — the app cannot ask
- * the store to charge an arbitrary amount — so the choice is a set of products
+ * Stake amounts. Google Play prices are fixed per product - the app cannot ask
+ * the store to charge an arbitrary amount - so the choice is a set of products
  * rather than a free-text field. The Play product ID is the tier id.
  *
  * The server resolves the expected amount from this table, never from the
@@ -115,7 +115,7 @@ export function forfeitAmount(stakeMinor: number, outcome: Outcome): number {
   return Math.round((stakeMinor * FORFEIT_PERCENT[outcome]) / 100)
 }
 
-/** What the user gets back — the full stake when they complete. */
+/** What the user gets back - the full stake when they complete. */
 export function settledAmount(stakeMinor: number, outcome: Outcome): number {
   return stakeMinor - forfeitAmount(stakeMinor, outcome)
 }

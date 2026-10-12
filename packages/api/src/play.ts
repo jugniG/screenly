@@ -28,7 +28,7 @@ function credentials(): Credentials {
 
 /**
  * The official generated client. Using this instead of hand-built URLs means
- * endpoint paths, field names and enums come from Google's own spec — a
+ * endpoint paths, field names and enums come from Google's own spec - a
  * `totalAmount` that does not exist, or an `/orders` route nested wrongly under
  * `/purchases`, cannot happen.
  */
@@ -55,7 +55,7 @@ function packageName(): string {
 /**
  * Converts a Money value to integer minor units (paise / cents).
  *
- * Money is `{ currencyCode, units, nanos }` — there is no `micros` field, and
+ * Money is `{ currencyCode, units, nanos }` - there is no `micros` field, and
  * the SDK's generated types say so. ₹50 is units="50", nanos=0.
  */
 function toMinorUnits(money: { units?: string | null; nanos?: number | null } | null | undefined): number {
@@ -132,7 +132,7 @@ export type RefundStatus = 'succeeded' | 'failed'
 
 /**
  * Refunds a settled challenge. The stake is the user's own money coming back,
- * so this runs only when a challenge completes — never on a forfeit.
+ * so this runs only when a challenge completes - never on a forfeit.
  */
 export async function refundPlayPurchase(orderId: string): Promise<RefundStatus> {
   try {

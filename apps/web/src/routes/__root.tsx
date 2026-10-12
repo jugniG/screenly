@@ -25,7 +25,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         content: 'width=device-width, initial-scale=1',
       },
       {
-        title: 'Screenly — Your day, but longer',
+        title: 'Screenly - Your day, but longer',
       },
       {
         name: 'description',
@@ -33,7 +33,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       },
       {
         property: 'og:title',
-        content: 'Screenly — Your day, but longer',
+        content: 'Screenly - Your day, but longer',
       },
       {
         property: 'og:description',

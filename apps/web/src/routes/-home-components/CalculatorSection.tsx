@@ -18,7 +18,7 @@ export default function CalculatorSection() {
           The True Cost of Distraction
         </h2>
         <p className="mt-4 text-base text-brand-gray">
-          Scrolling doesn't just cost you time—it drains your financial potential. 
+          Scrolling doesn't just cost you time-it drains your financial potential. 
           Put stakes on your focus and calculate what you save by breaking the loop.
         </p>
       </div>

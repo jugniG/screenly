@@ -45,7 +45,7 @@ class EnforcerAccessibilityService : AccessibilityService() {
 
     val pkg = event.packageName?.toString() ?: return
 
-    // Screenly came to foreground — pause tracking (stop the running timer)
+    // Screenly came to foreground - pause tracking (stop the running timer)
     if (pkg == selfPackage) {
       usageTracker.pauseTracking(System.currentTimeMillis())
       return
@@ -55,7 +55,7 @@ class EnforcerAccessibilityService : AccessibilityService() {
     if (pkg == lastForegroundPackage) return
     lastForegroundPackage = pkg
 
-    // Real-time usage tracking — record the transition
+    // Real-time usage tracking - record the transition
     usageTracker.recordForeground(pkg, System.currentTimeMillis())
 
     Log.i("Enforcer", "Foreground: $pkg")

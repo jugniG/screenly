@@ -52,7 +52,7 @@ export default function BlockScreen() {
   }, [packageName]);
 
   // The block screen is opened by the accessibility service as a deep link, so
-  // the stake isn't passed along with it — fetch the rule to show what giving
+  // the stake isn't passed along with it - fetch the rule to show what giving
   // in actually costs.
   useEffect(() => {
     if (!ruleId) return;
@@ -71,7 +71,7 @@ export default function BlockScreen() {
     router.dismissTo('/(protected)/(tabs)/limits' as any);
   }
 
-  // Block back button — trap user on this screen
+  // Block back button - trap user on this screen
   useEffect(() => {
     if (Platform.OS !== 'android') return;
     const sub = BackHandler.addEventListener('hardwareBackPress', () => true);
@@ -157,7 +157,7 @@ export default function BlockScreen() {
           <Text style={styles.stakeAmount}>{formatMoney(stakeMinor, currency)}</Text>
           <Text style={styles.stakeHint}>
             {daysLeft !== null && daysLeft > 0
-              ? `Back in full in ${daysLeft} day${daysLeft === 1 ? '' : 's'} — as long as you don't break the lock.`
+              ? `Back in full in ${daysLeft} day${daysLeft === 1 ? '' : 's'} - as long as you don't break the lock.`
               : 'Complete the challenge and get the full amount back.'}
           </Text>
         </View>
