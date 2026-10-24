@@ -1,15 +1,16 @@
 {
   "short_name": "Screenly",
-  "name": "Screenly - Your day, but longer",
+  "name": "Screenly — Your day, but longer.",
+  "description": "Less screen. More life. Screenly helps you set meaningful app limits, commit to your goals, and take back your time.",
   "icons": [
-    { "src": "favicon-16x16.png", "sizes": "16x16", "type": "image/png" },
-    { "src": "favicon-32x32.png", "sizes": "32x32", "type": "image/png" },
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "favicon.ico", "sizes": "16x16 32x32 48x48", "type": "image/x-icon" },
     { "src": "apple-touch-icon.png", "sizes": "180x180", "type": "image/png" },
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+    { "src": "images/screenly-logo.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "images/screenly-logo.png", "sizes": "512x512", "type": "image/png" }
   ],
   "start_url": "/",
   "display": "standalone",
-  "theme_color": "#0E0F11",
-  "background_color": "#0E0F11"
+  "theme_color": "#183e32",
+  "background_color": "#f8f7f2"
 }

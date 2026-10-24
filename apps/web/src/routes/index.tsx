@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
-import { PhoneMockup } from "@/components/PhoneMockup";
+import BlockScreen from "@/components/BlockScreen";
+import { DemoScreens } from "@/components/DemoScreens";
 import { Logo } from "@/components/Logo";
 import { FaGithub } from "react-icons/fa";
 
@@ -43,10 +44,31 @@ const beats = [
   },
 ];
 
-const steps = [
-  { n: "01", title: "Pick your leaks", body: "Choose the apps stealing your evenings." },
-  { n: "02", title: "Put money on it", body: "Commit an amount you'd hate to lose." },
-  { n: "03", title: "Break it, lose it", body: "Stay under and keep every cent." },
+const faqs = [
+  [
+    "How does Screenly work?",
+    "Pick the apps you want to spend less time on, set a daily or hourly limit, and choose a stake. Stay within your limits and you keep every rupee of it.",
+  ],
+  [
+    "Do I have to put money on it?",
+    "No. You can start on the free tier and never stake anything. The commitment is the extra layer, not the entry fee.",
+  ],
+  [
+    "What happens if I go over my limit?",
+    "The stake you committed is what you stand to lose. Screenly is up front about that before you pick an amount — nothing is charged silently.",
+  ],
+  [
+    "What are the actual stakes?",
+    "From ₹50 up to ₹1000, over a week, a month or a year. The app only ever charges the amount you picked, and the server prices it independently so it can't be tampered with.",
+  ],
+  [
+    "Is Screenly open source?",
+    "Yes. Every line is on GitHub — including the Android accessibility service and the server that verifies payments.",
+  ],
+  [
+    "Can I use it with my family?",
+    "Family circles turn less scrolling into a shared challenge. Invite people, compare screen time, and keep each other honest.",
+  ],
 ];
 
 // Each band is min-h-dvh rather than a fixed pixel height. The vh/lvh units
@@ -91,37 +113,35 @@ function Index() {
       <main>
         <section className={`${band} overflow-hidden pt-16`}>
           <div className="warm-glow pointer-events-none absolute inset-0" />
-          <div className={`${shell} grid gap-12 py-16 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-16 lg:py-0`}>
+          <div
+            className={`${shell} grid gap-12 py-16 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-16 lg:py-0`}
+          >
             <div>
-              <h1 className="font-display text-6xl font-extrabold leading-[0.95] [word-spacing:0.015em] sm:text-7xl">
+              <p className="eyebrow text-muted-foreground">
+                <span className="live-dot" /> MORE TIME FOR WHAT MATTERS.
+              </p>
+              <h1 className="mt-6 text-5xl font-bold leading-[0.98] [word-spacing:0.015em] sm:text-6xl lg:text-7xl">
                 Your day,
                 <br />
-                <span className="text-primary">but longer 😌</span>
+                but <span className="serif">longer.</span>
               </h1>
-              <ul className="mt-6 max-w-md list-disc space-y-2.5 pl-5 text-lg leading-relaxed text-foreground/80 marker:text-primary">
-                <li>
-                  After your first week with{' '}
-                  <strong className="font-semibold text-foreground">Screenly</strong>,
-                  you&rsquo;ll find hours in your day you didn&rsquo;t know you had.
-                </li>
-                <li>
-                  Set limits on distracting apps. Put money behind your commitment. Stay under
-                  your limits and keep it.
-                </li>
-              </ul>
+              <p className="mt-6 max-w-md text-lg leading-relaxed text-foreground/80">
+                More room for the things you meant to do. Screenly helps you set app limits — and
+                stick to them. Put money behind your commitment. Stay under and keep it.
+              </p>
 
-              <div className="mt-9 flex flex-wrap items-center gap-5">
+              <div className="mt-9 flex flex-wrap items-center gap-4">
                 <a
                   href="/login"
-                  className="btn-premium inline-flex items-center gap-2 rounded-full bg-primary px-7 py-3.5 text-base font-semibold text-primary-foreground"
+                  className="button inline-flex items-center gap-4 rounded-full bg-ink px-7 py-3.5 text-sm font-medium text-white"
                 >
-                  Get Started <ArrowRight className="size-4" />
+                  Make room for your day <ArrowRight className="size-4" />
                 </a>
                 <a
                   href="#science"
-                  className="btn-outline-premium inline-flex items-center gap-2 rounded-full border border-border bg-card px-6 py-3.5 text-base font-medium text-foreground"
+                  className="btn-outline-premium inline-flex items-center gap-2 rounded-full border border-border bg-card px-6 py-3.5 text-sm font-medium text-foreground"
                 >
-                  Learn the Science <ArrowRight className="size-4" />
+                  The science <ArrowRight className="size-4" />
                 </a>
               </div>
 
@@ -130,18 +150,15 @@ function Index() {
               </p>
             </div>
 
-            <div className="relative">
-              <PhoneMockup />
-            </div>
+            <BlockScreen />
           </div>
         </section>
+
+        <DemoScreens />
 
         <section id="science" className={`${band} border-y border-border bg-accent/50`}>
           <div className={shell}>
             <div className="mx-auto max-w-4xl text-center">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-primary">
-                Why it works
-              </p>
               <p className="mx-auto text-xl font-medium leading-snug text-muted-foreground sm:text-2xl">
                 Mobiles were the biggest tech revolution in human history.
               </p>
@@ -176,45 +193,54 @@ function Index() {
           </div>
         </section>
 
-        <section id="start" className={`${band} overflow-hidden`}>
-          <div className="warm-glow pointer-events-none absolute inset-0" />
-          <div className={`${shell} text-center`}>
-            <h2 className="mx-auto max-w-3xl font-display text-5xl font-extrabold leading-[1.02] sm:text-6xl">
-              Willpower is a bad plan.
-              <br />
-              <span className="text-primary">Money is a better one.</span>
-            </h2>
+        <section id="faq" className={`${band} border-y border-border bg-card`}>
+          <div className={shell}>
+            <div className="mx-auto max-w-2xl text-center">
+              <h2 className="text-4xl font-bold leading-[1.05] sm:text-5xl">
+                The <span className="serif">obvious</span> questions.
+              </h2>
+            </div>
 
-            <div className="mx-auto mt-14 grid max-w-4xl gap-4 sm:grid-cols-3">
-              {steps.map((s) => (
-                <div key={s.n} className="card-premium rounded-3xl bg-card p-7 text-left">
-                  <span className="font-display text-sm font-semibold text-primary">{s.n}</span>
-                  <h3 className="mt-3 text-lg font-semibold">{s.title}</h3>
-                  <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{s.body}</p>
-                </div>
+            <div className="mx-auto mt-14 max-w-3xl divide-y divide-border border-y border-border">
+              {faqs.map(([q, a]) => (
+                <details key={q} className="group">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-6 py-5 text-left text-base font-semibold marker:hidden">
+                    {q}
+                    <span className="shrink-0 text-xl font-normal text-muted-foreground transition-transform duration-200 group-open:rotate-45">
+                      +
+                    </span>
+                  </summary>
+                  <p className="max-w-2xl pb-5 text-sm leading-relaxed text-muted-foreground">{a}</p>
+                </details>
               ))}
             </div>
 
-            <a
-              href="/login"
-              className="btn-premium mt-12 inline-flex items-center gap-2 rounded-full bg-primary px-8 py-4 text-base font-semibold text-primary-foreground"
-            >
-              Get Started <ArrowUpRight className="size-4" />
-            </a>
-            <p className="mt-5 text-sm text-muted-foreground">
-              Set your first limit in under two minutes. Start free.
-            </p>
+            <div className="mt-14 text-center">
+              <h2 className="mx-auto max-w-3xl text-4xl font-bold leading-[1.05] sm:text-5xl">
+                Willpower is a bad plan.
+                <br />
+                <span className="serif">Money is a better one.</span>
+              </h2>
+              <a
+                href="/login"
+                className="button mt-10 inline-flex items-center gap-4 rounded-full bg-ink px-8 py-4 text-sm font-medium text-white"
+              >
+                Get started <ArrowUpRight className="size-4" />
+              </a>
+              <p className="mt-5 text-sm text-muted-foreground">
+                Set your first limit in under two minutes. Start free.
+              </p>
+            </div>
           </div>
         </section>
       </main>
 
       <footer className="border-t border-border">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-5 py-6 text-sm text-muted-foreground sm:flex-row">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-5 py-6 text-sm sm:flex-row">
           <span className="flex items-center gap-2">
-            <Logo iconSize="sm" showWordmark={false} />
-            <span>Screenly</span>
+            <Logo iconSize="sm" />
           </span>
-          <span>Open source. Built for people who want their hours back.</span>
+          <span className="text-muted-foreground">Open source. Built for people who want their hours back.</span>
         </div>
       </footer>
     </div>

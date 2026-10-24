@@ -3,42 +3,37 @@ interface LogoProps {
   iconSize?: "sm" | "md" | "lg";
   /** Off for tight placements where the surrounding copy already says Screenly. */
   showWordmark?: boolean;
+  /** For dark surfaces, where the wordmark needs to invert to cream. */
+  light?: boolean;
 }
 
-const sizeClasses = {
-  sm: "size-8",
-  md: "size-10",
-  lg: "size-12",
-};
-
-const pixelSize = { sm: 32, md: 40, lg: 48 };
+const iconPx = { sm: 26, md: 32, lg: 40 } as const;
+const wordmarkPx = { sm: 20, md: 24, lg: 30 } as const;
 
 /**
- * The one brand mark on the site. It renders the app icon rather than a
- * redrawn SVG, because that icon is what already ships on the user's home
- * screen and in Play - any separate web drawing drifts from it the moment the
- * app icon is updated.
- *
- * Regenerate public/logo-256.png with `node scripts/build-favicons.mjs` after
- * changing apps/android_app/assets/images/icon.png.
+ * The Open S mark — a lime S with a darker terminal, on a forest rounded
+ * square. Master art is public/images/screenly-logo.svg; the favicon set and
+ * app/touch icons come from the same file, so the tab icon, the Play listing
+ * and the nav can never drift apart.
  */
 export function Logo({
   className = "",
   iconSize = "md",
   showWordmark = true,
+  light = false,
 }: LogoProps) {
   return (
-    <span className={`flex select-none items-center gap-2.5 ${className}`}>
+    <span className={`logo ${light ? "light" : ""} ${className}`}>
       <img
-        src="/logo-256.png"
-        alt="Screenly"
-        width={pixelSize[iconSize]}
-        height={pixelSize[iconSize]}
-        className={`${sizeClasses[iconSize]} shrink-0 rounded-xl`}
+        src="/images/screenly-logo.svg"
+        alt=""
+        width={iconPx[iconSize]}
+        height={iconPx[iconSize]}
+        className="shrink-0"
       />
       {showWordmark && (
-        <span className="font-display text-lg font-bold tracking-tight text-foreground">
-          Screenly
+        <span style={{ fontSize: `${wordmarkPx[iconSize]}px` }}>
+          screenly<span className="logo-dot">.</span>
         </span>
       )}
     </span>

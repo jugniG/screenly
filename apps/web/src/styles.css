@@ -73,32 +73,49 @@
 }
 
 @theme {
-  --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
-  --font-sans: "Work Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Poppins", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
 }
 
 :root {
   --radius: 0.875rem;
-  --background: oklch(0.977 0.012 78);
-  --foreground: oklch(0.24 0.05 260);
-  --card: oklch(0.995 0.006 84);
-  --card-foreground: oklch(0.24 0.05 260);
-  --popover: oklch(0.995 0.006 84);
-  --popover-foreground: oklch(0.24 0.05 260);
-  --primary: oklch(0.68 0.2 42);
-  --primary-foreground: oklch(0.99 0.01 84);
-  --secondary: oklch(0.94 0.02 78);
-  --secondary-foreground: oklch(0.24 0.05 260);
-  --muted: oklch(0.945 0.015 80);
-  --muted-foreground: oklch(0.52 0.035 258);
-  --accent: oklch(0.93 0.045 70);
-  --accent-foreground: oklch(0.3 0.09 45);
+  /*
+   * Ivory / forest / lime, converted from the hex originals
+   * (#f8f7f2 / #183e32 / #d9ef8a) so the whole site stays in the OKLCH contract
+   * the rest of the tokens use.
+   *
+   * --primary is forest rather than lime on purpose. Lime is very light, so
+   * using it for `text-primary` accents on the ivory canvas would be unreadable;
+   * it is exposed as --lime instead and used for button fills, where dark text
+   * sits on top of it.
+   */
+  --background: oklch(0.976 0.007 97.4);
+  --foreground: oklch(0.332 0.049 170);
+  --card: oklch(0.991 0.004 97.4);
+  --card-foreground: oklch(0.332 0.049 170);
+  --popover: oklch(0.991 0.004 97.4);
+  --popover-foreground: oklch(0.332 0.049 170);
+  --primary: oklch(0.332 0.049 170);
+  --primary-foreground: oklch(0.976 0.007 97.4);
+  --secondary: oklch(0.94 0.018 100);
+  --secondary-foreground: oklch(0.332 0.049 170);
+  --muted: oklch(0.938 0.012 100);
+  /*
+   * Their muted grey (#74796e) measures 4.16:1 on this cream — below the 4.5:1
+   * AA floor for body text. Darkened along the same hue to #676d63 (4.96:1) so
+   * muted copy stays on-brand without failing contrast.
+   */
+  --muted-foreground: oklch(0.526 0.017 132.6);
+  --accent: oklch(0.914 0.128 119.1);
+  --accent-foreground: oklch(0.332 0.049 170);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.9 0.018 74);
-  --input: oklch(0.9 0.018 74);
-  --ring: oklch(0.68 0.2 42);
-  --ink: oklch(0.19 0.05 262);
+  --border: oklch(0.9 0.014 100);
+  --input: oklch(0.9 0.014 100);
+  --ring: oklch(0.332 0.049 170);
+  --ink: oklch(0.332 0.049 170);
+  --cream: oklch(0.976 0.007 97.4);
+  --lime: oklch(0.914 0.128 119.1);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -212,6 +229,55 @@
 
 @utility inner-highlight {
   box-shadow: var(--shadow-inner-highlight);
+}
+
+/* --- Editorial system (ported from screenly-0915) ------------------------- */
+
+/* Georgia italic against Poppins. The payoff half of a headline reads as a
+   different voice without needing a second colour to do it. */
+@utility serif {
+  font-family: Georgia, "Times New Roman", serif;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.04em;
+}
+
+@utility eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.19em;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+@utility live-dot {
+  height: 6px;
+  width: 6px;
+  border-radius: 50%;
+  background: oklch(0.62 0.09 128);
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+@utility logo {
+  display: inline-flex;
+  align-items: center;
+  font-size: 24px;
+  font-weight: 650;
+  letter-spacing: -1.2px;
+  gap: 9px;
+}
+@utility logo-dot {
+  color: #6f8f4c;
+}
+@utility light {
+  color: #f8f7f2;
+}
+
+@utility lime-button {
+  background: var(--lime);
+  color: oklch(0.31 0.06 168);
 }
 
 /*
@@ -465,6 +531,167 @@
     background: linear-gradient(135deg, color-mix(in oklab, var(--primary-foreground) 18%, transparent) 0%, transparent 40%, transparent 60%, color-mix(in oklab, var(--primary) 8%, transparent) 100%);
     pointer-events: none;
   }
+
+  /* --- Limit-reached concept preview (ported from screenly-0915) ---------- */
+
+  .button {
+    background: var(--ink);
+    color: #fff;
+    border-radius: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 25px;
+    padding: 17px 25px;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: transform 0.2s, background 0.2s;
+  }
+  .lime-button {
+    background: var(--lime);
+    color: #234230;
+  }
+  .lime-button:hover {
+    background: #e7f5b5;
+  }
+
+  .button:hover {
+    transform: translateY(-3px);
+    background: #2c5544;
+  }
+  .button:active {
+    transform: translateY(-1px);
+  }
+
+  .block-visual {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .block-device {
+    width: 300px;
+    height: 512px;
+    position: relative;
+    background: #183e32;
+    color: #f8f7f2;
+    border: 6px solid #17372d;
+    border-radius: 36px;
+    box-shadow: 0 0 0 1px #49604c30, 0 18px 30px -18px #183e3245;
+    padding: 12px 22px 22px;
+  }
+  .block-status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 9px;
+    color: #d2ded1;
+  }
+  .block-status-icons {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+  .block-screen-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    text-align: center;
+    margin-top: 14px;
+  }
+  .block-app {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    margin: 18px 0 26px;
+  }
+  .block-app-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: #d9ef8a;
+    display: grid;
+    place-items: center;
+    margin-bottom: 2px;
+  }
+  .block-app-icon i {
+    width: 0;
+    height: 0;
+    border-left: 12px solid #183e32;
+    border-top: 7px solid transparent;
+    border-bottom: 7px solid transparent;
+    margin-left: 3px;
+  }
+  .block-app strong {
+    font-size: 15px;
+    font-weight: 500;
+    color: #f8f7f2;
+  }
+  .block-app-flag {
+    font-size: 9px;
+    color: #ee9c8b;
+  }
+  .block-stake {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    border: 1px solid #3f5a46;
+    background: #1d4638;
+    border-radius: 14px;
+    padding: 14px 16px 13px;
+    margin: 0 6px 26px;
+  }
+  .block-stake > span {
+    font-size: 7.5px;
+    font-weight: 500;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    color: #b6c59d;
+  }
+  .block-stake strong {
+    font-size: 26px;
+    font-weight: 450;
+    letter-spacing: -0.5px;
+    color: #f8f7f2;
+  }
+  .block-stake small {
+    font-size: 8px;
+    line-height: 1.7;
+    color: #aebfa6;
+  }
+  .block-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: auto;
+  }
+  .block-btn {
+    flex: 1;
+    text-align: center;
+    font-size: 9px;
+    font-weight: 500;
+    color: #c6d4bf;
+    border: 1px solid #3f5a46;
+    border-radius: 12px;
+    padding: 11px 6px;
+    white-space: nowrap;
+  }
+  .block-btn.accent {
+    color: #183e32;
+    background: #d9ef8a;
+    border-color: transparent;
+  }
+  .block-home-indicator {
+    position: absolute;
+    bottom: 9px;
+    left: 50%;
+    transform: translateX(-50%);
+    height: 3px;
+    width: 72px;
+    border-radius: 4px;
+    background: #b3c1a1;
+  }
 }
 
 @keyframes aurora {
@@ -508,4 +735,518 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* --- Demo screens row (ported from screenly-0915) ------------------------- */
+@layer components {
+.product-section {
+  padding-top: 13px;
+}
+.section-kicker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1.8px;
+  margin-bottom: 21px;
+}
+.demo-label {
+  font-size: 8px;
+  font-weight: 400;
+  letter-spacing: 1px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  color: #878e7f;
+}
+.demo-label .live-dot {
+  height: 4px;
+  width: 4px;
+}
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+.product-panel {
+  border-radius: 16px 16px 0 0;
+  background: #edeedf;
+  padding: 26px 30px 0;
+  height: 509px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid #e3e5d5;
+}
+.panel-1 {
+  background: #e8ebe3;
+  border-color: #e1e5dc;
+}
+.panel-2 {
+  background: #ecebe3;
+  border-color: #e3e2d9;
+}
+.product-title {
+  position: relative;
+  padding-left: 25px;
+}
+.step-tag {
+  position: absolute;
+  left: 0;
+  top: 4px;
+  color: #859177;
+  font-size: 9px;
+}
+.product-title h2 {
+  font-size: 18px;
+  letter-spacing: -0.6px;
+  font-weight: 500;
+}
+.product-title p {
+  font-size: 10px;
+  color: #818577;
+  margin-top: 5px;
+}
+.phone {
+  width: 255px;
+  background: #fffefa;
+  border: 5px solid #fffefa;
+  box-shadow:
+    0 0 0 1px #d0d2c9,
+    0 12px 35px #26362216;
+  border-radius: 27px;
+  height: 426px;
+  margin: 26px auto 0;
+  position: relative;
+  padding: 9px 13px;
+  overflow: hidden;
+  transform-origin: bottom;
+}
+.phone-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 8px;
+  color: #313c33;
+  margin-bottom: 24px;
+  padding: 0 4px;
+}
+.phone-status > span {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.phone-content {
+  color: #2c3c30;
+}
+.phone-eyebrow {
+  font-size: 10px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.phone h3 {
+  font-size: 29px;
+  font-weight: 600;
+  letter-spacing: -1.5px;
+  margin-top: 2px;
+}
+.phone h3.name-heading {
+  font-size: 23px;
+  letter-spacing: -0.7px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.tiny-sun {
+  font-size: 27px;
+  color: #adbe76;
+  font-weight: 400;
+}
+.phone-sub {
+  font-size: 6.5px;
+  margin-top: 3px;
+  color: #909587;
+}
+.chart-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 25px;
+  font-size: 7px;
+  color: #8c9184;
+}
+.chart-label span:last-child {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.chart {
+  display: flex;
+  gap: 11px;
+  height: 92px;
+  margin-top: 9px;
+  border-bottom: 1px solid #efeee5;
+}
+.chart button {
+  height: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  background: transparent;
+  padding: 0;
+  position: relative;
+  padding-bottom: 22px;
+}
+.chart button > span {
+  width: 100%;
+  border-radius: 4px 4px 0 0;
+  background: #e4ebd5;
+  min-height: 10px;
+}
+.chart button.chosen > span {
+  background: #70944b;
+}
+.chart small {
+  position: absolute;
+  bottom: 5px;
+  font-size: 7px;
+  color: #8b9380;
+}
+.chart button.chosen small {
+  color: #48662e;
+  font-weight: 600;
+}
+.phone h4 {
+  font-size: 9px;
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  margin-top: 17px;
+  margin-bottom: 12px;
+}
+.phone h4 span {
+  font-size: 6px;
+  color: #909587;
+  font-weight: 400;
+}
+.usage-row {
+  display: flex;
+  gap: 9px;
+  margin-bottom: 14px;
+  align-items: center;
+}
+.app-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: #f0f0e8;
+  flex-shrink: 0;
+}
+.app-icon.youtube {
+  background: #fff0ee;
+}
+.play {
+  width: 16px;
+  height: 11px;
+  border-radius: 3px;
+  background: #e54838;
+  position: relative;
+}
+.play:after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 6px;
+  border-left: 5px solid #fff;
+  border-top: 3px solid transparent;
+  border-bottom: 3px solid transparent;
+}
+.app-icon.x {
+  background: #f0f0eb;
+}
+.app-icon.chess {
+  color: #56813e;
+  background: #e9efde;
+  font-size: 25px;
+}
+.usage-row > div {
+  flex: 1;
+}
+.usage-name {
+  font-size: 8px;
+  display: flex;
+  justify-content: space-between;
+}
+.usage-name > span {
+  font-size: 7px;
+  color: #949789;
+}
+.usage-track,
+.limit-track {
+  height: 3px;
+  background: #eef0e6;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+.usage-track i,
+.limit-track i {
+  display: block;
+  height: 100%;
+  background: #aabb80;
+  border-radius: 3px;
+}
+.phone-nav {
+  position: absolute;
+  bottom: 23px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  justify-content: space-between;
+  background: #fffefa;
+  border-top: 1px solid #f0f0e8;
+  padding-top: 10px;
+}
+.phone-nav span {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 6px;
+  color: #a0a395;
+}
+.phone-nav .selected {
+  color: #608144;
+}
+.home-indicator {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 66px;
+  height: 3px;
+  background: #263526;
+  border-radius: 3px;
+}
+.limit-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 18px;
+}
+.limit-heading h4 {
+  margin: 0;
+}
+.limit-heading button,
+.family-top button {
+  font-size: 6px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: #eef2e3;
+  padding: 5px 7px;
+  border-radius: 5px;
+  color: #6b8250;
+}
+.limit-row {
+  padding: 15px 0 13px;
+  border-bottom: 1px solid #eeeee5;
+}
+.limit-top {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.limit-top > div {
+  flex: 1;
+}
+.limit-top b {
+  display: block;
+  font-size: 9px;
+  font-weight: 500;
+}
+.limit-top small {
+  display: block;
+  font-size: 7px;
+  color: #929787;
+  margin-top: 1px;
+}
+.limit-pill {
+  width: 22px;
+  height: 22px;
+  border: 1px solid #e6e9dc;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+}
+.limit-pill > span {
+  width: 5px;
+  height: 5px;
+  background: #afbd8b;
+  border-radius: 50%;
+}
+.limit-pill.reached {
+  background: #eaf1df;
+  color: #77954e;
+  border: 0;
+}
+.limit-track {
+  margin-top: 11px;
+  height: 4px;
+}
+.limit-track.full i {
+  background: #768f4c;
+}
+.limit-row > small {
+  font-size: 6.5px;
+  color: #a2a591;
+  display: block;
+  margin-top: 5px;
+}
+.limit-row .reached-text {
+  color: #7d8e60;
+}
+.commit-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 6px;
+  margin-top: 15px;
+  color: #8a9578;
+}
+.edit-limit {
+  display: flex;
+  align-items: center;
+  font-size: 7px;
+  gap: 4px;
+  margin-top: 3px;
+}
+.edit-limit input {
+  width: 38px;
+  border: 1px solid #c8d2b6;
+  border-radius: 3px;
+  padding: 1px;
+  font-size: 8px;
+  background: #fffefa;
+}
+.family-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 14px;
+}
+.family-top > span {
+  display: flex;
+}
+.family-top i {
+  height: 21px;
+  width: 21px;
+  border-radius: 50%;
+  background: #dfe8ce;
+  border: 2px solid #fffefa;
+  font-size: 7px;
+  font-style: normal;
+  display: grid;
+  place-items: center;
+  margin-right: -5px;
+}
+.family-top i:nth-child(2) {
+  background: #e8dfcc;
+}
+.family-top i:nth-child(3) {
+  background: #d8e1de;
+}
+.winner {
+  background: #eff3e4;
+  text-align: center;
+  border-radius: 10px;
+  margin-top: 17px;
+  padding: 12px 0 10px;
+}
+.winner-icon {
+  color: #8a9e59;
+  margin-bottom: 3px;
+}
+.winner-icon svg {
+  margin: auto;
+}
+.winner b {
+  font-size: 8px;
+  display: block;
+  font-weight: 500;
+}
+.winner strong {
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -1px;
+  display: block;
+  margin-top: 1px;
+}
+.winner p {
+  font-size: 6px;
+  color: #94a076;
+  line-height: 1.6;
+  margin-top: 4px;
+}
+.leader-list {
+  margin-top: 10px;
+}
+.leader-list > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 5px;
+  font-size: 7px;
+  border-radius: 4px;
+}
+.leader-list > div > span {
+  width: 12px;
+  color: #9aa284;
+}
+.leader-list > div > i {
+  height: 18px;
+  width: 18px;
+  background: #e6ebdc;
+  border-radius: 50%;
+  font-size: 6px;
+  display: grid;
+  place-items: center;
+  font-style: normal;
+}
+.leader-list b {
+  font-weight: 500;
+  flex: 1;
+}
+.leader-list small {
+  font-size: 7px;
+  color: #8f9882;
+}
+.leader-list .you {
+  background: #f0f3e8;
+}
+.pot-note {
+  font-size: 5.5px;
+  color: #979d8b;
+  text-align: center;
+  margin-top: 8px;
+}
+.below-demos {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  padding: 18px 2px;
+  color: #919786;
+  font-size: 9px;
+  border-bottom: 1px solid #e1e4d8;
+}
+.demo-data {
+  margin-left: auto;
+  font-size: 8px;
+}
 }
