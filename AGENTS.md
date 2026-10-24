@@ -161,7 +161,7 @@ npm run db:migrate  --workspace packages/db
   gitignored), **outside** the folder prebuild wipes. Prebuild still resets
   `android/gradle.properties` and the signingConfig in `android/app/build.gradle`,
   so after any prebuild: restore the `SCREENLY_UPLOAD_*` block in
-  `gradle.properties` (`STORE_FILE=../keystore/upload-keystore.jks`) and the
+  `gradle.properties` (`STORE_FILE=../../keystore/upload-keystore.jks`) and the
   `release` entry under `signingConfigs` wired to
   `signingConfigs.release`, then verify the key still matches Play before
   building: SHA-256 of `keystore/upload-keystore.jks` must equal the cert in
