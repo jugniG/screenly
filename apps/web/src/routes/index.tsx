@@ -77,7 +77,7 @@ const faqs = [
 // dvh tracks the real viewport, and min-h (not h) lets a band grow when its
 // content is taller than the screen - which it is on small phones, where the
 // hero stacks the text above the mockup.
-const band = "relative flex min-h-dvh items-center scroll-mt-16";
+const band = "relative flex min-h-[85vh] items-center scroll-mt-16";
 const shell = "relative mx-auto w-full max-w-6xl px-5";
 
 function Index() {
