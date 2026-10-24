@@ -30,41 +30,30 @@ function SharedHeader(): JSX.Element {
   const displayName = user ? (user.name ?? user.email) : null;
 
   return (
-    <View
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderColor: colors.border,
-        backgroundColor: colors.surface,
-      }}
-    >
+    <View className="flex-row items-center justify-between px-4 py-3 border-b border-border bg-surface">
       {user ? (
-        <Pressable onPress={() => router.push("/account" as any)} style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+        <Pressable onPress={() => router.push("/account" as any)} className="flex-row items-center gap-2.5">
           <Avatar size="sm" alt={displayName || "User"}>
             <Avatar.Image source={{ uri: user.image ?? undefined }} />
             <Avatar.Fallback style={{ backgroundColor: colors.surfaceAlt }}>
-              <Text style={{ color: colors.primary, fontWeight: "700", fontSize: 14 }}>{displayName ? displayName.slice(0, 1).toUpperCase() : "U"}</Text>
+              <Text className="text-foreground font-bold text-sm">{displayName ? displayName.slice(0, 1).toUpperCase() : "U"}</Text>
             </Avatar.Fallback>
           </Avatar>
           <View>
-            <Text style={{ color: colors.textSecondary, fontSize: 11, fontWeight: "500" }}>Hi,</Text>
-            <Text style={{ color: colors.text, fontWeight: "700", fontSize: 15 }}>{displayName}</Text>
+            <Text className="text-text-secondary text-[11px] font-medium">Hi,</Text>
+            <Text className="text-foreground font-bold text-[15px]">{displayName}</Text>
           </View>
         </Pressable>
       ) : (
-        <Pressable onPress={() => router.push("/(auth)/sign-in" as any)} style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+        <Pressable onPress={() => router.push("/(auth)/sign-in" as any)} className="flex-row items-center gap-2.5">
           <Avatar size="sm" alt="Guest">
             <Avatar.Fallback style={{ backgroundColor: colors.surfaceAlt }}>
               <Ionicons name="person-outline" size={16} color={colors.primary} />
             </Avatar.Fallback>
           </Avatar>
           <View>
-            <Text style={{ color: colors.textSecondary, fontSize: 11, fontWeight: "500" }}>Welcome</Text>
-            <Text style={{ color: colors.primary, fontWeight: "700", fontSize: 14 }}>Sign In</Text>
+            <Text className="text-text-secondary text-[11px] font-medium">Welcome</Text>
+            <Text className="text-foreground font-bold text-sm">Sign In</Text>
           </View>
         </Pressable>
       )}
@@ -74,23 +63,10 @@ function SharedHeader(): JSX.Element {
           // straight to sign-in rather than into a form they cannot submit.
           router.push(session ? ("/add-rule" as any) : ("/(auth)/sign-in" as any))
         }
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 4,
-          backgroundColor: colors.primary,
-          paddingHorizontal: 14,
-          paddingVertical: 7,
-          borderRadius: 20,
-          shadowColor: colors.primary,
-          shadowOffset: { width: 0, height: 3 },
-          shadowOpacity: 0.25,
-          shadowRadius: 6,
-          elevation: 3,
-        }}
+        className="flex-row items-center gap-1 bg-primary rounded-full px-3.5 py-1.5"
       >
         <Ionicons name="add" size={16} color="#FFFFFF" />
-        <Text style={{ color: "#FFFFFF", fontWeight: "600", fontSize: 13 }}>Add App</Text>
+        <Text className="text-white font-semibold text-[13px]">Add App</Text>
       </TouchableOpacity>
     </View>
   );
@@ -163,7 +139,8 @@ export default function TabsLayout(): JSX.Element {
             paddingTop: 0,
             paddingBottom: 0,
             // Same tone as the page and the system navigation bar below it -
-            // surface (#FCFBF9) on background (#F4F1EB) reads as a white stripe.
+            // background on background keeps the tab bar from reading as a
+            // separate stripe.
             backgroundColor: colors.background,
             borderTopColor: colors.border,
             borderTopWidth: 1,

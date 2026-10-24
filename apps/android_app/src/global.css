@@ -8,18 +8,36 @@
 @source '../node_modules/heroui-native/lib';
 
 @theme {
-  --color-background: #F4F1EB;
-  --color-foreground: #1F242D;
-  --color-surface: #FCFBF9;
-  --color-surface-alt: #EAE5DC;
-  --color-border: #DFD8CC;
-  --color-border-soft: #D2C9BB;
-  --color-text: #1F242D;
-  --color-text-secondary: #6B7280;
-  --color-text-muted: #9CA3AF;
-  --color-muted-foreground: #6B7280;
-  --color-primary: #F95721;
-  --color-primary-light: #FCEEE5;
+  /* Palette matching apps/web: ivory ground, forest ink, lime highlight. */
+  --color-background: #F8F7F2;
+  --color-foreground: #183E32;
+  --color-surface: #FCFBF7;
+  --color-surface-alt: #EFEEE3;
+  --color-border: #DAD8CA;
+  --color-border-soft: #CCCBBB;
+  --color-text: #183E32;
+  --color-text-secondary: #676D63;
+  --color-text-muted: #8B9083;
+  --color-muted-foreground: #676D63;
+  --color-primary: #183E32;
+  --color-primary-light: #EAEFD9;
+  --color-lime: #D9EF8A;
   --color-success: #16A34A;
   --color-danger: #DC2626;
+
+  /* Enforced-moment screens (block, unlock early) sit on forest; these are
+     their readable pairs, mirroring the web block-screen CSS. */
+  --color-forest: #183E32;
+  --color-forest-lift: #1D4638;
+  --color-forest-border: #3F5A46;
+  --color-on-forest: #F8F7F2;
+  --color-on-forest-muted: #AEBFA6;
+  --color-on-forest-dim: #B6C59D;
+  --color-danger-on-forest: #F0A48F;
+
+  /* React Native has no dynamic font weights - one family name per weight. */
+  --font-regular: 'Poppins-Regular';
+  --font-medium: 'Poppins-Medium';
+  --font-semibold: 'Poppins-SemiBold';
+  --font-bold: 'Poppins-Bold';
 }

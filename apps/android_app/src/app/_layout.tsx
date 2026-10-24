@@ -1,7 +1,7 @@
 import "../lib/polyfill";
 import { Component, type ReactNode, useEffect } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
-import { Stack } from "expo-router";
+import { Stack, usePathname } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
 import { HeroUINativeProvider } from "heroui-native";
@@ -44,6 +44,12 @@ export default function RootLayout() {
     "Poppins-Bold": require("../../assets/fonts/Poppins-Bold.ttf"),
   });
 
+  // edge-to-edge: the root SafeAreaView paints the system nav-bar strip, so its
+  // background has to follow the one forest-dark screen (block) or an ivory
+  // line shows up under the enforced moment.
+  const pathname = usePathname();
+  const onBlockScreen = pathname === "/(protected)/block";
+
   const { data: session } = authClient.useSession() as any;
 
   useEffect(() => {
@@ -61,11 +67,17 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <HeroUINativeProvider>
           <RouteErrorBoundary>
-            <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, overflow:'scroll' }}>
+            <SafeAreaView
+              style={{
+                flex: 1,
+                backgroundColor: onBlockScreen ? colors.forest : colors.background,
+                overflow: 'scroll',
+              }}
+            >
               <Stack screenOptions={{ headerShown: false }} />
             </SafeAreaView>
           </RouteErrorBoundary>
-          <StatusBar style="dark" />
+          <StatusBar style={onBlockScreen ? "light" : "dark"} />
         </HeroUINativeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

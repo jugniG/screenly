@@ -1,18 +1,20 @@
 export const colors = {
-  background:    '#F4F1EB',     // Warm faded stone / paper (gentle, zero glare)
-  surface:       '#FCFBF9',     // Soft warm card surface (not harsh neon white)
-  surfaceAlt:    '#EAE5DC',     // Subtle warm stone for pills, inputs, track
+  background:    '#F8F7F2',     // Ivory (matches apps/web)
+  surface:       '#FCFBF7',     // Near-white card surface
+  surfaceAlt:    '#EFEEE3',     // Greige-green for pills, inputs, tracks
 
-  border:        '#DFD8CC',     // Subtle warm border
-  borderSoft:    '#D2C9BB',     // Slightly more visible divider
+  border:        '#DAD8CA',
+  borderSoft:    '#CCCBBB',
 
-  text:          '#1F242D',     // Soft ink charcoal text (not harsh pure black)
-  textSecondary: '#6B7280',     // Warm muted secondary text
-  textMuted:     '#9CA3AF',     // Soft rank / placeholder text
+  text:          '#183E32',     // Forest ink
+  textSecondary: '#676D63',     // AA-checked muted on ivory (matches web)
+  textMuted:     '#8B9083',
 
-  primary:       '#F95721',     // Signature vibrant warm orange
-  primaryLight:  '#FCEEE5',     // Soft warm peach tint for badges/highlights
-  primarySoft:   '#F8E7DB',     // Alias
+  primary:       '#183E32',     // Brand ink
+  forest:        '#183E32',     // Forest shell for enforced-moment screens
+  primaryLight:  '#EAEFD9',     // Pale lime tint for badges/highlights
+  primarySoft:   '#EAEFD9',     // Alias
+  lime:          '#D9EF8A',     // Signature lime highlight
 
   success:       '#16A34A',
   successSoft:   '#DCFCE7',
@@ -20,12 +22,12 @@ export const colors = {
   danger:        '#DC2626',
   dangerSoft:    '#FEE2E2',
 
-  overlay:       'rgba(31, 36, 45, 0.45)',
+  overlay:       'rgba(24, 62, 50, 0.45)',
 
   // Legacy aliases used across codebase
-  bg:            '#F4F1EB',
-  accent:        '#F95721',
-  accentSoft:    '#FCEEE5',
+  bg:            '#F8F7F2',
+  accent:        '#D9EF8A',
+  accentSoft:    '#EAEFD9',
 };
 
 export const fonts = {

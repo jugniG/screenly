@@ -3,7 +3,6 @@ import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   TouchableOpacity,
   Alert,
   BackHandler,
@@ -13,7 +12,6 @@ import {
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import Constants from 'expo-constants';
-import { colors, fonts, spacing } from '@/components/ui/theme';
 import { syncRules } from '@/lib/enforcer';
 import { orpcClient } from '@/lib/orpc';
 import { forfeitAmount, formatMoney, type CurrencyCode } from '@screen/monetization';
@@ -139,23 +137,24 @@ export default function BlockScreen() {
   }
 
   return (
-    <View style={styles.screen}>
-      <View style={styles.iconWrap}>
+    <View className="flex-1 bg-forest px-8">
+      <View className="items-center mt-10 mb-[60px]">
         {iconUri ? (
-          <Image source={{ uri: iconUri }} style={styles.appIconImage} />
+          <Image source={{ uri: iconUri }} className="size-20 rounded-[20px] mb-4" />
         ) : (
-          <View style={styles.appIcon}>
-            <Text style={styles.appIconText}>{(appName ?? 'A')[0]}</Text>
+          <View className="size-20 rounded-[20px] bg-lime items-center justify-center mb-4">
+            <Text className="font-bold text-[36px] text-foreground">{(appName ?? 'A')[0]}</Text>
           </View>
         )}
-        <Text style={styles.appName}>{appName}</Text>
-        <Text style={styles.blockedLabel}>This app is blocked</Text>
+        <Text className="font-bold text-xl text-on-forest">{appName}</Text>
+        <Text className="font-regular text-sm text-danger-on-forest mt-1">This app is blocked</Text>
       </View>
+
       {stakeMinor > 0 && (
-        <View style={styles.stakeCard}>
-          <Text style={styles.stakeLabel}>YOUR STAKE</Text>
-          <Text style={styles.stakeAmount}>{formatMoney(stakeMinor, currency)}</Text>
-          <Text style={styles.stakeHint}>
+        <View className="items-center self-stretch bg-forest-lift border border-forest-border rounded-2xl py-6 px-8 mb-6">
+          <Text className="font-semibold text-[11px] tracking-[1.2px] text-on-forest-dim">YOUR STAKE</Text>
+          <Text className="font-bold text-[32px] text-on-forest mt-1">{formatMoney(stakeMinor, currency)}</Text>
+          <Text className="font-regular text-[13px] text-on-forest-muted text-center leading-[19px] mt-1">
             {daysLeft !== null && daysLeft > 0
               ? `Back in full in ${daysLeft} day${daysLeft === 1 ? '' : 's'} - as long as you don't break the lock.`
               : 'Complete the challenge and get the full amount back.'}
@@ -163,15 +162,15 @@ export default function BlockScreen() {
         </View>
       )}
 
-      <View style={styles.btnRow}>
-        <TouchableOpacity onPress={goHome} style={styles.backBtn}>
-          <Text style={styles.backText}>Back to home</Text>
+      <View className="flex-row gap-4 w-full mt-12">
+        <TouchableOpacity onPress={goHome} className="flex-1 items-center justify-center py-3 rounded-xl border border-forest-border">
+          <Text className="font-semibold text-sm text-on-forest-muted">Back to home</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleUnlock} disabled={loading} style={styles.unlockBtn}>
-          <Text style={styles.unlockText}>
+        <TouchableOpacity onPress={handleUnlock} disabled={loading} className="flex-1 items-center justify-center py-3 rounded-xl bg-lime">
+          <Text className="font-semibold text-[13px] text-forest text-center leading-[18px]">
             Unlock early{'\n'}
             {stakeMinor > 0 && (
-              <Text style={styles.unlockCost}>−{formatMoney(forfeitCost, currency)}</Text>
+              <Text className="font-bold text-[15px] text-forest">−{formatMoney(forfeitCost, currency)}</Text>
             )}
           </Text>
         </TouchableOpacity>
@@ -179,112 +178,5 @@ export default function BlockScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.background,
-    alignItems: 'center',
-  },
-  iconWrap: {
-    alignItems: 'center',
-    marginTop: 40,
-    marginBottom: 60,
-  },
-  appIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 20,
-    backgroundColor: colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.md,
-  },
-  appIconImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 20,
-    marginBottom: spacing.md,
-  },
-  appIconText: { fontFamily: fonts.bold, fontSize: 36, color: colors.primary },
-  appName: { fontFamily: fonts.bold, fontSize: 20, color: colors.text },
-  blockedLabel: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.danger,
-    marginTop: 4,
-  },
-  stakeCard: {
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 16,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.xl,
-    marginHorizontal: spacing.xl,
-    marginBottom: spacing.lg,
-  },
-  stakeLabel: {
-    fontFamily: fonts.semiBold,
-    fontSize: 11,
-    letterSpacing: 1.2,
-    color: colors.textMuted,
-  },
-  stakeAmount: {
-    fontFamily: fonts.bold,
-    fontSize: 32,
-    color: colors.text,
-    marginTop: spacing.xs,
-  },
-  stakeHint: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginTop: spacing.xs,
-    lineHeight: 19,
-  },
-  unlockBtn: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.xs,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    backgroundColor: colors.primaryLight,
-  },
-  unlockText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 13,
-    color: colors.primary,
-    textAlign: 'center',
-    lineHeight: 18,
-  },
-  unlockCost: { fontFamily: fonts.bold, fontSize: 15, color: colors.primary },
-  backBtn: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.sm,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-  },
-  backText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  btnRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    paddingHorizontal: spacing.xl,
-    marginTop: spacing.xxl,
-  },
-});
 
 export { };  // needed because we have a default export
