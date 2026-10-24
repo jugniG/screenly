@@ -1250,3 +1250,62 @@
   font-size: 8px;
 }
 }
+
+/* --- Landing responsiveness ------------------------------------------------- */
+
+@layer components {
+  /* Single column below Tailwind's lg. Panels, kicker and footer row share
+     one width so the three stay aligned without a stretched full-bleed card. */
+  @media (max-width: 1023px) {
+    .product-grid {
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    .product-panel,
+    .section-kicker,
+    .below-demos {
+      max-width: 560px;
+      margin-left: auto;
+      margin-right: auto;
+      width: 100%;
+    }
+    .section-kicker {
+      margin-bottom: 14px;
+    }
+  }
+
+  /* Phone-sized: the letterspaced kicker is ~350px wide alone, and the demo
+     strip's two ends collide. Tight typing, drop the row, clamp the phone. */
+  @media (max-width: 640px) {
+    .section-kicker {
+      flex-wrap: wrap;
+      gap: 6px;
+      font-size: 7px;
+      letter-spacing: 1.2px;
+    }
+    .demo-label {
+      font-size: 7px;
+    }
+    .phone {
+      width: min(255px, 100%);
+    }
+    .below-demos {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 5px;
+      padding: 14px 2px 16px;
+    }
+    .demo-data {
+      margin-left: 0;
+    }
+  }
+
+  /* 320px phones: the 300px device plus shell padding corners out. */
+  @media (max-width: 360px) {
+    .block-device {
+      width: 274px;
+      height: 476px;
+      padding: 12px 18px 18px;
+    }
+  }
+}
