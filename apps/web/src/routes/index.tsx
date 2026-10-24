@@ -116,7 +116,7 @@ function Index() {
           <div
             className={`${shell} grid gap-12 py-16 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-16 lg:py-0`}
           >
-            <div>
+            <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
               <p className="eyebrow text-muted-foreground">
                 <span className="live-dot" /> MORE TIME FOR WHAT MATTERS.
               </p>
@@ -130,7 +130,7 @@ function Index() {
                 stick to them. Put money behind your commitment. Stay under and keep it.
               </p>
 
-              <div className="mt-9 flex flex-wrap items-center gap-4">
+              <div className="mt-9 flex flex-wrap items-center justify-center gap-4 lg:justify-start">
                 <a
                   href="/login"
                   className="button inline-flex items-center gap-4 rounded-full bg-ink px-7 py-3.5 text-sm font-medium text-white"
