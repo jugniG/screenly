@@ -29,7 +29,7 @@ export default function BlockScreen() {
           <div className="block-stake">
             <span>Your stake</span>
             <strong>₹100.00</strong>
-            <small>Back in full in 12 days — as long as you don't break the lock.</small>
+            <small>Back in full in 12 days - as long as you don't break the lock.</small>
           </div>
 
           <div className="block-actions">
