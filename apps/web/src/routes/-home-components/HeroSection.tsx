@@ -17,7 +17,7 @@ const FEATURES: { icon: IconType; title: string; subtitle: string }[] = [
 export default function HeroSection() {
 
   return (
-    <section className="flex flex-col lg:flex-row gap-12 lg:gap-8 mx-auto w-full max-w-7xl px-4 pt-4 pb-20 sm:px-6 lg:pt-4 lg:pb-28 items-center">
+    <section className="flex flex-col lg:flex-row gap-12 lg:gap-8 mx-auto w-full max-w-7xl px-4 pt-4 pb-20 sm:px-6 lg:pt-4 lg:pb-28 items-center h-[90vh]">
       {/* Background radial glow */}
 
       <div className=" text-center lg:text-left">
