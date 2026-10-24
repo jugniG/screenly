@@ -79,10 +79,18 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="light">
       <head>
-        <HeadContent /></head>
+        <HeadContent />
+        <script
+          src="https://cdn.databuddy.cc/databuddy.js"
+          data-client-id="019cc0a4-4f0f-4c91-b8a1-340aab9f3073"
+          data-track-web-vitals="true"
+          crossOrigin="anonymous"
+          async
+        ></script>
+      </head>
       <body className="min-h-screen antialiased">
-          {children}
-          <Scripts />
+        {children}
+        <Scripts />
       </body>
     </html>
   )
