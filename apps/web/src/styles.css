@@ -818,7 +818,9 @@
   height: 426px;
   margin: 26px auto 0;
   position: relative;
-  padding: 9px 13px;
+  display: flex;
+  flex-direction: column;
+  padding: 9px 13px 0;
   overflow: hidden;
   transform-origin: bottom;
 }
@@ -837,6 +839,9 @@
   gap: 3px;
 }
 .phone-content {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
   color: #2c3c30;
 }
 .phone-eyebrow {
@@ -1003,15 +1008,12 @@
   border-radius: 3px;
 }
 .phone-nav {
-  position: absolute;
-  bottom: 23px;
-  left: 12px;
-  right: 12px;
   display: flex;
   justify-content: space-between;
   background: #fffefa;
   border-top: 1px solid #f0f0e8;
-  padding-top: 10px;
+  margin: 0 -13px;
+  padding: 10px 13px 16px;
 }
 .phone-nav span {
   display: flex;
