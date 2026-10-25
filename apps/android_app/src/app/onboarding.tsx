@@ -4,10 +4,12 @@ import {
   Text,
   Dimensions,
   TouchableOpacity,
+  Image,
   FlatList,
   Animated,
   type DimensionValue,
 } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -48,27 +50,77 @@ const SLIDES: { id: string; kind: SlideKind; title: string; sub: string }[] = [
 const BAR_HEIGHTS = [41, 67, 56, 86, 48, 32, 23];
 const DAY_INITIALS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
-const MOST_USED: { app: string; glyph: string; tint: string; time: string; width: number }[] = [
-  { app: 'YouTube', glyph: 'Y', tint: '#E54838', time: '1h 04m', width: 70 },
-  { app: 'X', glyph: 'X', tint: '#3E3E3E', time: '38m', width: 43 },
-  { app: 'Chess', glyph: 'C', tint: '#56813E', time: '15m', width: 22 },
+const MOST_USED: { app: string; time: string; width: number }[] = [
+  { app: 'YouTube', time: '1h 04m', width: 70 },
+  { app: 'X', time: '38m', width: 43 },
+  { app: 'Chess', time: '15m', width: 22 },
 ];
 
-const LIMITS: { app: string; glyph: string; tint: string; track: DimensionValue; reached: boolean; right: string; note: string }[] = [
-  { app: 'YouTube', glyph: 'Y', tint: '#E54838', track: '100%', reached: true, right: '', note: 'Limit reached. Locked until tomorrow.' },
-  { app: 'Chess', glyph: 'C', tint: '#56813E', track: '33%', reached: false, right: '15m used', note: 'of 45m' },
-  { app: 'X', glyph: 'X', tint: '#3E3E3E', track: '80%', reached: false, right: '4m used', note: 'of 5m' },
+const LIMITS: { app: string; track: DimensionValue; reached: boolean; right: string; note: string }[] = [
+  { app: 'YouTube', track: '100%', reached: true, right: '', note: 'Limit reached. Locked until tomorrow.' },
+  { app: 'Chess', track: '33%', reached: false, right: '15m used', note: 'of 45m' },
+  { app: 'X', track: '80%', reached: false, right: '4m used', note: 'of 5m' },
 ];
 
-function AppChip({ glyph, tint, small }: { glyph: string; tint: string; small?: boolean }) {
+const X_PATH =
+  'M14.234 10.162 22.977 0h-2.072l-7.591 8.824L7.251 0H.258l9.168 13.343L.258 24H2.33l8.016-9.318L16.749 24h6.993zm-2.837 3.299-.929-1.329L3.076 1.56h3.182l5.965 8.532.929 1.329 7.754 11.09h-3.182z';
+
+/**
+ * Brand marks for the apps the demo data names. Proportions are computed from
+ * `size` because the same mark renders at row size and at the stake screen's
+ * large size; type-safe views/SVG rather than letter chips.
+ */
+function AppMark({ app, size }: { app: string; size: number }) {
+  if (app === 'YouTube') {
+    return (
+      <View
+        style={{
+          width: size,
+          height: size,
+          borderRadius: size * 0.23,
+          backgroundColor: '#FF0000',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <View
+          style={{
+            width: 0,
+            height: 0,
+            borderLeftWidth: size * 0.28,
+            borderTopWidth: size * 0.17,
+            borderBottomWidth: size * 0.17,
+            borderLeftColor: '#FFFFFF',
+            borderTopColor: 'transparent',
+            borderBottomColor: 'transparent',
+            marginLeft: size * 0.05,
+          }}
+        />
+      </View>
+    );
+  }
+  if (app === 'Chess') {
+    return (
+      <Image
+        source={require('../../assets/images/chesscom.webp')}
+        style={{ width: size, height: size, borderRadius: size * 0.23 }}
+      />
+    );
+  }
   return (
     <View
-      className={`items-center justify-center rounded-[10px] ${small ? 'size-7' : 'size-8'}`}
-      style={{ backgroundColor: `${tint}1F` }}
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size * 0.23,
+        backgroundColor: '#F1F1EC',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
     >
-      <Text className="font-bold text-[11px]" style={{ color: tint }}>
-        {glyph}
-      </Text>
+      <Svg width={size * 0.55} height={size * 0.55} viewBox="0 0 24 24">
+        <Path fill="#0F1419" d={X_PATH} />
+      </Svg>
     </View>
   );
 }
@@ -119,7 +171,7 @@ function UsageScreen() {
       <Text className="font-bold text-[12px] text-foreground mt-5 mb-2.5">Most used</Text>
       {MOST_USED.map((row) => (
         <View key={row.app} className="flex-row items-center gap-2 mb-2.5">
-          <AppChip glyph={row.glyph} tint={row.tint} small />
+          <AppMark app={row.app} size={28} />
           <View className="flex-1">
             <View className="flex-row justify-between">
               <Text className="font-medium text-[10px] text-foreground">{row.app}</Text>
@@ -150,7 +202,7 @@ function LimitsScreen() {
           className="rounded-xl border border-border bg-surface p-2.5 mb-2"
         >
           <View className="flex-row items-center gap-2">
-            <AppChip glyph={limit.glyph} tint={limit.tint} small />
+            <AppMark app={limit.app} size={28} />
             <Text className="font-semibold text-[11px] text-foreground flex-1">{limit.app}</Text>
             {limit.reached ? (
               <View className="flex-row items-center gap-1 rounded-full bg-lime px-1.5 py-0.5">
@@ -188,9 +240,7 @@ function StakeScreen() {
     <>
       <PhoneStatus />
       <View className="items-center mt-6">
-        <View className="size-12 rounded-[14px] bg-lime items-center justify-center">
-          <Text className="font-bold text-lg text-forest">Y</Text>
-        </View>
+        <AppMark app="YouTube" size={44} />
         <Text className="font-bold text-[13px] text-on-forest mt-2">YouTube</Text>
         <Text className="font-regular text-[9px] text-danger-on-forest mt-0.5">
           This app is blocked
