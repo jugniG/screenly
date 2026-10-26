@@ -115,13 +115,17 @@ function purchaseErrorMessage(code?: string, fallback?: string): string {
     case 'user-cancelled':
       return 'Purchase cancelled'
     case 'network-error':
+    case 'sync-error':
       return 'No connection to Google Play. Check your network and try again.'
     case 'service-unavailable':
     case 'service-disconnected':
+    case 'service-timeout':
+    case 'service-error':
+    case 'remote-error':
       return 'Google Play billing is temporarily unavailable. Try again shortly.'
-    case 'billing-availability-issues':
+    case 'billing-unavailable':
       return 'Google Play billing is not available on this device.'
-    case 'item-already-owned':
+    case 'already-owned':
       return 'You already own this stake.'
     default:
       return fallback ?? 'Purchase failed. Please try again.'
@@ -157,6 +161,24 @@ export async function purchaseStake(tierId: string, offerToken?: string): Promis
       resolve(result)
     }
 
+    // A purchase that failed earlier - most often our server could not confirm
+    // it - is still owned by the account, so a fresh attempt at the same
+    // product only produces an already-owned error. Play still verifies the
+    // original token, so reusing it turns the retry into a recovery.
+    const recoverAlreadyOwned = async () => {
+      try {
+        const purchase = (await RNIap.getAvailablePurchases()).find(
+          (p) => p.productId === tierId && p.purchaseToken,
+        )
+        const token = purchase?.purchaseToken
+        if (token) finish({ ok: true, token })
+        else finish({ ok: false, message: purchaseErrorMessage('already-owned') })
+      } catch (e) {
+        console.error('[IAP] already-owned recovery failed:', e)
+        finish({ ok: false, message: purchaseErrorMessage('already-owned') })
+      }
+    }
+
     const sub = RNIap.purchaseUpdatedListener((event) => {
       const purchase = first(event)
       const token = purchase?.purchaseToken
@@ -164,6 +186,10 @@ export async function purchaseStake(tierId: string, offerToken?: string): Promis
     })
     const errSub = RNIap.purchaseErrorListener((error) => {
       console.error('[IAP] purchaseErrorListener:', JSON.stringify(error))
+      if (error.code === 'already-owned') {
+        void recoverAlreadyOwned()
+        return
+      }
       finish({ ok: false, message: purchaseErrorMessage(error.code, error.message) })
     })
 
@@ -180,6 +206,10 @@ export async function purchaseStake(tierId: string, offerToken?: string): Promis
       })
       .catch((e: any) => {
         console.error('[IAP] requestPurchase catch error:', e)
+        if (e?.code === 'already-owned') {
+          void recoverAlreadyOwned()
+          return
+        }
         finish({ ok: false, message: purchaseErrorMessage(e?.code, e?.message) })
       })
   })

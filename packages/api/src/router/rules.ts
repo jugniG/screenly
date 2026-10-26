@@ -4,8 +4,8 @@ import * as schema from '@screen/db/schema'
 import { eq, and, inArray } from 'drizzle-orm'
 import { authedProcedure } from '../base'
 import { ORPCError } from '@orpc/client'
-import { forfeitAmount, challengeEndsAt, tierMinor, DEFAULT_DURATION_ID } from '@screen/monetization'
-import { verifyStakePurchase, fetchOrderAmount, refundPlayPurchase, type RefundStatus } from '../play'
+import { challengeEndsAt, tierMinor, DEFAULT_DURATION_ID } from '@screen/monetization'
+import { verifyStakePurchase, fetchOrderAmount, acknowledgePlayPurchase, refundPlayPurchase, type RefundStatus } from '../play'
 
 /**
  * The two states a user can still see. Everything else is a tombstone kept only
@@ -263,7 +263,22 @@ export const confirmStakePurchase = authedProcedure
       throw new ORPCError('Google Play did not return an order for this purchase')
     }
 
-    const { paidMinor, currency } = await fetchOrderAmount(verified.orderId)
+    let paidMinor: number
+    let currency: string
+    if (verified.isTestPurchase) {
+      // License-tester purchases are never charged: there is no financial order
+      // for Google to report an amount from. The product id above comes
+      // detailed from Play, so the feature-by-Play check is that product, and
+      // the amount is resolved from our own table the same as a real buy.
+      const expectedTest = tierMinor(rule.stakeTierId, 'INR')
+      if (expectedTest === null) {
+        throw new ORPCError(`Unknown stake tier: ${rule.stakeTierId}`)
+      }
+      currency = 'INR'
+      paidMinor = expectedTest
+    } else {
+      ;({ paidMinor, currency } = await fetchOrderAmount(verified.orderId))
+    }
     if (currency !== 'INR' && currency !== 'USD') {
       throw new ORPCError(`Unsupported stake currency: ${currency}`)
     }
@@ -287,6 +302,8 @@ export const confirmStakePurchase = authedProcedure
         challengeEndsAt: challengeEndsAt(new Date(), rule.challengeDuration ?? DEFAULT_DURATION_ID),
       })
       .where(eq(schema.appRules.id, rule.id))
+
+    await acknowledgePlayPurchase(input.purchaseToken)
 
     return { success: true, alreadyPaid: false, orderId }
   })

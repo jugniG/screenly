@@ -128,6 +128,37 @@ export async function fetchOrderAmount(
   return { paidMinor, currency }
 }
 
+/**
+ * Reports a verified purchase to Play as delivered: consuming it (or, when the
+ * product is non-consumable, acknowledging it) is what Google looks at when it
+ * decides to auto-refund. Without this call Play reverses unreported purchases
+ * on its own - after 3 days for real buyers, after 3 minutes for license
+ * testers - handing the user their stake back while the challenge still runs.
+ * Consumption also frees the product so the same tier can be staked again.
+ *
+ * Failures are logged, never thrown: the challenge is already active at this
+ * point, and a settlement hiccup must not read as a failed payment.
+ */
+export async function acknowledgePlayPurchase(purchaseToken: string): Promise<void> {
+  try {
+    await (await play()).purchases.products.consume({
+      packageName: packageName(),
+      token: purchaseToken,
+    })
+  } catch (e) {
+    // Non-consumable products reject consumption; acknowledging still stops
+    // the auto-refund clock.
+    try {
+      await (await play()).purchases.products.acknowledge({
+        packageName: packageName(),
+        token: purchaseToken,
+      })
+    } catch (ackError) {
+      console.error('[play] acknowledge failed', (ackError as Error).message)
+    }
+  }
+}
+
 export type RefundStatus = 'succeeded' | 'failed'
 
 /**
