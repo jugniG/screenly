@@ -47,7 +47,7 @@ function Login() {
   useEffect(() => {
     authClient.getSession().then(({ data }) => {
       if (data?.session) {
-        void navigate({ to: '/home' })
+        void navigate({ to: '/install' })
       }
     }).catch((err) => {
       console.error('🔴 Failed to check session:', err)
@@ -60,7 +60,7 @@ function Login() {
     try {
       await authClient.signIn.social({
         provider: 'google',
-        callbackURL: '/home',
+        callbackURL: '/install',
       })
     } catch (err) {
       console.error('🔴 Google sign-in failed:', err)
@@ -75,7 +75,7 @@ function Login() {
       const res = await authClient.signIn.magicLink({
         email: values.email,
         name: values.name || undefined,
-        callbackURL: '/home',
+        callbackURL: '/install',
       })
       if (res.error) {
         setError(res.error.message || 'Failed to send magic link. Please try again.')

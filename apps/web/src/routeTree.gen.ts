@@ -10,12 +10,10 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ProtectedRouteRouteImport } from './routes/_protected/route'
 import { Route as DeleteAccountRouteImport } from './routes/delete-account'
 import { Route as InstallRouteImport } from './routes/install'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PrivacyRouteImport } from './routes/privacy'
-import { Route as ProtectedHomeRouteImport } from './routes/_protected/home'
 import { Route as ApiPlayWebhookRouteImport } from './routes/api/play-webhook'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiRpcSplatRouteImport } from './routes/api.rpc.$'
@@ -23,10 +21,6 @@ import { Route as ApiRpcSplatRouteImport } from './routes/api.rpc.$'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProtectedRouteRoute = ProtectedRouteRouteImport.update({
-  id: '/_protected',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DeleteAccountRoute = DeleteAccountRouteImport.update({
@@ -48,11 +42,6 @@ const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
   getParentRoute: () => rootRouteImport,
-} as any)
-const ProtectedHomeRoute = ProtectedHomeRouteImport.update({
-  id: '/home',
-  path: '/home',
-  getParentRoute: () => ProtectedRouteRoute,
 } as any)
 const ApiPlayWebhookRoute = ApiPlayWebhookRouteImport.update({
   id: '/api/play-webhook',
@@ -76,7 +65,6 @@ export interface FileRoutesByFullPath {
   '/install': typeof InstallRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
-  '/home': typeof ProtectedHomeRoute
   '/api/play-webhook': typeof ApiPlayWebhookRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
@@ -87,7 +75,6 @@ export interface FileRoutesByTo {
   '/install': typeof InstallRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
-  '/home': typeof ProtectedHomeRoute
   '/api/play-webhook': typeof ApiPlayWebhookRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
@@ -95,12 +82,10 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/_protected': typeof ProtectedRouteRouteWithChildren
   '/delete-account': typeof DeleteAccountRoute
   '/install': typeof InstallRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
-  '/_protected/home': typeof ProtectedHomeRoute
   '/api/play-webhook': typeof ApiPlayWebhookRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
@@ -113,7 +98,6 @@ export interface FileRouteTypes {
     | '/install'
     | '/login'
     | '/privacy'
-    | '/home'
     | '/api/play-webhook'
     | '/api/auth/$'
     | '/api/rpc/$'
@@ -124,19 +108,16 @@ export interface FileRouteTypes {
     | '/install'
     | '/login'
     | '/privacy'
-    | '/home'
     | '/api/play-webhook'
     | '/api/auth/$'
     | '/api/rpc/$'
   id:
     | '__root__'
     | '/'
-    | '/_protected'
     | '/delete-account'
     | '/install'
     | '/login'
     | '/privacy'
-    | '/_protected/home'
     | '/api/play-webhook'
     | '/api/auth/$'
     | '/api/rpc/$'
@@ -144,7 +125,6 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  ProtectedRouteRoute: typeof ProtectedRouteRouteWithChildren
   DeleteAccountRoute: typeof DeleteAccountRoute
   InstallRoute: typeof InstallRoute
   LoginRoute: typeof LoginRoute
@@ -161,13 +141,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_protected': {
-      id: '/_protected'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof ProtectedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/delete-account': {
@@ -198,13 +171,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_protected/home': {
-      id: '/_protected/home'
-      path: '/home'
-      fullPath: '/home'
-      preLoaderRoute: typeof ProtectedHomeRouteImport
-      parentRoute: typeof ProtectedRouteRoute
-    }
     '/api/play-webhook': {
       id: '/api/play-webhook'
       path: '/api/play-webhook'
@@ -229,21 +195,8 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface ProtectedRouteRouteChildren {
-  ProtectedHomeRoute: typeof ProtectedHomeRoute
-}
-
-const ProtectedRouteRouteChildren: ProtectedRouteRouteChildren = {
-  ProtectedHomeRoute: ProtectedHomeRoute,
-}
-
-const ProtectedRouteRouteWithChildren = ProtectedRouteRoute._addFileChildren(
-  ProtectedRouteRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  ProtectedRouteRoute: ProtectedRouteRouteWithChildren,
   DeleteAccountRoute: DeleteAccountRoute,
   InstallRoute: InstallRoute,
   LoginRoute: LoginRoute,
