@@ -6,7 +6,6 @@ import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { db } from "@screen/db";
 import * as schema from "@screen/db/schema";
 import { eq } from "drizzle-orm";
-import { addEmailToGooglePlayTesters } from "./google-play";
 
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL,
@@ -22,17 +21,6 @@ export const auth = betterAuth({
   logger:{level:'debug'},
   secret: process.env.BETTER_AUTH_SECRET,
   trustedOrigins: ["*", "screenly://", "exp://"],
-  databaseHooks: {
-    user: {
-      create: {
-        after: async (user) => {
-          if (user?.email) {
-            void addEmailToGooglePlayTesters(user.email);
-          }
-        },
-      },
-    },
-  },
 
   socialProviders: {
     google: {

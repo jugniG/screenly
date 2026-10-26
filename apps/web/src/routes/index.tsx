@@ -102,7 +102,7 @@ function Index() {
             </a>
           </div>
           <a
-            href="/login"
+            href="/install"
             className="btn-premium inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground"
           >
             Get Started <ArrowRight className="size-4" />
@@ -132,7 +132,7 @@ function Index() {
 
               <div className="mt-9 flex flex-wrap items-center justify-center gap-4 lg:justify-start">
                 <a
-                  href="/login"
+                  href="/install"
                   className="button inline-flex items-center gap-4 rounded-full bg-ink px-7 py-3.5 text-sm font-medium text-white"
                 >
                   Make room for your day <ArrowRight className="size-4" />
@@ -222,7 +222,7 @@ function Index() {
                 <span className="serif">Money is a better one.</span>
               </h2>
               <a
-                href="/login"
+                href="/install"
                 className="button mt-10 inline-flex items-center gap-4 rounded-full bg-ink px-8 py-4 text-sm font-medium text-white"
               >
                 Get started <ArrowUpRight className="size-4" />

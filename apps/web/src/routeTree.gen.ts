@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProtectedRouteRouteImport } from './routes/_protected/route'
 import { Route as DeleteAccountRouteImport } from './routes/delete-account'
+import { Route as InstallRouteImport } from './routes/install'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ProtectedHomeRouteImport } from './routes/_protected/home'
@@ -31,6 +32,11 @@ const ProtectedRouteRoute = ProtectedRouteRouteImport.update({
 const DeleteAccountRoute = DeleteAccountRouteImport.update({
   id: '/delete-account',
   path: '/delete-account',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InstallRoute = InstallRouteImport.update({
+  id: '/install',
+  path: '/install',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -67,6 +73,7 @@ const ApiRpcSplatRoute = ApiRpcSplatRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/delete-account': typeof DeleteAccountRoute
+  '/install': typeof InstallRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/home': typeof ProtectedHomeRoute
@@ -77,6 +84,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/delete-account': typeof DeleteAccountRoute
+  '/install': typeof InstallRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/home': typeof ProtectedHomeRoute
@@ -89,6 +97,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_protected': typeof ProtectedRouteRouteWithChildren
   '/delete-account': typeof DeleteAccountRoute
+  '/install': typeof InstallRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/_protected/home': typeof ProtectedHomeRoute
@@ -101,6 +110,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/delete-account'
+    | '/install'
     | '/login'
     | '/privacy'
     | '/home'
@@ -111,6 +121,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/delete-account'
+    | '/install'
     | '/login'
     | '/privacy'
     | '/home'
@@ -122,6 +133,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_protected'
     | '/delete-account'
+    | '/install'
     | '/login'
     | '/privacy'
     | '/_protected/home'
@@ -134,6 +146,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ProtectedRouteRoute: typeof ProtectedRouteRouteWithChildren
   DeleteAccountRoute: typeof DeleteAccountRoute
+  InstallRoute: typeof InstallRoute
   LoginRoute: typeof LoginRoute
   PrivacyRoute: typeof PrivacyRoute
   ApiPlayWebhookRoute: typeof ApiPlayWebhookRoute
@@ -162,6 +175,13 @@ declare module '@tanstack/react-router' {
       path: '/delete-account'
       fullPath: '/delete-account'
       preLoaderRoute: typeof DeleteAccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/install': {
+      id: '/install'
+      path: '/install'
+      fullPath: '/install'
+      preLoaderRoute: typeof InstallRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -225,6 +245,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ProtectedRouteRoute: ProtectedRouteRouteWithChildren,
   DeleteAccountRoute: DeleteAccountRoute,
+  InstallRoute: InstallRoute,
   LoginRoute: LoginRoute,
   PrivacyRoute: PrivacyRoute,
   ApiPlayWebhookRoute: ApiPlayWebhookRoute,
@@ -234,12 +255,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
