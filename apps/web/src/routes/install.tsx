@@ -9,13 +9,13 @@ export const Route = createFileRoute("/install")({
       {
         name: "description",
         content:
-          "Screenly for Android is rolling out in small rounds. Join the early group and install it right from Google Play.",
+          "Screenly for Android is in open early access. Join the group on Google and install it from Play - no waiting list.",
       },
       { property: "og:title", content: "Install Screenly - Early Access" },
       {
         property: "og:description",
         content:
-          "Screenly for Android is rolling out in small rounds. Join the early group and install it right from Google Play.",
+          "Screenly for Android is in open early access. Join the group on Google and install it from Play - no waiting list.",
       },
       { property: "og:type", content: "website" },
     ],
@@ -23,20 +23,27 @@ export const Route = createFileRoute("/install")({
   component: Install,
 });
 
-// This single link covers both jobs: Google Play first asks the person to join
-// the early group, and the same page then offers the install - so the page
-// never needs to explain two separate links.
+// Play's tester field only accepts Google Groups, not raw emails - the group
+// is what makes access self-serve: anyone who joins it becomes a tester
+// without us touching the Console again.
+const GROUP_JOIN_URL = "https://groups.google.com/g/screenly-early-access";
 const PLAY_EARLY_ACCESS_URL = "https://play.google.com/apps/testing/com.screenly.app";
 const PLAY_OPEN_URL = "https://play.google.com/store/apps/details?id=com.screenly.app";
 
 const steps = [
   {
     title: "Join the early group",
-    body: "Tap the button below. Google Play opens and asks whether you want to join Screenly's early group.",
+    body: "One tap on a Google page. Use the same Google account you'll install with - joining is open to everyone.",
+    href: GROUP_JOIN_URL,
+    cta: "Join the group",
+    primary: true,
   },
   {
     title: "Install from Play",
-    body: "After you accept, the same screen offers Screenly to install. That's it - everything else happens inside the app.",
+    body: "Right after joining, open the link below. Play offers Screenly to install - everything else happens inside the app.",
+    href: PLAY_EARLY_ACCESS_URL,
+    cta: "Install from Play",
+    primary: false,
   },
 ];
 
@@ -59,7 +66,7 @@ function Install() {
 
       <main className="mx-auto max-w-2xl px-5 pb-20 pt-16 sm:pt-24">
         <p className="eyebrow text-muted-foreground">
-          <span className="live-dot" /> EARLY ACCESS. FEW PEOPLE AT A TIME.
+          <span className="live-dot" /> EARLY ACCESS. OPEN RIGHT NOW.
         </p>
         <h1 className="mt-5 text-5xl font-bold leading-[0.98] [word-spacing:0.015em] sm:text-6xl">
           You're early.
@@ -67,35 +74,37 @@ function Install() {
           That's <span className="serif">the point.</span>
         </h1>
         <p className="mt-6 text-lg leading-relaxed text-foreground/80">
-          Screenly for Android is rolling out in small rounds. Each round gets real attention from
-          us, and your feedback shapes what ships next.
+          Screenly for Android is in open early access. You install it through Google's early
+          group, which anyone can join right now - no waiting list, no sign-in needed.
         </p>
 
         <div className="mt-10 space-y-4 rounded-3xl border border-border bg-card p-6 sm:p-8">
-          {steps.map((step, index) => (
+          {steps.map((step) => (
             <div key={step.title} className="flex flex-row items-start gap-4">
               <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-ink text-sm font-semibold text-white">
-                {index + 1}
+                {step.primary ? "1" : "2"}
               </span>
               <div>
                 <h2 className="text-base font-semibold">{step.title}</h2>
                 <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{step.body}</p>
+                <a
+                  href={step.href}
+                  className={
+                    step.primary
+                      ? "button mt-4 inline-flex items-center gap-2 rounded-full bg-ink px-6 py-3 text-sm font-medium text-white"
+                      : "btn-outline-premium mt-4 inline-flex items-center gap-2 rounded-full border border-border bg-card px-6 py-3 text-sm font-medium text-foreground"
+                  }
+                >
+                  {step.cta} <ArrowRight className="size-4" />
+                </a>
               </div>
             </div>
           ))}
-
-          <a
-            href={PLAY_EARLY_ACCESS_URL}
-            className="button mt-6 inline-flex items-center gap-3 rounded-full bg-ink px-7 py-3.5 text-sm font-medium text-white"
-          >
-            Get early access <ArrowRight className="size-4" />
-          </a>
         </div>
 
         <p className="mt-6 text-sm leading-relaxed text-muted-foreground">
-          Rounds fill up. If Play says Screenly isn't available yet, your Google account isn't in
-          this round - <a href="/login" className="font-medium text-foreground underline underline-offset-4">sign in</a> and
-          we'll add you to the next one.
+          Use the same Google account for both steps. If Play says Screenly isn't available right
+          after you join, Google just needs a few minutes to sync - try again shortly.
         </p>
 
         <a
