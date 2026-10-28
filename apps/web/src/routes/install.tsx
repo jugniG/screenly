@@ -89,6 +89,8 @@ function Install() {
                 <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{step.body}</p>
                 <a
                   href={step.href}
+                  target={step.primary ? "_blank" : undefined}
+                  rel={step.primary ? "noreferrer" : undefined}
                   className={
                     step.primary
                       ? "button mt-4 inline-flex items-center gap-2 rounded-full bg-ink px-6 py-3 text-sm font-medium text-white"
