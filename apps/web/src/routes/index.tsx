@@ -126,7 +126,7 @@ function Index() {
                 but <span className="serif">longer.</span>
               </h1>
               <p className="mt-6 max-w-md text-lg leading-relaxed text-foreground/80">
-                More room for the things you meant to do. Screenly helps you set app limits — and
+               Screenly helps you set app limits - and
                 stick to them. Put money behind your commitment. Stay under and keep it.
               </p>
 
@@ -135,13 +135,13 @@ function Index() {
                   href="/install"
                   className="button inline-flex items-center gap-4 rounded-full bg-ink px-7 py-3.5 text-sm font-medium text-white"
                 >
-                  Make room for your day <ArrowRight className="size-4" />
+                  Get the App <ArrowRight className="size-4" />
                 </a>
                 <a
                   href="#science"
                   className="btn-outline-premium inline-flex items-center gap-2 rounded-full border border-border bg-card px-6 py-3.5 text-sm font-medium text-foreground"
                 >
-                  The science <ArrowRight className="size-4" />
+                  Learn the science <ArrowRight className="size-4" />
                 </a>
               </div>
 
@@ -158,12 +158,12 @@ function Index() {
 
         <section id="science" className={`${band} border-y border-border bg-accent/50`}>
           <div className={shell}>
-            <div className="mx-auto max-w-4xl text-center">
+            <div className="mx-auto max-w-4xl text-center px-6">
               <p className="mx-auto text-xl font-medium leading-snug text-muted-foreground sm:text-2xl">
-                Mobiles were the biggest tech revolution in human history.
+                Mobiles were the biggest invention in human history.
               </p>
               <h2 className="mx-auto mt-4 max-w-3xl text-4xl font-bold leading-[1.05] sm:text-5xl">
-                Now they&rsquo;re <span className="text-primary">holding your hours</span>.
+                Now they have became beiggest source of distraction.
               </h2>
               <p className="mx-auto mt-7 max-w-md text-lg leading-relaxed text-foreground/70">
                 Not your fault. Apps are designed to keep you in flow.
@@ -193,7 +193,7 @@ function Index() {
           </div>
         </section>
 
-        <section id="faq" className={`${band} border-y border-border bg-card`}>
+        <section id="faq" className={`${band} border-y border-border bg-card px-6`}>
           <div className={shell}>
             <div className="mx-auto max-w-2xl text-center">
               <h2 className="text-4xl font-bold leading-[1.05] sm:text-5xl">
@@ -215,7 +215,7 @@ function Index() {
               ))}
             </div>
 
-            <div className="mt-14 text-center">
+            <div className="mt-14 text-center px-4">
               <h2 className="mx-auto max-w-3xl text-4xl font-bold leading-[1.05] sm:text-5xl">
                 Willpower is a bad plan.
                 <br />
