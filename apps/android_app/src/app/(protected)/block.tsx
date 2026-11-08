@@ -142,8 +142,8 @@ export default function BlockScreen() {
         {iconUri ? (
           <Image source={{ uri: iconUri }} className="size-20 rounded-[20px] mb-4" />
         ) : (
-          <View className="size-20 rounded-[20px] bg-lime items-center justify-center mb-4">
-            <Text className="font-bold text-[36px] text-foreground">{(appName ?? 'A')[0]}</Text>
+          <View className="size-20 rounded-[20px] bg-primary/20 items-center justify-center mb-4">
+            <Text className="font-bold text-[36px] text-primary">{(appName ?? 'A')[0]}</Text>
           </View>
         )}
         <Text className="font-bold text-xl text-on-forest">{appName}</Text>
@@ -166,11 +166,11 @@ export default function BlockScreen() {
         <TouchableOpacity onPress={goHome} className="flex-1 items-center justify-center py-3 rounded-xl border border-forest-border">
           <Text className="font-semibold text-sm text-on-forest-muted">Back to home</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleUnlock} disabled={loading} className="flex-1 items-center justify-center py-3 rounded-xl bg-lime">
-          <Text className="font-semibold text-[13px] text-forest text-center leading-[18px]">
+        <TouchableOpacity onPress={handleUnlock} disabled={loading} className="flex-1 items-center justify-center py-3 rounded-xl bg-primary">
+          <Text className="font-semibold text-[13px] text-white text-center leading-[18px]">
             Unlock early{'\n'}
             {stakeMinor > 0 && (
-              <Text className="font-bold text-[15px] text-forest">−{formatMoney(forfeitCost, currency)}</Text>
+              <Text className="font-bold text-[15px] text-white">−{formatMoney(forfeitCost, currency)}</Text>
             )}
           </Text>
         </TouchableOpacity>

@@ -8,32 +8,32 @@
 @source '../node_modules/heroui-native/lib';
 
 @theme {
-  /* Palette matching apps/web: ivory ground, forest ink, lime highlight. */
-  --color-background: #F8F7F2;
-  --color-foreground: #183E32;
-  --color-surface: #FCFBF7;
-  --color-surface-alt: #EFEEE3;
-  --color-border: #DAD8CA;
-  --color-border-soft: #CCCBBB;
-  --color-text: #183E32;
-  --color-text-secondary: #676D63;
-  --color-text-muted: #8B9083;
-  --color-muted-foreground: #676D63;
-  --color-primary: #183E32;
-  --color-primary-light: #EAEFD9;
-  --color-lime: #D9EF8A;
+  /* Rebranded palette matching apps/web: ivory ground, deep navy ink, Quippy blue highlight. */
+  --color-background: #FAF8F5;
+  --color-foreground: #0D1B2A;
+  --color-surface: #FFFFFF;
+  --color-surface-alt: #F1F5F9;
+  --color-border: #E2E8F0;
+  --color-border-soft: #CBD5E1;
+  --color-text: #0D1B2A;
+  --color-text-secondary: #5A6678;
+  --color-text-muted: #8B99AD;
+  --color-muted-foreground: #5A6678;
+  --color-primary: #2B66F2;
+  --color-primary-light: #EEF3FB;
+  --color-lime: #2B66F2;
   --color-success: #16A34A;
   --color-danger: #DC2626;
 
-  /* Enforced-moment screens (block, unlock early) sit on forest; these are
+  /* Enforced-moment screens (block, unlock early) sit on midnight navy; these are
      their readable pairs, mirroring the web block-screen CSS. */
-  --color-forest: #183E32;
-  --color-forest-lift: #1D4638;
-  --color-forest-border: #3F5A46;
-  --color-on-forest: #F8F7F2;
-  --color-on-forest-muted: #AEBFA6;
-  --color-on-forest-dim: #B6C59D;
-  --color-danger-on-forest: #F0A48F;
+  --color-forest: #0A1124;
+  --color-forest-lift: #131D35;
+  --color-forest-border: #243354;
+  --color-on-forest: #FFFFFF;
+  --color-on-forest-muted: #94A3B8;
+  --color-on-forest-dim: #CBD5E1;
+  --color-danger-on-forest: #F87171;
 
   /* React Native has no dynamic font weights - one family name per weight. */
   --font-regular: 'Poppins-Regular';

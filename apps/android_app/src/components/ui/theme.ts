@@ -1,20 +1,20 @@
 export const colors = {
-  background:    '#F8F7F2',     // Ivory (matches apps/web)
-  surface:       '#FCFBF7',     // Near-white card surface
-  surfaceAlt:    '#EFEEE3',     // Greige-green for pills, inputs, tracks
+  background:    '#FAF8F5',     // Crisp ivory/paper ground (matches apps/web)
+  surface:       '#FFFFFF',     // Pure white card surface
+  surfaceAlt:    '#F1F5F9',     // Soft slate for pills, inputs, tracks
 
-  border:        '#DAD8CA',
-  borderSoft:    '#CCCBBB',
+  border:        '#E2E8F0',
+  borderSoft:    '#CBD5E1',
 
-  text:          '#183E32',     // Forest ink
-  textSecondary: '#676D63',     // AA-checked muted on ivory (matches web)
-  textMuted:     '#8B9083',
+  text:          '#0D1B2A',     // Deep slate navy ink
+  textSecondary: '#5A6678',     // Muted slate text
+  textMuted:     '#8B99AD',
 
-  primary:       '#183E32',     // Brand ink
-  forest:        '#183E32',     // Forest shell for enforced-moment screens
-  primaryLight:  '#EAEFD9',     // Pale lime tint for badges/highlights
-  primarySoft:   '#EAEFD9',     // Alias
-  lime:          '#D9EF8A',     // Signature lime highlight
+  primary:       '#2B66F2',     // Brand Quippy blue
+  forest:        '#0A1124',     // Midnight navy shell for enforced moments
+  primaryLight:  '#EEF3FB',     // Pale blue tint for badges/highlights
+  primarySoft:   '#EEF3FB',     // Alias
+  lime:          '#2B66F2',     // Replaced lime with primary blue
 
   success:       '#16A34A',
   successSoft:   '#DCFCE7',
@@ -22,12 +22,12 @@ export const colors = {
   danger:        '#DC2626',
   dangerSoft:    '#FEE2E2',
 
-  overlay:       'rgba(24, 62, 50, 0.45)',
+  overlay:       'rgba(10, 17, 36, 0.65)',
 
   // Legacy aliases used across codebase
-  bg:            '#F8F7F2',
-  accent:        '#D9EF8A',
-  accentSoft:    '#EAEFD9',
+  bg:            '#FAF8F5',
+  accent:        '#2B66F2',
+  accentSoft:    '#EEF3FB',
 };
 
 export const fonts = {

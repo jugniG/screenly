@@ -13,6 +13,7 @@ import Svg, { Path } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { colors } from '@/components/ui/theme';
 
 /**
  * Onboarding mirrors the landing page's demo phones: three live mock screens
@@ -156,7 +157,7 @@ function UsageScreen() {
         {BAR_HEIGHTS.map((height, i) => (
           <View key={i} className="flex-1 items-center justify-end h-full">
             <View
-              className={`w-full rounded-md ${i === 3 ? 'bg-lime' : 'bg-surface-alt'}`}
+              className={`w-full rounded-md ${i === 3 ? 'bg-primary' : 'bg-surface-alt'}`}
               style={{ height: `${height}%` }}
             />
             <Text
@@ -178,7 +179,7 @@ function UsageScreen() {
               <Text className="text-[9px] text-text-muted">{row.time}</Text>
             </View>
             <View className="h-[3px] rounded-full bg-surface-alt mt-1">
-              <View className="h-full rounded-full bg-lime" style={{ width: `${row.width}%` }} />
+              <View className="h-full rounded-full bg-primary" style={{ width: `${row.width}%` }} />
             </View>
           </View>
         </View>
@@ -205,9 +206,9 @@ function LimitsScreen() {
             <AppMark app={limit.app} size={28} />
             <Text className="font-semibold text-[11px] text-foreground flex-1">{limit.app}</Text>
             {limit.reached ? (
-              <View className="flex-row items-center gap-1 rounded-full bg-lime px-1.5 py-0.5">
-                <Ionicons name="lock-closed" size={9} color="#183E32" />
-                <Text className="font-semibold text-[8px] text-forest">Locked</Text>
+              <View className="flex-row items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5">
+                <Ionicons name="lock-closed" size={9} color={colors.primary} />
+                <Text className="font-semibold text-[8px] text-primary">Locked</Text>
               </View>
             ) : (
               <Text className="text-[9px] text-text-muted">{limit.right}</Text>
@@ -215,7 +216,7 @@ function LimitsScreen() {
           </View>
           <View className="h-[4px] rounded-full bg-surface-alt mt-2">
             <View
-              className={`h-full rounded-full ${limit.reached ? 'bg-forest' : 'bg-lime'}`}
+              className={`h-full rounded-full ${limit.reached ? 'bg-primary' : 'bg-primary/40'}`}
               style={{ width: limit.reached ? '88%' : limit.track }}
             />
           </View>
@@ -225,10 +226,10 @@ function LimitsScreen() {
         </View>
       ))}
 
-      <View className="flex-row items-center justify-center gap-1.5 rounded-xl bg-forest py-2.5 mt-1">
-        <Ionicons name="shield-checkmark" size={13} color="#D9EF8A" />
-        <Text className="font-medium text-[9px] text-on-forest">
-          Your evening is looking a little greener.
+      <View className="flex-row items-center justify-center gap-1.5 rounded-xl bg-primary/10 py-2.5 mt-1">
+        <Ionicons name="shield-checkmark" size={13} color={colors.primary} />
+        <Text className="font-medium text-[9px] text-primary">
+          Your evening is looking a lot clearer.
         </Text>
       </View>
     </>
@@ -259,13 +260,13 @@ function StakeScreen() {
         <View className="flex-1 items-center justify-center py-2.5 rounded-lg border border-forest-border">
           <Text className="font-semibold text-[9px] text-on-forest-muted">Back to home</Text>
         </View>
-        <View className="flex-1 items-center justify-center py-2.5 rounded-lg bg-lime">
-          <Text className="font-semibold text-[9px] text-forest">Unlock early −₹100</Text>
+        <View className="flex-1 items-center justify-center py-2.5 rounded-lg bg-primary">
+          <Text className="font-semibold text-[9px] text-white">Unlock early −₹100</Text>
         </View>
       </View>
 
       <View className="items-center mt-4">
-        <Ionicons name="refresh" size={11} color="#D9EF8A" />
+        <Ionicons name="refresh" size={11} color={colors.primary} />
         <Text className="font-regular text-[8px] text-on-forest-dim text-center leading-[13px] mt-1 px-4">
           Meet the challenge and the whole stake returns. Leave early and it's the price of the door.
         </Text>
@@ -372,7 +373,7 @@ export default function OnboardingScreen() {
             return (
               <Animated.View
                 key={i}
-                className="h-1.5 rounded-full bg-forest"
+                className="h-1.5 rounded-full bg-primary"
                 style={{ width: dotWidth, opacity }}
               />
             );
@@ -380,7 +381,7 @@ export default function OnboardingScreen() {
         </View>
 
         <TouchableOpacity
-          className="w-full rounded-2xl bg-forest py-4 items-center"
+          className="w-full rounded-2xl bg-primary py-4 items-center"
           onPress={next}
           activeOpacity={0.85}
         >
