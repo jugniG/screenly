@@ -57,17 +57,17 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Quicksand:wght@500;600;700&display=swap",
       },
       {
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "manifest", href: "/manifest.json" },
-      { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
-      { rel: "icon", type: "image/x-icon", href: "/favicon.ico", sizes: "16x16 32x32 48x48" },
-      { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png" },
-      { name: "theme-color", content: "#183e32" },
+      { rel: "manifest", href: "/manifest.json?v=2" },
+      { rel: "icon", type: "image/svg+xml", href: "/favicon.svg?v=2" },
+      { rel: "icon", type: "image/x-icon", href: "/favicon.ico?v=2", sizes: "16x16 32x32 48x48" },
+      { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png?v=2" },
+      { name: "theme-color", content: "#2b66f2" },
     ],
   }),
   shellComponent: RootDocument,
@@ -98,7 +98,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 
 function RootLayout() {
   return (
-    <div className="flex min-h-screen flex-col bg-brand-bg text-brand-white font-recursive">
+    <div className="flex min-h-screen flex-col overflow-x-hidden">
       {/* <Header /> */}
       <main className="flex-grow">
         <Outlet />

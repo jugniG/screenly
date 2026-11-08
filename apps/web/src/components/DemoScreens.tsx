@@ -3,14 +3,15 @@ import {
   BarChart3,
   BatteryFull,
   ChevronDown,
-  Leaf,
   Plus,
   ShieldCheck,
   Signal,
   SlidersHorizontal,
+  Sparkles,
   Trophy,
   Wifi,
 } from "lucide-react";
+import { YouTubeLogo } from "./YouTubeLogo";
 
 /**
  * The three app screens side by side, each interactive: the chart picks a day,
@@ -21,13 +22,6 @@ import {
  * not read these as real numbers.
  */
 
-type PanelCopy = [string, string];
-
-const PANELS: PanelCopy[] = [
-  ["Know your time.", "See your day. Choose what deserves it."],
-  ["Make room for more.", "App limits that leave space for your plans."],
-  ["Better together.", "Shared goals. A little friendly competition."],
-];
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const DAY_INITIALS = ["M", "T", "W", "T", "F", "S", "S"];
@@ -49,6 +43,15 @@ const LEADERBOARD: [string, string][] = [
 
 const TABS = [BarChart3, SlidersHorizontal, Trophy];
 
+const STAKE_OPTIONS = [
+  { amount: 0, label: "₹0", sub: "Free" },
+  { amount: 50, label: "₹50", sub: "" },
+  { amount: 100, label: "₹100", sub: "Popular" },
+  { amount: 250, label: "₹250", sub: "" },
+  { amount: 500, label: "₹500", sub: "" },
+  { amount: 1000, label: "₹1k", sub: "" },
+];
+
 function AppIcon({ name }: { name: string }) {
   return (
     <span className={`app-icon ${name.toLowerCase()}`}>
@@ -65,10 +68,13 @@ function AppIcon({ name }: { name: string }) {
   );
 }
 
-function Phone({ type }: { type: number }) {
+export function Phone({ type }: { type: number }) {
   const [day, setDay] = useState(3);
   const [limits, setLimits] = useState([60, 45, 5]);
   const [editing, setEditing] = useState(false);
+  const [stakeTier, setStakeTier] = useState(100);
+  const [duration, setDuration] = useState("1 week");
+  const [stayStrong, setStayStrong] = useState(false);
 
   return (
     <div className={`phone phone-${type}`}>
@@ -186,10 +192,123 @@ function Phone({ type }: { type: number }) {
             ))}
 
             <div className="commit-note">
-              <Leaf size={14} />
-              <span>Your evening is looking a little greener.</span>
+              <Sparkles size={13} />
+              <span>Your evening is looking a lot clearer.</span>
             </div>
           </>
+        ) : type === 2 ? (
+          <>
+            <div className="phone-eyebrow">
+              Commitment stake <span className="live-dot" />
+            </div>
+            <h3 className="name-heading" style={{ fontSize: "19px" }}>
+              YouTube Rule
+            </h3>
+            <p className="phone-sub">Choose your stake tier and lock duration</p>
+
+            <div style={{ marginTop: "10px" }}>
+              <span style={{ fontSize: "7px", fontWeight: 700, color: "#5a6678", textTransform: "uppercase" }}>
+                How much are you staking?
+              </span>
+              <div className="phone-stake-grid">
+                {STAKE_OPTIONS.map((tier) => (
+                  <button
+                    key={tier.amount}
+                    type="button"
+                    onClick={() => setStakeTier(tier.amount)}
+                    className={`phone-tier-btn ${stakeTier === tier.amount ? "selected" : ""}`}
+                  >
+                    <span>{tier.label}</span>
+                    {tier.sub && <small>{tier.sub}</small>}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ marginTop: "8px" }}>
+              <span style={{ fontSize: "7px", fontWeight: 700, color: "#5a6678", textTransform: "uppercase" }}>
+                Challenge duration
+              </span>
+              <div className="phone-duration-row">
+                {stakeTier === 0 ? (
+                  <div className="w-full py-1 text-center text-[7px] font-semibold text-slate-400">
+                    No duration needed for free limits
+                  </div>
+                ) : (
+                  ["1 week", "1 month", "1 year"].map((dur) => (
+                    <button
+                      key={dur}
+                      type="button"
+                      onClick={() => setDuration(dur)}
+                      className={`phone-duration-btn ${duration === dur ? "selected" : ""}`}
+                    >
+                      {dur}
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className={`phone-stake-card ${stakeTier === 0 ? "free" : ""}`}>
+              <ShieldCheck
+                size={16}
+                className={stakeTier === 0 ? "text-slate-500 shrink-0" : "text-primary shrink-0"}
+              />
+              <p>
+                {stakeTier === 0 ? (
+                  <>
+                    <strong>₹0 stake (Free).</strong> Add limit without putting money on the line. Upgrade anytime.
+                  </>
+                ) : (
+                  <>
+                    <strong>₹{stakeTier} locked for {duration}.</strong> Hold out and get 100% of it back.
+                  </>
+                )}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              className={`phone-stake-cta ${stakeTier === 0 ? "secondary" : ""}`}
+            >
+              {stakeTier === 0 ? "Add YouTube Limit (No Stake)" : `Stake ₹${stakeTier} & Lock YouTube`}
+            </button>
+          </>
+        ) : type === 3 ? (
+          <div className="phone-block-screen">
+            <div className="phone-block-icon">
+              <YouTubeLogo className="w-11 h-[30px] drop-shadow-md mx-auto" />
+            </div>
+            <div className="phone-block-name">YouTube</div>
+            <span className="phone-block-flag">This app is blocked</span>
+
+            <div className="phone-block-card">
+              <span>Your Stake</span>
+              <strong>₹100.00</strong>
+              <p>Back in full in 12 days — as long as you don't break the lock.</p>
+            </div>
+
+            <div className="phone-block-actions">
+              <button
+                type="button"
+                className="phone-block-btn"
+                onClick={() => setStayStrong(true)}
+              >
+                {stayStrong ? "Locked in" : "Back to home"}
+              </button>
+              <button
+                type="button"
+                className="phone-block-btn danger"
+                onClick={() => setStayStrong(false)}
+              >
+                Unlock early (−₹100)
+              </button>
+            </div>
+
+            <div className="phone-tamper-pill">
+              Anti-tamper active · Unlock only by losing money · Uninstall attempts trigger instant forfeit
+            </div>
+          </div>
         ) : (
           <>
             <div className="phone-eyebrow">This week</div>
@@ -233,48 +352,25 @@ function Phone({ type }: { type: number }) {
         )}
       </div>
 
-      <div className="phone-nav">
-        {TABS.map((Icon, i) => (
-          <span key={i} className={i === type ? "selected" : ""}>
-            <Icon size={15} />
-            {["Screen time", "Limits", "Leaderboard"][i]}
-          </span>
-        ))}
-      </div>
+      {type !== 2 && type !== 3 && (
+        <div className="phone-nav">
+          {TABS.map((Icon, i) => (
+            <span
+              key={i}
+              className={
+                (type === 0 && i === 0) || (type === 1 && i === 1) || (type === 4 && i === 2)
+                  ? "selected"
+                  : ""
+              }
+            >
+              <Icon size={15} />
+              {["Screen time", "Limits", "Leaderboard"][i]}
+            </span>
+          ))}
+        </div>
+      )}
 
       <div className="home-indicator" />
     </div>
-  );
-}
-
-export function DemoScreens() {
-  return (
-    <section id="product" className="product-section mx-auto w-full max-w-6xl px-5">
-      <div className="section-kicker">
-        <span>THREE WAYS TO MAKE YOUR TIME YOURS.</span>
-        <span className="demo-label">
-          <span className="live-dot" /> INTERACTIVE APP PREVIEW
-        </span>
-      </div>
-
-      <div className="product-grid">
-        {PANELS.map(([title, description], i) => (
-          <article className={`product-panel panel-${i}`} key={title}>
-            <div className="product-title">
-              <span className="step-tag">0{i + 1}</span>
-              <h2>{title}</h2>
-              <p>{description}</p>
-            </div>
-            <Phone type={i} />
-          </article>
-        ))}
-      </div>
-
-      <div className="below-demos">
-        <ShieldCheck size={15} />
-        <span>Your time, your limits, your people. All in one place.</span>
-        <span className="demo-data">Sample data shown</span>
-      </div>
-    </section>
   );
 }
